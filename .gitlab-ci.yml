@@ -6,7 +6,7 @@ compile:
     - scala-cli .
 
 test:
-  stage: testsx
+  stage: test
   needs: [compile]
   script:
     - scala-cli test .
