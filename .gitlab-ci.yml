@@ -1,9 +1,11 @@
 image: openjdk:8
 
 compile:
-    script:
-        # Compile code
+  script:
+    # Compile code
+    - echo "compile"
 
 test:
   script:
     # Execute your project's tests
+    - echo "tests"
