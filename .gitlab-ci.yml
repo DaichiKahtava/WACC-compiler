@@ -1,11 +1,12 @@
 image: openjdk:8
 
 compile:
+  stage: build
   script:
-    # Compile code
-    - echo "compile"
+    - scala-cli .
 
 test:
+  stage: testsx
+  needs: [compile]
   script:
-    # Execute your project's tests
-    - echo "tests"
+    - scala-cli test .
