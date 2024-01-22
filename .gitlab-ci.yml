@@ -1,0 +1,9 @@
+image: openjdk:8
+
+compile:
+    script:
+        # Compile code
+
+test:
+  script:
+    # Execute your project's tests
