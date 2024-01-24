@@ -3,29 +3,35 @@
 # Script which tests the compiler against all test programs in exampleProgs
 
 # test_compile ($1 == file, $2 == expected code, )
+# Attempts to compile a program and compares the exit code
+# to the expected. Saves the results in temp
 test_compile () {
   ./compile $1
   code=$?
   if [ $code -eq $2 ]
   then
     printf "<testcase name=\"$1\" />\n" >> temp
-    tests=$((tests + 1))
   else
     printf "<testcase name=\"$1\" >\n" >> temp
     printf "<failure message=\"Expected exit code = 200, got $code\" type=\"FAIL\" />\n" >> temp
     printf "<testcase />\n" >> temp
-    tests=$((tests + 1))
-    fail=$((fail + 1))
   fi
+}
+
+# count_results ($1 == testsuite_name)
+# Counts how many test cases have failed and 
+count_results () {
+  fails=$(cat temp | grep -E "(FAIL)" | wc -l)
+  tests=$(cat temp | grep -E "testcase name=" | wc -l)
+  printf "<testsuite name=\"Programs at: $1\" tests=\"$tests\" failures=\"$fails\">\n" >> testres.xml
+  cat temp >> testres.xml 
+  printf "<testsuite />\n" >> testres.xml
 }
 
 #Initialise the xml and temp files
 printf "<?xml version="1.0" encoding="UTF-8" ?>\n" > testres.xml
 
 # Test results for valid tests
-tests=0
-fail=0
-totalTime=0
 
 allowList=$"(array|exit|expressions|function|if|IO|multiple|pairs|print|read|scope|variables|while|whack)"
 
@@ -39,14 +45,10 @@ do
     printf "" > temp
     for file in $fileLs
     do
-      test_compile $file 0
+      test_compile $file 0 &
     done
-    printf "<testsuite name=\"Programs at: $dir\" tests=\"$tests\" failures=\"$fail\">\n" >> testres.xml
-    cat temp >> testres.xml 
-    printf "<testsuite />\n" >> testres.xml
-    tests=0
-    fail=0
-    totalTime=0
+    wait
+    count_results $dir
 done
 
 # Test result for syntax errors
@@ -59,14 +61,10 @@ do
     printf "" > temp
     for file in $fileLs
     do
-      test_compile $file 100
+      test_compile $file 100 &
     done
-    printf "<testsuite name=\"Programs at: $dir\" tests=\"$tests\" failures=\"$fail\">\n" >> testres.xml
-    cat temp >> testres.xml 
-    printf "<testsuite />\n" >> testres.xml
-    tests=0
-    fail=0
-    totalTime=0
+    wait
+    count_results $dir
 done
 
 # Test result for semantic errors
@@ -79,14 +77,10 @@ do
     printf "" > temp
     for file in $fileLs
     do
-      test_compile $file 200
+      test_compile $file 200 &
     done
-    printf "<testsuite name=\"Programs at: $dir\" tests=\"$tests\" failures=\"$fail\">\n" >> testres.xml
-    cat temp >> testres.xml 
-    printf "<testsuite />\n" >> testres.xml
-    tests=0
-    fail=0
-    totalTime=0
+    wait
+    count_results $dir
 done
 
 rm temp
