@@ -10,12 +10,11 @@ tests=0
 fail=0
 totalTime=0
 
-#allowList=$("array" "exit" "expressions" "function" "if" "IO" "multiple" "pairs" "print" "read" "scope" "variables" "while")
 allowList=$"(array|exit|expressions|function|if|IO|multiple|pairs|print|read|scope|variables|while)"
 
 # TODO: Add the WHACK stuff...
 
-dirLs=$(echo exampleProgs/valid/* | tr " " "\n" | grep -E '$allowList')
+dirLs=$(echo exampleProgs/valid/* | tr " " "\n" | grep -E $allowList)
 for dir in $dirLs
 do
     echo "==="$dir"==="
@@ -47,7 +46,7 @@ done
 
 # Test result for syntax errors
 
-dirLs=$(echo exampleProgs/invalid/syntaxErr/* | tr " " "\n")
+dirLs=$(echo exampleProgs/invalid/syntaxErr/* | tr " " "\n" | grep -E $allowList)
 for dir in $dirLs
 do
     echo "==="$dir"==="
@@ -79,7 +78,7 @@ done
 
 # Test result for semantic errors
 
-dirLs=$(echo exampleProgs/invalid/semanticErr/* | tr " " "\n")
+dirLs=$(echo exampleProgs/invalid/semanticErr/* | tr " " "\n" | grep -E $allowList)
 for dir in $dirLs
 do
     echo "==="$dir"==="
