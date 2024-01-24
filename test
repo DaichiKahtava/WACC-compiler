@@ -10,9 +10,9 @@ tests=0
 fail=0
 totalTime=0
 
-allowList=$"(array|exit|expressions|function|if|IO|multiple|pairs|print|read|scope|variables|while)"
+allowList=$"(array|exit|expressions|function|if|IO|multiple|pairs|print|read|scope|variables|while|whack)"
 
-# TODO: Add the WHACK stuff...
+
 
 dirLs=$(echo exampleProgs/valid/* | tr " " "\n" | grep -E $allowList)
 for dir in $dirLs
