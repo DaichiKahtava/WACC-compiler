@@ -1,12 +1,14 @@
 image: openjdk:8
 
+# The docker image needs to contain scala-cli.
+
 compile:
   stage: build
   script:
-    - scala-cli .
+    - echo "AUTOMATED COMPILATION NOT IMPLEMENTED"
 
 test:
   stage: test
   needs: [compile]
   script:
-    - scala-cli test .
+    - echo "AUTOMATED TESTING NOT IMPLEMENTED"
