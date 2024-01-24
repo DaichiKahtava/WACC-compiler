@@ -2,6 +2,23 @@
 
 # Script which tests the compiler against all test programs in exampleProgs
 
+# test_compile ($1 == file, $2 == expected code, )
+test_compile () {
+  ./compile $1
+  code=$?
+  if [ $code -eq $2 ]
+  then
+    printf "<testcase name=\"$1\" />\n" >> temp
+    tests=$((tests + 1))
+  else
+    printf "<testcase name=\"$1\" >\n" >> temp
+    printf "<failure message=\"Expected exit code = 200, got $code\" type=\"FAIL\" />\n" >> temp
+    printf "<testcase />\n" >> temp
+    tests=$((tests + 1))
+    fail=$((fail + 1))
+  fi
+}
+
 #Initialise the xml and temp files
 printf "<?xml version="1.0" encoding="UTF-8" ?>\n" > testres.xml
 
@@ -22,19 +39,7 @@ do
     printf "" > temp
     for file in $fileLs
     do
-        ./compile $file
-        code=$?
-        if [ $code -eq 0 ]
-        then
-          printf "<testcase name=\"$file\" />\n" >> temp
-          tests=$((tests + 1))
-        else
-          printf "<testcase name=\"$file\" >\n" >> temp
-          printf "<failure message=\"Expected exit code = 0, got $code\" type=\"FAIL\" />\n" >> temp
-          printf "<testcase />\n" >> temp
-          tests=$((tests + 1))
-          fail=$((fail + 1))
-        fi
+      test_compile $file 0
     done
     printf "<testsuite name=\"Programs at: $dir\" tests=\"$tests\" failures=\"$fail\">\n" >> testres.xml
     cat temp >> testres.xml 
@@ -54,19 +59,7 @@ do
     printf "" > temp
     for file in $fileLs
     do
-        ./compile $file
-        code=$?
-        if [ $code -eq 100 ]
-        then
-          printf "<testcase name=\"$file\" />\n" >> temp
-          tests=$((tests + 1))
-        else
-          printf "<testcase name=\"$file\" >\n" >> temp
-          printf "<failure message=\"Expected exit code = 100, got $code\" type=\"FAIL\" />\n" >> temp
-          printf "<testcase />\n" >> temp
-          tests=$((tests + 1))
-          fail=$((fail + 1))
-        fi
+      test_compile $file 100
     done
     printf "<testsuite name=\"Programs at: $dir\" tests=\"$tests\" failures=\"$fail\">\n" >> testres.xml
     cat temp >> testres.xml 
@@ -86,19 +79,7 @@ do
     printf "" > temp
     for file in $fileLs
     do
-        ./compile $file
-        code=$?
-        if [ $code -eq 200 ]
-        then
-          printf "<testcase name=\"$file\" />\n" >> temp
-          tests=$((tests + 1))
-        else
-          printf "<testcase name=\"$file\" >\n" >> temp
-          printf "<failure message=\"Expected exit code = 200, got $code\" type=\"FAIL\" />\n" >> temp
-          printf "<testcase />\n" >> temp
-          tests=$((tests + 1))
-          fail=$((fail + 1))
-        fi
+      test_compile $file 200
     done
     printf "<testsuite name=\"Programs at: $dir\" tests=\"$tests\" failures=\"$fail\">\n" >> testres.xml
     cat temp >> testres.xml 
