@@ -1,0 +1,112 @@
+#!/bin/bash
+
+# Script which tests the compiler against all test programs in exampleProgs
+
+#Initialise the xml and temp files
+printf "<?xml version="1.0" encoding="UTF-8" ?>\n" > testres.xml
+
+# Test results for valid tests
+tests=0
+fail=0
+totalTime=0
+
+#allowList=$("array" "exit" "expressions" "function" "if" "IO" "multiple" "pairs" "print" "read" "scope" "variables" "while")
+allowList=$"(array|exit|expressions|function|if|IO|multiple|pairs|print|read|scope|variables|while)"
+
+# TODO: Add the WHACK stuff...
+
+dirLs=$(echo exampleProgs/valid/* | tr " " "\n" | grep -E '$allowList')
+for dir in $dirLs
+do
+    echo "==="$dir"==="
+    fileLs=$(echo $dir/* | tr " " "\n")
+    printf "" > temp
+    for file in $fileLs
+    do
+        ./compile $file
+        code=$?
+        if [ $code -eq 0 ]
+        then
+          printf "<testcase name=\"$file\" />\n" >> temp
+          tests=$((tests + 1))
+        else
+          printf "<testcase name=\"$file\" >\n" >> temp
+          printf "<failure message=\"Expected exit code = 0, got $code\" type=\"FAIL\" />\n" >> temp
+          printf "<testcase />\n" >> temp
+          tests=$((tests + 1))
+          fail=$((fail + 1))
+        fi
+    done
+    printf "<testsuite name=\"Programs at: $dir\" tests=\"$tests\" failures=\"$fail\">\n" >> testres.xml
+    cat temp >> testres.xml 
+    printf "<testsuite />\n" >> testres.xml
+    tests=0
+    fail=0
+    totalTime=0
+done
+
+# Test result for syntax errors
+
+dirLs=$(echo exampleProgs/invalid/syntaxErr/* | tr " " "\n")
+for dir in $dirLs
+do
+    echo "==="$dir"==="
+    fileLs=$(echo $dir/* | tr " " "\n")
+    printf "" > temp
+    for file in $fileLs
+    do
+        ./compile $file
+        code=$?
+        if [ $code -eq 100 ]
+        then
+          printf "<testcase name=\"$file\" />\n" >> temp
+          tests=$((tests + 1))
+        else
+          printf "<testcase name=\"$file\" >\n" >> temp
+          printf "<failure message=\"Expected exit code = 100, got $code\" type=\"FAIL\" />\n" >> temp
+          printf "<testcase />\n" >> temp
+          tests=$((tests + 1))
+          fail=$((fail + 1))
+        fi
+    done
+    printf "<testsuite name=\"Programs at: $dir\" tests=\"$tests\" failures=\"$fail\">\n" >> testres.xml
+    cat temp >> testres.xml 
+    printf "<testsuite />\n" >> testres.xml
+    tests=0
+    fail=0
+    totalTime=0
+done
+
+# Test result for semantic errors
+
+dirLs=$(echo exampleProgs/invalid/semanticErr/* | tr " " "\n")
+for dir in $dirLs
+do
+    echo "==="$dir"==="
+    fileLs=$(echo $dir/* | tr " " "\n")
+    printf "" > temp
+    for file in $fileLs
+    do
+        ./compile $file
+        code=$?
+        if [ $code -eq 200 ]
+        then
+          printf "<testcase name=\"$file\" />\n" >> temp
+          tests=$((tests + 1))
+        else
+          printf "<testcase name=\"$file\" >\n" >> temp
+          printf "<failure message=\"Expected exit code = 200, got $code\" type=\"FAIL\" />\n" >> temp
+          printf "<testcase />\n" >> temp
+          tests=$((tests + 1))
+          fail=$((fail + 1))
+        fi
+    done
+    printf "<testsuite name=\"Programs at: $dir\" tests=\"$tests\" failures=\"$fail\">\n" >> testres.xml
+    cat temp >> testres.xml 
+    printf "<testsuite />\n" >> testres.xml
+    tests=0
+    fail=0
+    totalTime=0
+done
+
+rm temp
