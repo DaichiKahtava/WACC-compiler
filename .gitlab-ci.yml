@@ -1,14 +1,24 @@
-image: openjdk:8
-
-# The docker image needs to contain scala-cli.
+# THIS CAN RUN ON cloud-vm-45-72 ONLY
 
 compile:
   stage: build
+  artifacts:
+  name: "Compiled stuff"
+  public: false
+  paths:
+    - wacc-compiler
+    - .scala-build
   script:
-    - echo "AUTOMATED COMPILATION NOT IMPLEMENTED"
+    - scala-cli compile .
 
 test:
   stage: test
   needs: [compile]
+  artifacts:
+  when: always
+  paths:
+    - testres.xml
+  reports:
+    junit:  testres.xml
   script:
-    - echo "AUTOMATED TESTING NOT IMPLEMENTED"
+    - bash ./test
