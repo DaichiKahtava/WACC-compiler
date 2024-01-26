@@ -4,4 +4,6 @@
 .vscode/
 .idea/
 wacc-compiler
-testres.xml
+semanticRes.xml
+syntaxRes.xml
+validRes.xml

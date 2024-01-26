@@ -20,6 +20,9 @@ test:
     paths:
       - testres.xml
     reports:
-      junit:  testres.xml
+      junit:  
+        - validRes.xml
+        - syntaxRes.xml
+        - semanticRes.xml
   script:
     - bash ./test

@@ -14,22 +14,22 @@ test_compile () {
   else
     printf "<testcase name=\"$1\" >\n" >> temp
     printf "<failure message=\"Expected exit code = 200, got $code\" type=\"FAIL\" />\n" >> temp
-    printf "<testcase />\n" >> temp
+    printf "</testcase>\n" >> temp
   fi
 }
 
-# count_results ($1 == testsuite_name, $2 == num_skipped_tests)
-# Counts how many test cases have failed and 
+# count_results ($1 == testsuite_name, $2 == num_skipped_tests, $3 == results_file)
+# Counts how many test cases have failed and stores the results in 
+# results_file
 count_results () {
   fails=$(cat temp | grep -E "(FAIL)" | wc -l)
   tests=$(cat temp | grep -E "testcase name=" | wc -l)
-  printf "<testsuite name=\"Programs at: $1\" tests=\"$tests\" failures=\"$fails\"  skipped=\"$2\">\n" >> testres.xml
-  cat temp >> testres.xml 
-  printf "<testsuite />\n" >> testres.xml
+  printf "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n" > $3
+  printf "<testsuite name=\"Programs at: $1\" tests=\"$tests\" failures=\"$fails\"  skipped=\"$2\">\n" >> $3
+  cat temp >> $3
+  printf "</testsuite>\n" >> $3
 }
 
-#Initialise the xml and temp files
-printf "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n" > testres.xml
 
 # Test results for valid tests
 
@@ -46,7 +46,7 @@ do
     test_compile $file 0
   fi
 done
-count_results "valid folder" $skipped
+count_results "valid folder" $skipped "validRes.xml"
 
 # Test result for syntax errors
 
@@ -59,10 +59,10 @@ do
   then
     skipped=$((skipped + 1))
   else
-    test_compile $file 0
+    test_compile $file 100
   fi
 done
-count_results "syntax folder" $skipped
+count_results "syntax folder" $skipped "syntaxRes.xml"
 
 # Test result for semantic errors
 
@@ -75,9 +75,9 @@ do
   then
     skipped=$((skipped + 1))
   else
-    test_compile $file 0 
+    test_compile $file 200 
   fi
 done
-count_results "semantic folder" $skipped
+count_results "semantic folder" $skipped "semanticRes.xml"
 
 rm temp
