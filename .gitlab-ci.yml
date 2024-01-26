@@ -3,11 +3,11 @@
 compile:
   stage: build
   artifacts:
-  name: "Compiled stuff"
-  public: false
-  paths:
-    - wacc-compiler
-    - .scala-build
+    name: "Compiled stuff"
+
+    paths:
+      - wacc-compiler
+      - .scala-build
   script:
     - scala-cli compile .
 
@@ -15,10 +15,10 @@ test:
   stage: test
   needs: [compile]
   artifacts:
-  when: always
-  paths:
-    - testres.xml
-  reports:
-    junit:  testres.xml
+    when: always
+    paths:
+      - testres.xml
+    reports:
+      junit:  testres.xml
   script:
     - bash ./test
