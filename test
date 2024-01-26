@@ -33,10 +33,6 @@ printf "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n" > testres.xml
 
 # Test results for valid tests
 
-allowList=$"(array|exit|expressions|function|if|IO|multiple|pairs|print|read|scope|variables|while|whack)"
-
-
-
 
 fileLs=$(cat exampleProgs/valid.selection | tr " " "\n")
 skipped=0
