@@ -18,12 +18,12 @@ test_compile () {
   fi
 }
 
-# count_results ($1 == testsuite_name)
+# count_results ($1 == testsuite_name, $2 == num_skipped_tests)
 # Counts how many test cases have failed and 
 count_results () {
   fails=$(cat temp | grep -E "(FAIL)" | wc -l)
   tests=$(cat temp | grep -E "testcase name=" | wc -l)
-  printf "<testsuite name=\"Programs at: $1\" tests=\"$tests\" failures=\"$fails\">\n" >> testres.xml
+  printf "<testsuite name=\"Programs at: $1\" tests=\"$tests\" failures=\"$fails\"  skipped=\"$2\">\n" >> testres.xml
   cat temp >> testres.xml 
   printf "<testsuite />\n" >> testres.xml
 }
@@ -37,50 +37,54 @@ allowList=$"(array|exit|expressions|function|if|IO|multiple|pairs|print|read|sco
 
 
 
-dirLs=$(echo exampleProgs/valid/* | tr " " "\n" | grep -E $allowList)
-for dir in $dirLs
+
+fileLs=$(cat exampleProgs/valid.selection | tr " " "\n")
+skipped=0
+printf "" > temp
+for file in $fileLs
 do
-    echo "==="$dir"==="
-    fileLs=$(echo $dir/* | tr " " "\n")
-    printf "" > temp
-    for file in $fileLs
-    do
-      test_compile $file 0 &
-    done
-    wait
-    count_results $dir
+  if [[ $file == \'* ]]
+  then
+    skipped=$((skipped + 1))
+  else
+    test_compile $file 0 &
+  fi
 done
+wait
+count_results "valid folder" $skipped
 
 # Test result for syntax errors
 
-dirLs=$(echo exampleProgs/invalid/syntaxErr/* | tr " " "\n" | grep -E $allowList)
-for dir in $dirLs
+fileLs=$(cat exampleProgs/syntax.selection | tr " " "\n")
+skipped=0
+printf "" > temp
+for file in $fileLs
 do
-    echo "==="$dir"==="
-    fileLs=$(echo $dir/* | tr " " "\n")
-    printf "" > temp
-    for file in $fileLs
-    do
-      test_compile $file 100 &
-    done
-    wait
-    count_results $dir
+  if [[ $file == \'* ]]
+  then
+    skipped=$((skipped + 1))
+  else
+    test_compile $file 0 &
+  fi
 done
+wait
+count_results "syntax folder" $skipped
 
 # Test result for semantic errors
 
-dirLs=$(echo exampleProgs/invalid/semanticErr/* | tr " " "\n" | grep -E $allowList)
-for dir in $dirLs
+fileLs=$(cat exampleProgs/semantic.selection | tr " " "\n")
+skipped=0
+printf "" > temp
+for file in $fileLs
 do
-    echo "==="$dir"==="
-    fileLs=$(echo $dir/* | tr " " "\n")
-    printf "" > temp
-    for file in $fileLs
-    do
-      test_compile $file 200 &
-    done
-    wait
-    count_results $dir
+  if [[ $file == \'* ]]
+  then
+    skipped=$((skipped + 1))
+  else
+    test_compile $file 0 &
+  fi
 done
+wait
+count_results "semantic folder" $skipped
 
 rm temp
