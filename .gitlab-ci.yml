@@ -4,16 +4,17 @@ compile:
   stage: build
   artifacts:
     name: "Compiled stuff"
-
     paths:
       - wacc-compiler
       - .scala-build
   script:
-    - scala-cli --power compile .
+    - make
 
 test:
   stage: test
-  needs: [compile]
+  needs:
+    - job: compile
+      artifacts: true
   artifacts:
     when: always
     paths:
