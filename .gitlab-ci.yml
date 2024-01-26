@@ -18,7 +18,9 @@ test:
   artifacts:
     when: always
     paths:
-      - testres.xml
+        - validRes.xml
+        - syntaxRes.xml
+        - semanticRes.xml
     reports:
       junit:  
         - validRes.xml
