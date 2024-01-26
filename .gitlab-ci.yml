@@ -9,7 +9,7 @@ compile:
       - wacc-compiler
       - .scala-build
   script:
-    - scala-cli compile .
+    - scala-cli --power compile .
 
 test:
   stage: test
