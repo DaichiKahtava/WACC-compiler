@@ -19,10 +19,13 @@ object lexer {
 
         symbolDesc = SymbolDesc.plain.copy(
             hardKeywords = Set(
-                "begin", "end", "skip", "read", "free", "return", "exit", 
-                "print", "println", "if", "then", "else", "fi", "while", "do", "done", "fst", 
-                "snd", "int", "bool", "char", "string", "pair", "null", "true", "false"
+                "begin", "end", "skip", "read", "free", "return", "exit", "print", "println",
+                "if", "then", "else","fi", "while", "do", "done", "fst", "snd", "int", "bool",
+                "char", "string", "pair", "null", "true", "false"
             ),
+            hardOperators = Set(
+                "!", "-", "len", "ord", "chr", "*", "/", "%", "+", "-", ">", ">=", "<", "<=", "==", "!=", "&&", "||" 
+            )
         ),
 
         numericDesc = NumericDesc.plain,
@@ -30,7 +33,16 @@ object lexer {
         textDesc = TextDesc.plain.copy(
             escapeSequences = EscapeDesc.plain.copy(
                 escBegin = '\\',
-                mapping = Map("0" -> 0x0, "b" -> 0x8, "t" -> 0x9, "n" -> 0xa, "f" -> 0xc, "r" -> 0xd, "\"" -> 0x22, "\'" -> 0x27, "\\" -> 0x5c),
+                mapping = Map(
+                    "0" -> 0x0,
+                    "b" -> 0x8,
+                    "t" -> 0x9,
+                    "n" -> 0xa,
+                    "f" -> 0xc,
+                    "r" -> 0xd,
+                    "\"" -> 0x22,
+                    "\'" -> 0x27,
+                    "\\" -> 0x5c),
             ),
             characterLiteralEnd = '\'',
             stringEnds = Set(("\"", "\"")),
@@ -43,6 +55,7 @@ object lexer {
     )
     private val lexer = new Lexer(desc)
 
+    val ident = lexer.lexeme.names.identifier
     val integer = lexer.lexeme.integer.decimal
     val implicits = lexer.lexeme.symbol.implicits
     def fully[A](p: Parsley[A]): Parsley[A] = lexer.fully(p)
