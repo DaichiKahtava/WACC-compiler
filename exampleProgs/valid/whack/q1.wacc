@@ -1,0 +1,8 @@
+# how much wacc could a whack wacc whack,
+# if a whack wacc could whack wacc
+
+begin
+  char[] arr = ['h'];
+  string[] s = [arr];
+  free s
+end

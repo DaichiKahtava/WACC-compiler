@@ -1,0 +1,12 @@
+#// how much wacc could a whack wacc whack,
+#// if a whack wacc could whack wacc
+
+begin
+int main(int argc, string[] argv) is
+    if argc < 0 then 
+        println "please add more arguments";
+        exit -1 else skip fi;
+    return 0
+end
+println "filler!"
+end
