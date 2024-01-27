@@ -1,0 +1,8 @@
+# how much wacc could a whack wacc whack,
+# if a whack wacc could whack wacc
+
+begin
+    pair(pair, pair) p = null;
+    pair(pair(int, bool)[], pair(int, bool)[]) q = null;
+    free q
+end

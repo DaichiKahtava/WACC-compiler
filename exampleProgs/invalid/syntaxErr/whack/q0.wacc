@@ -1,0 +1,4 @@
+begin
+    int x = ~~5 & 2;
+char c = chr 92223372036864775807
+ end

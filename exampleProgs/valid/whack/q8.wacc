@@ -1,0 +1,12 @@
+# how much wacc could a whack wacc whack,
+# if a whack wacc could whack wacc
+begin
+    int f() is
+        return 5;
+        int x = 5;
+        if x < x then return 5
+        else          return 6 #;
+        fi
+    end
+    println "a filler statment"
+end

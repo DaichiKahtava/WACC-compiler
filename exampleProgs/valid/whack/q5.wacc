@@ -1,0 +1,13 @@
+## how much wacc could a whack wacc whack,
+#   if a whack wacc could whack wacc
+##
+
+begin
+    char c = 'P';
+    pair(char, int) q = newpair(c, 2);
+    pair(pair, int) p = newpair(q, 6);
+    int x = fst fst p;
+    pair(int, int) r = newpair(4, 2);
+    int y = fst r;
+    skip
+end

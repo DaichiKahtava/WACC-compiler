@@ -1,0 +1,11 @@
+# how much wacc could a whack wacc whack,
+# if a whack wacc could whack wacc
+
+begin
+    char xs = ' ';
+    read xs;
+    pair(int, int) p = null;
+    if null == p then begin
+        println "hello null"
+    end else skip fi
+end

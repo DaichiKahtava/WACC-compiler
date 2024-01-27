@@ -1,0 +1,74 @@
+#!/bin/bash
+
+# Script which tests the compiler against all test programs in exampleProgs
+
+# test_compile ($1 == file, $2 == expected code, )
+# Checks if the file it to be combiled and 
+# Attempts to compileit and compares the exit code
+# to the expected. Saves the results in temp
+test_compile () {
+  if [[ $file == \'* ]]
+  then
+    echo "*** SKIPING TEST ${1:1}"
+    printf "<testcase name=\"${1:1}\" >\n" >> temp
+    printf "<skipped message=\"The program ${1:1} has been skipped\"/>\n" >> temp
+    printf "</testcase>\n" >> temp
+  else
+    ./compile $1
+    code=$?
+    if [ $code -eq $2 ]
+    then
+      printf "<testcase name=\"$1\" />\n" >> temp
+    else
+      printf "<testcase name=\"$1\" >\n" >> temp
+      printf "<failure message=\"Expected exit code = $2, got $code\" type=\"FAIL\" />\n" >> temp
+      printf "</testcase>\n" >> temp
+    fi
+  fi
+}
+
+# count_results ($1 == testsuite_name, $2 == results_file)
+# Counts how many test cases have failed and stores the results in 
+# results_file
+count_results () {
+  fails=$(cat temp | grep -E "(FAIL)" | wc -l)
+  tests=$(cat temp | grep -E "testcase name=" | wc -l)
+  skipped=$(cat temp | grep -E "skipped" | wc -l)
+  printf "<?xml version=\"1.0\" encoding=\"UTF-8\" ?>\n" > $2
+  printf "<testsuite name=\"Programs at: $1\" tests=\"$tests\" failures=\"$fails\"  skipped=\"$skipped\">\n" >> $2
+  cat temp >> $2
+  printf "</testsuite>\n" >> $2
+}
+
+
+# Test results for valid tests
+
+fileLs=$(cat exampleProgs/valid.selection | tr " " "\n")
+printf "" > temp
+for file in $fileLs
+do
+  test_compile $file 0
+done
+count_results "valid folder" "validRes.xml"
+
+# Test result for syntax errors
+
+fileLs=$(cat exampleProgs/syntax.selection | tr " " "\n")
+printf "" > temp
+for file in $fileLs
+do
+  test_compile $file 100
+done
+count_results "syntax folder" "syntaxRes.xml"
+
+# Test result for semantic errors
+
+fileLs=$(cat exampleProgs/semantic.selection | tr " " "\n")
+printf "" > temp
+for file in $fileLs
+do
+  test_compile $file 200
+done
+count_results "semantic folder" "semanticRes.xml"
+
+rm temp

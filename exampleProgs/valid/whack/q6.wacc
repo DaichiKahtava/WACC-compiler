@@ -1,0 +1,17 @@
+# how much wacc could a whack wacc whack,
+# if a whack wacc could whack wacc
+
+begin
+    int h(string[] arr) is return 0 end
+
+    string[] xs = ["h", "i"];
+    # Note that [['h', 'i']] would still cause a syntax error
+    #      due to nested array literals
+    # Note that ['h', 'i'] would produce two semantic errors:
+    #      > A char[] cannot be coerced to a string[] 
+    #      > The elements inside are expected to be strings
+    # Note that ["h", "i"] is valid 
+    #        (but probably not what was ment by the author of q6)
+
+    int x = call h(xs)
+end

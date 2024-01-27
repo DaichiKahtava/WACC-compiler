@@ -1,0 +1,15 @@
+#!/bin/bash
+
+# Generates a file which contains the directories to all test programs
+# PRE: The test programs should be inside
+#      > exampleProgs/valid/<type>/
+#      > exampleProgs/invalid/semanticErr/<type>/
+#      > exampleProgs/invalid/syntaxErr/<type>/
+# This script ensure that new tests will be included
+
+# The test script will ignore the files location which start with '
+# CAUTION: IT WILL OVERWITE THE CHOICES MADE PREVIOUSLY
+
+echo exampleProgs/valid/*/* | tr " " "\n" > exampleProgs/valid.selection
+echo exampleProgs/invalid/syntaxErr/*/* | tr " " "\n" > exampleProgs/syntax.selection
+echo exampleProgs/invalid/semanticErr/*/* | tr " " "\n" > exampleProgs/semantic.selection
