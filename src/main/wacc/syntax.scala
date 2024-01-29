@@ -1,9 +1,22 @@
 import parsley.generic
 import parsley.token.errors._
 
+// Types
 sealed trait Type
+sealed trait PairElemType
+
+case class Int() extends Type with PairElemType
+case class Bool() extends Type with PairElemType
+case class Char() extends Type with PairElemType
+case class String() extends Type with PairElemType
+case class Array(tp: Type) extends Type with PairElemType
+
+case class Pair(pe1: PairElemType, pe2: PairElemType) extends Type
+
+case class ErasedPair() extends PairElemType
 
 
+// Expressions
 sealed trait UnOp
 case class Not() extends UnOp
 sealed trait  BinOp
@@ -21,6 +34,7 @@ case class StrL(s: String) extends Atom
 case class PairL() extends Atom
 case class Ident(id: String) extends Atom
 
+// Statements
 case class Progam(funcs: List[Func], s: Stmt)
 case class Func(tp: Type, id: String, params: List[Param], s: Stmt)
 case class Param(tp: Type, id: String)
