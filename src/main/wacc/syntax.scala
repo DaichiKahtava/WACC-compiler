@@ -33,6 +33,7 @@ case class CharL(c: Char) extends Atom
 case class StrL(s: String) extends Atom
 case class PairL() extends Atom
 case class Ident(id: String) extends Atom
+case class ArrElem(id: String, xs: List[Expr]) extends Atom with LValue
 
 // Statements
 case class Progam(funcs: List[Func], s: Stmt)
@@ -56,17 +57,20 @@ case class Delimit(s1: Stmt, s2: Stmt) extends Stmt
 
 sealed trait LValue
 case class LIdent(id: String) extends LValue
-case class ArrElem(id: String, xs: List[Expr]) extends LValue
-case class LPairElem(e: RPairElem) extends LValue
 
 sealed trait RValue
-// case class RExpr(x: Expr) extends RValue
-// case class RArrL(arrL: ArrL) extends RValue
-// case class NewPair(x1: Expr, x2: Expr) extends RValue
-case class RPairElem(e: LPairElem) extends RValue
-// case class Call(id: String, xs: List[Expr])
+case class RExpr(x: Expr) extends RValue
+case class RArrL(xs: List[Expr]) extends RValue
+case class NewPair(x1: Expr, x2: Expr) extends RValue
+case class Call(id: String, xs: List[Expr])
+
+sealed trait PairElem extends RValue with LValue
+case class First(lv: LValue) extends PairElem
+case class Second(lv: LValue) extends PairElem
+// TODO [for parser]: RArrL and Call's List[Expr] have different min # of elements
 
 
+// Example bridges from PPT
 
 // object Prog extends generic.ParserBridge2[List[Asgn], Expr, Prog]
 // object Asgn extends generic.ParserBridge2[String, Expr, Asgn] {
