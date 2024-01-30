@@ -1,17 +1,15 @@
 package wacc
 
-import parsley.{Parsley, Result}
-import parsley.expr.chain
 import parsley.Parsley._
-import parsley.expr.chain
+import parsley.{Parsley, Result}
 import parsley.syntax._
 import parsley.syntax.zipped._
 import parsley.combinator._
 import parsley.character._
-
+import parsley.expr.{chain, precedence, Ops, InfixL, InfixN, InfixR, Prefix}
 
 import lexer.implicits.implicitSymbol
-import lexer.{ident, integer, char_liter, str_liter, fully}
+import lexer.{ident, intLit, charLit, strLit, fully}
 
 object parser {
     def parse(input: String): Result[String, BigInt] = parser.parse(input)
@@ -41,15 +39,36 @@ object parser {
     private lazy val arrayLiter = ("[" ~> sepBy1(expr, ",") <~ "]").map(ArrL(_)) | (("[" <~> "]") #> ArrL(List.empty))
 
     
-    private val add = (x: BigInt, y: BigInt) => x + y
-    private val sub = (x: BigInt, y: BigInt) => x - y
+    private val add = (x: Int, y: Int) => x + y
+    private val sub = (x: Int, y: Int) => x - y
 
-    private lazy val expr: Parsley[Expr] = ???
+    private lazy val arrayElem = (ident, some("[" ~> expr <~ "]")).zipped((id, xs) => (ArrElem(id, xs)))
 
-    private lazy val atom = integer | bool_liter | char_liter | str_liter | pair_liter | ident | array_elem
-    private lazy val bool_liter = ("true" #> BoolL(true))| ("false" #> BoolL(false))
-    private lazy val pair_liter = "null" #> PairL()
-    private lazy val array_elem = (ident, some("[" ~> expr <~ "]")).zipped((id, xs) => (ArrElem(id, xs)))
+    
+    
+    private lazy val boolLit = ("true" #> BoolL(true) | "false" #> BoolL(false))
+    private lazy val pairLit = "null" #> PairL()
+    private lazy val expr: Parsley[Expr] = 
+        precedence(
+            intLit.map(IntL(_)),
+            boolLit,
+            charLit.map(CharL(_)),
+            strLit.map(StrL(_)),
+            pairLit, ident.map(Ident(_)),
+            arrayElem,
+            "(" ~> expr <~ ")"
+        )(
+            Ops(Prefix)("!" as Not, "-" as Neg, "len" as Len, "ord" as Ord, "chr" as Chr),
+            Ops(InfixL)("*" as Mul, "%" as Mod, "/" as Div),
+            Ops(InfixL)("+" as Add, "-" as Minus),
+            Ops(InfixN)(">" as GrT, ">=" as GrEqT, "<" as LsT, "<=" as LsEqT),
+            Ops(InfixN)("==" as Eq, "!=" as NEq),
+            Ops(InfixR)("&&" as And),
+            Ops(InfixR)("||" as Or)
+        )
+
+
+    // private lazy val atom = integer | lexer.character
     // private lazy val atom = ???
     // private lazy val unOp = ???
     // private lazy val binOp = ???
