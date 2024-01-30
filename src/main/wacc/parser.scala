@@ -10,11 +10,20 @@ import parsley.expr.{chain, precedence, Ops, InfixL, InfixN, InfixR, Prefix}
 
 import lexer.implicits.implicitSymbol
 import lexer.{ident, intLit, charLit, strLit, fully}
+import scala.collection.immutable.IntMap
 
 object parser {
     def parse(input: String): Result[String, BigInt] = parser.parse(input)
     private lazy val parser = fully(program)
     
+    // Types
+    private lazy val typep: Parsley[Type] = baseType | arrayType | pairType
+
+    private lazy val baseType = ("int" #> IntT()) | ("bool" #> BoolT()) | ("char" #> CharT()) | ("string" #> StringT())
+    private lazy val arrayType = (typep <~ "[" <~ "]").map((t) => ArrayT(t))
+    private lazy val pairType = (string("pair"), char('('), pairElemType, char(','), pairElemType, char(')')).zipped((_, _, pe1, _, pe2, _) => (Pair(pe1, pe2)))
+    private lazy val pairElemType: Parsley[PairElemType] = baseType | arrayType | ("pair" #> ErasedPair())
+
     // Statments
     
     private lazy val program = ???
