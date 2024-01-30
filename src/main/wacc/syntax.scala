@@ -24,7 +24,7 @@ case class Not() extends UnOp
 sealed trait  BinOp
 case class Add() extends BinOp
 
-sealed trait Expr
+sealed trait Expr extends RValue
 case class UnExpr(op: UnOp, x: Expr) extends Expr
 case class BinExpr(x1: Expr, op: BinOp, x2: Expr) extends Expr
 
@@ -62,9 +62,9 @@ case class LIdent(id: String) extends LValue
 
 sealed trait RValue
 case class RExpr(x: Expr) extends RValue
-case class RArrL(xs: List[Expr]) extends RValue
+case class ArrL(xs: List[Expr]) extends RValue
 case class NewPair(x1: Expr, x2: Expr) extends RValue
-case class Call(id: String, xs: List[Expr])
+case class Call(id: String, xs: List[Expr]) extends RValue
 
 sealed trait PairElem extends RValue with LValue
 case class First(lv: LValue) extends PairElem
