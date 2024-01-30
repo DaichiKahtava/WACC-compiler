@@ -55,7 +55,7 @@ case class Ident(id: String) extends Atom
 case class ArrElem(id: String, xs: List[Expr]) extends Atom with LValue
 
 // Statements
-case class Progam(funcs: List[Func], s: Stmt)
+case class Program(funcs: List[Func], s: Stmt)
 case class Func(tp: Type, id: String, params: List[Param], s: Stmt)
 case class Param(tp: Type, id: String)
 
@@ -70,8 +70,8 @@ case class Exit(x: Expr) extends Stmt
 case class Print(x: Expr) extends Stmt // May be able to combine print and println
 case class Println(x: Expr) extends Stmt
 case class Cond(x: Expr, s1: Stmt, s2: Stmt) extends Stmt
-case class Loop(x: Expr, s: Stmt)
-case class Body(s: Stmt)
+case class Loop(x: Expr, s: Stmt) extends Stmt
+case class Body(s: Stmt) extends Stmt
 case class Delimit(s1: Stmt, s2: Stmt) extends Stmt
 
 sealed trait LValue

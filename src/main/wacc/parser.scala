@@ -13,7 +13,7 @@ import lexer.{ident, intLit, charLit, strLit, fully}
 import scala.collection.immutable.IntMap
 
 object parser {
-    def parse(input: String): Result[String, BigInt] = parser.parse(input)
+    def parse(input: String): Result[String, BigInt] = ??? // parser.parse(input)
     private lazy val parser = fully(program)
     
     // Types
@@ -26,13 +26,25 @@ object parser {
 
     // Statments
     
-    private lazy val program = ???
-    // private lazy val func = ???
-    // private lazy val paramList = ???
-    // private lazy val param = ???
-    // private lazy val stmt = ("skip" #> Skip()) | ("read" ~> expr).map((x => Read(x)))
+    private lazy val program = ("begin" ~> many(func), stmt <~ "end").zipped(Program(_, _))
+    private lazy val func = (typep, ident, "(" ~> paramList <~ ")", "is" ~> stmt <~ "end").zipped(Func(_, _, _, _))
+    private lazy val paramList = sepBy(param, ",")
+    private lazy val param = (typep, ident).zipped(Param(_, _))
+    private lazy val stmt: Parsley[Stmt] = (
+        ("skip" #> Skip())
+        | ("read" ~> lvalue).map(Read(_))
+        | ("free" ~> expr).map(Free(_))
+        | ("return" ~> expr).map(Return(_))
+        | ("exit" ~> expr).map(Exit(_))
+        | ("print" ~> expr).map(Print(_))
+        | ("println" ~> expr).map(Println(_))
+        | (("if" ~> expr), ("then" ~> stmt), ("else" ~> stmt <~ "fi")).zipped(Cond(_, _, _))
+        | (("while" ~> expr), ("do" ~> stmt <~ "done")).zipped(Loop(_, _))
+        | ("begin" ~> stmt <~ "end").map(Body(_))
+        | ((stmt <~ ";"), stmt).zipped(Delimit(_, _))
+    )
     
-    private lazy val lvalue = ???
+    private lazy val lvalue: Parsley[LValue] = arrayElem | pairElem | ident.map(LIdent(_))
     private lazy val rvalue: Parsley[RValue] = (
         expr 
         | arrayLiter 
@@ -47,14 +59,10 @@ object parser {
     private lazy val pairElem = (("fst" ~> lvalue).map(First(_))) | (("snd" ~> lvalue).map(Second(_)))
     private lazy val arrayLiter = ("[" ~> sepBy1(expr, ",") <~ "]").map(ArrL(_)) | (("[" <~> "]") #> ArrL(List.empty))
 
-    
-    private val add = (x: Int, y: Int) => x + y
-    private val sub = (x: Int, y: Int) => x - y
+    // Expressions
 
     private lazy val arrayElem = (ident, some("[" ~> expr <~ "]")).zipped((id, xs) => (ArrElem(id, xs)))
 
-    
-    
     private lazy val boolLit = ("true" #> BoolL(true) | "false" #> BoolL(false))
     private lazy val pairLit = "null" #> PairL()
     private lazy val expr: Parsley[Expr] = 
