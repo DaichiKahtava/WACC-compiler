@@ -1,3 +1,5 @@
+package wacc
+
 import parsley.generic
 import parsley.token.errors._
 
@@ -5,11 +7,11 @@ import parsley.token.errors._
 sealed trait Type
 sealed trait PairElemType
 
-case class Int() extends Type with PairElemType
-case class Bool() extends Type with PairElemType
-case class Char() extends Type with PairElemType
-case class String() extends Type with PairElemType
-case class Array(tp: Type) extends Type with PairElemType
+case class IntT() extends Type with PairElemType
+case class BoolT() extends Type with PairElemType
+case class CharT() extends Type with PairElemType
+case class StringT() extends Type with PairElemType
+case class ArrayT(tp: Type) extends Type with PairElemType
 
 case class Pair(pe1: PairElemType, pe2: PairElemType) extends Type
 
