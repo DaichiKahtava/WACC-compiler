@@ -25,11 +25,11 @@ object parser {
     
     private lazy val lvalue = ???
     private lazy val rvalue: Parsley[RValue] = (
-        // expr 
-        arrayLiter 
-        // | ((string("newpair"), char('\"'), expr, char('\"'), expr, string(")")).zipped(constrNewPair)) 
-        // | pairElem 
-        // | (string("call"), ident, char('('), argList, char(')')).zipped((_, id, _, xs, _) => (Call(id, xs)))
+        expr 
+        | arrayLiter 
+        | ((string("newpair"), char('\"'), expr, char('\"'), expr, string(")")).zipped(constrNewPair)) 
+        | pairElem 
+        | (string("call"), ident, char('('), argList, char(')')).zipped((_, id, _, xs, _) => (Call(id, xs)))
     )
     
     private val constrNewPair = (_: String, _: Char, x1: Expr, _: Char, x2: Expr, _: String) => (NewPair(x1, x2))
