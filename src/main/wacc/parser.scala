@@ -26,68 +26,62 @@ object parser {
 
     // Statments
     
-    private lazy val program = ("begin" ~> many(func), stmt <~ "end").zipped(Program(_, _))
-    private lazy val func = (typep, ident, "(" ~> paramList <~ ")", "is" ~> stmt <~ "end").zipped(Func(_, _, _, _))
+    private lazy val program = Program("begin" ~> many(func), stmt <~ "end")
+    private lazy val func = Func(typep, ident, "(" ~> paramList <~ ")", "is" ~> stmt <~ "end")
     private lazy val paramList = sepBy(param, ",")
-    private lazy val param = (typep, ident).zipped(Param(_, _))
+    private lazy val param = Param(typep, ident)
     private lazy val stmt: Parsley[Stmt] = (
         ("skip" #> Skip())
-        | ("read" ~> lvalue).map(Read(_))
-        | ("free" ~> expr).map(Free(_))
-        | ("return" ~> expr).map(Return(_))
-        | ("exit" ~> expr).map(Exit(_))
-        | ("print" ~> expr).map(Print(_))
-        | ("println" ~> expr).map(Println(_))
-        | (("if" ~> expr), ("then" ~> stmt), ("else" ~> stmt <~ "fi")).zipped(Cond(_, _, _))
-        | (("while" ~> expr), ("do" ~> stmt <~ "done")).zipped(Loop(_, _))
-        | ("begin" ~> stmt <~ "end").map(Body(_))
-        | ((stmt <~ ";"), stmt).zipped(Delimit(_, _))
+        | Read("read" ~> lvalue)
+        | Free("free" ~> expr)
+        | Return("return" ~> expr)
+        | Exit("exit" ~> expr)
+        | Print("print" ~> expr)
+        | Println("println" ~> expr)
+        | Cond("if" ~> expr, "then" ~> stmt, "else" ~> stmt <~ "fi")
+        | Loop("while" ~> expr, "do" ~> stmt <~ "done")
+        | Body("begin" ~> stmt <~ "end")
+        | Delimit(stmt <~ ";", stmt)
     )
     
-    private lazy val lvalue: Parsley[LValue] = arrayElem | pairElem | ident.map(LIdent(_))
+    private lazy val lvalue: Parsley[LValue] = arrayElem | pairElem | LIdent(ident)
     private lazy val rvalue: Parsley[RValue] = (
         expr 
         | arrayLiter 
-        | ((string("newpair"), char('\"'), expr, char('\"'), expr, string(")")).zipped(constrNewPair)) 
+        | NewPair("newpair" ~> "(" ~> expr, "," ~> expr <~ ")")
         | pairElem 
-        | (string("call"), ident, char('('), argList, char(')')).zipped((_, id, _, xs, _) => (Call(id, xs)))
+        | Call("call" ~> ident, "(" ~> argList <~ ")")
     )
-    
-    private val constrNewPair = (_: String, _: Char, x1: Expr, _: Char, x2: Expr, _: String) => (NewPair(x1, x2))
 
     private lazy val argList = sepBy(expr, ",")
-    private lazy val pairElem = (("fst" ~> lvalue).map(First(_))) | (("snd" ~> lvalue).map(Second(_)))
-    private lazy val arrayLiter = ("[" ~> sepBy1(expr, ",") <~ "]").map(ArrL(_)) | (("[" <~> "]") #> ArrL(List.empty))
+    private lazy val pairElem = First("fst" ~> lvalue) | Second("snd" ~> lvalue)
+    private lazy val arrayLiter = ArrL("[" ~> sepBy1(expr, ",") <~ "]") | (("[" <~> "]") #> ArrL(List.empty))
 
     // Expressions
 
+    //TODO implement extending from 2 bridges
     private lazy val arrayElem = (ident, some("[" ~> expr <~ "]")).zipped((id, xs) => (ArrElem(id, xs)))
 
-    private lazy val boolLit = ("true" #> BoolL(true) | "false" #> BoolL(false))
+    private lazy val boolLit = "true" #> BoolL(true) | "false" #> BoolL(false)
     private lazy val pairLit = "null" #> PairL()
     private lazy val expr: Parsley[Expr] = 
         precedence(
-            intLit.map(IntL(_)),
+            IntL(intLit),
             boolLit,
-            charLit.map(CharL(_)),
-            strLit.map(StrL(_)),
-            pairLit, ident.map(Ident(_)),
+            CharL(charLit),
+            StrL(strLit),
+            pairLit,
+            Ident(ident),
             arrayElem,
             "(" ~> expr <~ ")"
         )(
-            Ops(Prefix)("!" as Not, "-" as Neg, "len" as Len, "ord" as Ord, "chr" as Chr),
-            Ops(InfixL)("*" as Mul, "%" as Mod, "/" as Div),
-            Ops(InfixL)("+" as Add, "-" as Minus),
-            Ops(InfixN)(">" as GrT, ">=" as GrEqT, "<" as LsT, "<=" as LsEqT),
-            Ops(InfixN)("==" as Eq, "!=" as NEq),
-            Ops(InfixR)("&&" as And),
-            Ops(InfixR)("||" as Or)
+            Ops(Prefix)(Not from "!", Neg from "-", Len from "len", Ord from "ord", Chr from "chr"),
+            Ops(InfixL)(Mul from "*", Mod from "%", Div from "/"),
+            Ops(InfixL)(Add from "+", Minus from "-"),
+            Ops(InfixN)(GrT from ">", GrEqT from ">=", LsT from "<", LsEqT from "<="),
+            Ops(InfixN)(Eq from "==", NEq from "!="),
+            Ops(InfixR)(And from "&&"),
+            Ops(InfixR)(Or from "||")
         )
 
-
-    // private lazy val atom = integer | lexer.character
-    // private lazy val atom = ???
-    // private lazy val unOp = ???
-    // private lazy val binOp = ???
-    // private lazy val arrElem = ???
 }

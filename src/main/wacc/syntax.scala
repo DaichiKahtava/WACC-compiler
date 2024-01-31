@@ -89,14 +89,66 @@ case class Second(lv: LValue) extends PairElem
 // TODO [for parser]: RArrL and Call's List[Expr] have different min # of elements
 
 
-// Example bridges from PPT
+/// Companion objects for each AST node ///
 
-// object Prog extends generic.ParserBridge2[List[Asgn], Expr, Prog]
-// object Asgn extends generic.ParserBridge2[String, Expr, Asgn] {
-//     override def labels: List[String] = List("assignment")
-// }
+// Expressions
+object Not extends generic.ParserBridge1[Expr, UnOp]
+object Neg extends generic.ParserBridge1[Expr, UnOp]
+object Len extends generic.ParserBridge1[Expr, UnOp]
+object Ord extends generic.ParserBridge1[Expr, UnOp]
+object Chr extends generic.ParserBridge1[Expr, UnOp]
 
-// object Add extends generic.ParserBridge2[Expr, Expr, Expr]
-// object Mul extends generic.ParserBridge2[Expr, Expr, Expr]
-// object Val extends generic.ParserBridge1[BigInt, Expr]
-// object Var extends generic.ParserBridge1[String, Expr]
+object Mul extends generic.ParserBridge2[Expr, Expr, BinOp]
+object Div extends generic.ParserBridge2[Expr, Expr, BinOp]
+object Mod extends generic.ParserBridge2[Expr, Expr, BinOp]
+object Add extends generic.ParserBridge2[Expr, Expr, BinOp]
+object Minus extends generic.ParserBridge2[Expr, Expr, BinOp]
+object GrT extends generic.ParserBridge2[Expr, Expr, BinOp]
+object GrEqT extends generic.ParserBridge2[Expr, Expr, BinOp]
+object LsT extends generic.ParserBridge2[Expr, Expr, BinOp]
+object LsEqT extends generic.ParserBridge2[Expr, Expr, BinOp]
+object Eq extends generic.ParserBridge2[Expr, Expr, BinOp]
+object NEq extends generic.ParserBridge2[Expr, Expr, BinOp]
+object And extends generic.ParserBridge2[Expr, Expr, BinOp]
+object Or extends generic.ParserBridge2[Expr, Expr, BinOp]
+
+object UnExpr extends generic.ParserBridge2[UnOp, Expr, Expr]
+object BinExpr extends generic.ParserBridge3[Expr, BinOp, Expr, Expr]
+
+object IntL extends generic.ParserBridge1[Int, Atom]
+object BoolL extends generic.ParserBridge1[Boolean, Atom]
+object CharL extends generic.ParserBridge1[Char, Atom]
+object StrL extends generic.ParserBridge1[String, Atom]
+// object PairL extends generic.ParserBridge0[Atom]
+object Ident extends generic.ParserBridge1[String, Atom]
+// TODO: find a way to extend from two bridges
+// object ArrElem extends generic.ParserBridge2[String, List[Expr], Atom] with generic.ParserBridge2[String, List[Expr], LValue]
+
+// Statements
+object Program extends generic.ParserBridge2[List[Func], Stmt, Program]
+object Func extends generic.ParserBridge4[Type, String, List[Param], Stmt, Func]
+object Param extends generic.ParserBridge2[Type, String, Param]
+
+// object Skip extends generic.ParserBridge0[Stmt]
+object Decl extends generic.ParserBridge3[Type, String, RValue, Stmt]
+object Asgn extends generic.ParserBridge2[LValue, RValue, Stmt]
+object Read extends generic.ParserBridge1[LValue, Stmt]
+object Free extends generic.ParserBridge1[Expr, Stmt]
+object Return extends generic.ParserBridge1[Expr, Stmt]
+object Exit extends generic.ParserBridge1[Expr, Stmt]
+object Print extends generic.ParserBridge1[Expr, Stmt]
+object Println extends generic.ParserBridge1[Expr, Stmt]
+object Cond extends generic.ParserBridge3[Expr, Stmt, Stmt, Stmt]
+object Loop extends generic.ParserBridge2[Expr, Stmt, Stmt]
+object Body extends generic.ParserBridge1[Stmt, Stmt]
+object Delimit extends generic.ParserBridge2[Stmt, Stmt, Stmt]
+
+object LIdent extends generic.ParserBridge1[String, LValue]
+
+object RExpr extends generic.ParserBridge1[Expr, RValue]
+object ArrL extends generic.ParserBridge1[List[Expr], RValue]
+object NewPair extends generic.ParserBridge2[Expr, Expr, RValue]
+object Call extends generic.ParserBridge2[String, List[Expr], RValue]
+
+object First extends generic.ParserBridge1[LValue, PairElem]
+object Second extends generic.ParserBridge1[LValue, PairElem]
