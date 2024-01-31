@@ -19,8 +19,8 @@ object parser {
     // Types
     private lazy val typep: Parsley[Type] = baseType | arrayType | pairType
 
-    private lazy val baseType = "int" #> IntT | "bool" #> BoolT | "char" #> CharT | "string" #> StringT
-    private lazy val arrayType = (typep <~ "[" <~ "]").map(ArrayT(_))
+    private lazy val baseType = IntT <# "int" | BoolT <# "bool" | CharT <# "char" | StringT <# "string"
+    private lazy val arrayType = ArrayT(typep <~ "[" <~ "]")
     private lazy val pairType = Pair("pair" ~> "(" ~> pairElemType, "," ~> pairElemType <~ ")")
     private lazy val pairElemType: Parsley[PairElemType] = baseType | arrayType | ErasedPair <# "pair"
 
@@ -44,7 +44,7 @@ object parser {
         | Delimit(stmt <~ ";", stmt)
     )
     
-    private lazy val lvalue: Parsley[LValue] = arrayElem | pairElem | LIdent(ident)
+    private lazy val lvalue: Parsley[LValue] = leftArrayElem | pairElem | LIdent(ident)
     private lazy val rvalue: Parsley[RValue] = (
         expr 
         | arrayLiter 
@@ -59,8 +59,8 @@ object parser {
 
     // Expressions
 
-    //TODO implement extending from 2 bridges
-    private lazy val arrayElem = (ident, some("[" ~> expr <~ "]")).zipped((id, xs) => (ArrElem(id, xs)))
+    private lazy val arrayElem = ArrElem(ident, some("[" ~> expr <~ "]"))
+    private lazy val leftArrayElem = LArrElem(ident, some("[" ~> expr <~ "]"))
 
     private lazy val boolLit = "true" #> BoolL(true) | "false" #> BoolL(false)
     private lazy val pairLit = PairL <# "null"

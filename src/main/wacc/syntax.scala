@@ -7,11 +7,10 @@ import parsley.token.errors._
 sealed trait Type
 sealed trait PairElemType
 
-// TODO: Implement inheriting from 2 bridges
-case object IntT extends Type with PairElemType
-case object BoolT extends Type with PairElemType
-case object CharT extends Type with PairElemType
-case object StringT extends Type with PairElemType
+case object IntT extends Type with PairElemType with ParserBridge0[Type with PairElemType]
+case object BoolT extends Type with PairElemType with ParserBridge0[Type with PairElemType]
+case object CharT extends Type with PairElemType with ParserBridge0[Type with PairElemType]
+case object StringT extends Type with PairElemType with ParserBridge0[Type with PairElemType]
 case class ArrayT(tp: Type) extends Type with PairElemType
 
 case class Pair(pe1: PairElemType, pe2: PairElemType) extends Type
@@ -53,7 +52,7 @@ case class CharL(c: Char) extends Atom
 case class StrL(s: String) extends Atom
 case object PairL extends Atom with ParserBridge0[Atom]
 case class Ident(id: String) extends Atom
-case class ArrElem(id: String, xs: List[Expr]) extends Atom with LValue
+case class ArrElem(id: String, xs: List[Expr]) extends Atom
 
 // Statements
 case class Program(funcs: List[Func], s: Stmt)
@@ -77,6 +76,7 @@ case class Delimit(s1: Stmt, s2: Stmt) extends Stmt
 
 sealed trait LValue
 case class LIdent(id: String) extends LValue
+case class LArrElem(id: String, xs: List[Expr]) extends LValue
 
 sealed trait RValue
 case class RExpr(x: Expr) extends RValue
@@ -93,6 +93,7 @@ case class Second(lv: LValue) extends PairElem
 /// Companion objects for each AST node ///
 
 // Types
+object ArrayT extends ParserBridge1[Type, Type with PairElemType]
 object Pair extends ParserBridge2[PairElemType, PairElemType, Type]
 
 // Expressions
@@ -124,8 +125,7 @@ object BoolL extends ParserBridge1[Boolean, Atom]
 object CharL extends ParserBridge1[Char, Atom]
 object StrL extends ParserBridge1[String, Atom]
 object Ident extends ParserBridge1[String, Atom]
-// TODO: find a way to extend from two bridges
-// object ArrElem extends ParserBridge2[String, List[Expr], Atom] with ParserBridge2[String, List[Expr], LValue]
+object ArrElem extends ParserBridge2[String, List[Expr], Atom]
 
 // Statements
 object Program extends ParserBridge2[List[Func], Stmt, Program]
@@ -146,6 +146,7 @@ object Body extends ParserBridge1[Stmt, Stmt]
 object Delimit extends ParserBridge2[Stmt, Stmt, Stmt]
 
 object LIdent extends ParserBridge1[String, LValue]
+object LArrElem extends ParserBridge2[String, List[Expr], LValue]
 
 object RExpr extends ParserBridge1[Expr, RValue]
 object ArrL extends ParserBridge1[List[Expr], RValue]
