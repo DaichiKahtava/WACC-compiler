@@ -7,6 +7,9 @@ import parsley.token.errors._
 sealed trait Type
 sealed trait PairElemType
 
+case class AnyT() extends Type
+case class AnyPet() extends PairElemType
+
 case class IntT() extends Type with PairElemType
 case class BoolT() extends Type with PairElemType
 case class CharT() extends Type with PairElemType
@@ -87,6 +90,7 @@ sealed trait PairElem extends RValue with LValue
 case class First(lv: LValue) extends PairElem
 case class Second(lv: LValue) extends PairElem
 // TODO [for parser]: RArrL and Call's List[Expr] have different min # of elements
+
 
 
 // Example bridges from PPT
