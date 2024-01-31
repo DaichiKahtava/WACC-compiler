@@ -19,10 +19,10 @@ object parser {
     // Types
     private lazy val typep: Parsley[Type] = baseType | arrayType | pairType
 
-    private lazy val baseType = ("int" #> IntT()) | ("bool" #> BoolT()) | ("char" #> CharT()) | ("string" #> StringT())
-    private lazy val arrayType = (typep <~ "[" <~ "]").map((t) => ArrayT(t))
-    private lazy val pairType = (string("pair"), char('('), pairElemType, char(','), pairElemType, char(')')).zipped((_, _, pe1, _, pe2, _) => (Pair(pe1, pe2)))
-    private lazy val pairElemType: Parsley[PairElemType] = baseType | arrayType | ("pair" #> ErasedPair())
+    private lazy val baseType = "int" #> IntT | "bool" #> BoolT | "char" #> CharT | "string" #> StringT
+    private lazy val arrayType = (typep <~ "[" <~ "]").map(ArrayT(_))
+    private lazy val pairType = Pair("pair" ~> "(" ~> pairElemType, "," ~> pairElemType <~ ")")
+    private lazy val pairElemType: Parsley[PairElemType] = baseType | arrayType | ErasedPair <# "pair"
 
     // Statments
     
@@ -31,7 +31,7 @@ object parser {
     private lazy val paramList = sepBy(param, ",")
     private lazy val param = Param(typep, ident)
     private lazy val stmt: Parsley[Stmt] = (
-        ("skip" #> Skip())
+        Skip <# "skip"
         | Read("read" ~> lvalue)
         | Free("free" ~> expr)
         | Return("return" ~> expr)
@@ -55,7 +55,7 @@ object parser {
 
     private lazy val argList = sepBy(expr, ",")
     private lazy val pairElem = First("fst" ~> lvalue) | Second("snd" ~> lvalue)
-    private lazy val arrayLiter = ArrL("[" ~> sepBy1(expr, ",") <~ "]") | (("[" <~> "]") #> ArrL(List.empty))
+    private lazy val arrayLiter = ArrL("[" ~> sepBy1(expr, ",") <~ "]") | ("[" <~> "]") #> ArrL(List.empty)
 
     // Expressions
 
@@ -63,7 +63,7 @@ object parser {
     private lazy val arrayElem = (ident, some("[" ~> expr <~ "]")).zipped((id, xs) => (ArrElem(id, xs)))
 
     private lazy val boolLit = "true" #> BoolL(true) | "false" #> BoolL(false)
-    private lazy val pairLit = "null" #> PairL()
+    private lazy val pairLit = PairL <# "null"
     private lazy val expr: Parsley[Expr] = 
         precedence(
             IntL(intLit),
@@ -75,13 +75,13 @@ object parser {
             arrayElem,
             "(" ~> expr <~ ")"
         )(
-            Ops(Prefix)(Not from "!", Neg from "-", Len from "len", Ord from "ord", Chr from "chr"),
-            Ops(InfixL)(Mul from "*", Mod from "%", Div from "/"),
-            Ops(InfixL)(Add from "+", Minus from "-"),
-            Ops(InfixN)(GrT from ">", GrEqT from ">=", LsT from "<", LsEqT from "<="),
-            Ops(InfixN)(Eq from "==", NEq from "!="),
-            Ops(InfixR)(And from "&&"),
-            Ops(InfixR)(Or from "||")
+            Ops(Prefix)(Not <# "!", Neg <# "-", Len <# "len", Ord <# "ord", Chr <# "chr"),
+            Ops(InfixL)(Mul <# "*", Mod <# "%", Div <# "/"),
+            Ops(InfixL)(Add <# "+", Minus <# "-"),
+            Ops(InfixN)(GrT <# ">", GrEqT <# ">=", LsT <# "<", LsEqT <# "<="),
+            Ops(InfixN)(Eq <# "==", NEq <# "!="),
+            Ops(InfixR)(And <# "&&"),
+            Ops(InfixR)(Or <# "||")
         )
 
 }
