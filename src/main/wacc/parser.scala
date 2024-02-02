@@ -27,9 +27,27 @@ object parser {
     // Statments
     
     private lazy val program = Program("begin" ~> many(func), stmt <~ "end")
-    private lazy val func = Func(typep, ident, "(" ~> paramList <~ ")", "is" ~> stmt <~ "end")
+    private lazy val func = Func(typep, ident, "(" ~> paramList <~ ")", "is" ~> stmt.filter(funcEnd) <~ "end")
     private lazy val paramList = sepBy(param, ",")
     private lazy val param = Param(typep, ident)
+
+    def funcEnd(stmt:Stmt):Boolean = stmt match {
+        case Skip => false
+        case Decl(_,_,_) => false
+        case Asgn(_, _) => false
+        case Read(_) => false
+        case Free(_) => false
+        case Return(_) => true
+        case Exit(_) => true
+        case Print(_) => false
+        case Println(_) => false
+        case Cond(_, s1: Stmt, s2: Stmt) => funcEnd(s1) && funcEnd(s2) // ?   I think it should be OR
+        case Loop(_,_) => false
+        case Body(s:Stmt) => funcEnd(s) 
+        case Delimit(s1: Stmt, s2: Stmt) => funcEnd(s2)
+        
+    }
+
     private lazy val stmt: Parsley[Stmt] = (
         Skip <# "skip"
         | Read("read" ~> lvalue)
@@ -43,6 +61,8 @@ object parser {
         | Body("begin" ~> stmt <~ "end")
         | Delimit(stmt <~ ";", stmt)
     )
+
+    
     
     private lazy val lvalue: Parsley[LValue] = leftArrayElem | pairElem | LIdent(ident)
     private lazy val rvalue: Parsley[RValue] = (
