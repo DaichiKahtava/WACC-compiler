@@ -1,6 +1,6 @@
 package wacc
 
-import parsley.generic._
+import parsley.generic.{ParserBridge0, ParserBridge1, ParserBridge2, ParserBridge3, ParserBridge4}
 import parsley.token.errors._
 
 // Types
