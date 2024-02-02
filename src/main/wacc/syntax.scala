@@ -22,6 +22,8 @@ case class ErasedPair() extends PairElemType
 
 
 // Expressions
+sealed trait Expr
+
 sealed trait UnOp extends Expr
 case class Not(x: Expr) extends UnOp
 case class Neg(x: Expr) extends UnOp
@@ -43,10 +45,6 @@ case class Eq(x: Expr, y: Expr) extends BinOp
 case class NEq(x: Expr, y: Expr) extends BinOp
 case class And(x: Expr, y: Expr) extends BinOp
 case class Or(x: Expr, y: Expr) extends BinOp
-
-sealed trait Expr
-case class UnExpr(op: UnOp, x: Expr) extends Expr
-case class BinExpr(x1: Expr, op: BinOp, x2: Expr) extends Expr
 
 sealed trait Atom extends Expr
 case class IntL(n: Int) extends Atom

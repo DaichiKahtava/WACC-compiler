@@ -13,33 +13,36 @@ object semantics {
             case CharL(_) => CharT()
             case StrL(_) => StringT()
             case PairL() => Pair(AnyPet(), AnyPet())
-            case UnExpr(op, x) => op match {
-                case Not(_) => BoolT()
-                case Neg(_) => IntT()
-                case Len(_) => IntT()
-                case Ord(_) => IntT()
-                case Chr(_) => CharT()
-            }
-            case BinExpr(x1, op, x2) => op match {
-                case Mul(_, _) => IntT()
-                case Div(_, _) => IntT()
-                case Mod(_, _) => IntT()
-                case Add(_, _) => IntT()
-                case Minus(_, _) => IntT()
-                case GrT(_, _) => BoolT()
-                case GrEqT(_, _) => BoolT()
-                case LsT(_, _) => BoolT()
-                case LsEqT(_, _) => BoolT()
-                case Eq(_, _) => BoolT()
-                case NEq(_, _) => BoolT()
-                case And(_, _) => BoolT()
-                case Or(_, _) => BoolT()
-            }
+
+            case Not(_) => BoolT()
+            case Neg(_) => IntT()
+            case Len(_) => IntT()
+            case Ord(_) => IntT()
+            case Chr(_) => CharT()
+        
+            case Mul(_, _) => IntT()
+            case Div(_, _) => IntT()
+            case Mod(_, _) => IntT()
+            case Add(_, _) => IntT()
+            case Minus(_, _) => IntT()
+
+            case GrT(_, _) => BoolT()
+            case GrEqT(_, _) => BoolT()
+            case LsT(_, _) => BoolT()
+            case LsEqT(_, _) => BoolT()
+
+            case Eq(_, _) => BoolT()
+            case NEq(_, _) => BoolT()
+
+            case And(_, _) => BoolT()
+            case Or(_, _) => BoolT()
+            
             case ArrElem(_, List(x))  => getType(x)
-            case BinExpr(x1, op, x2) => getType(x1)
-            case BinExpr(x1, op, x2) => getType(x2)
         }
     }
+
+
+    def equalType(e1: Expr, e2: Expr) = getType(e1) == getType(e2)
 
     def isSemCorrect(e: Expr): Boolean = {
         return e match {
@@ -48,31 +51,32 @@ object semantics {
             case CharL(_) => true
             case StrL(_) => true
             case PairL() => true
-            case UnExpr(op, x) => op match {
-                case Not(_) => isSemCorrect(x) && getType(x) == BoolT()
-                case Neg(_) => isSemCorrect(x) && getType(x) == IntT()
-                case Len(_) => isSemCorrect(x) && getType(x) == ArrayT(AnyT())
-                case Ord(_) => isSemCorrect(x) && getType(x) == CharT()
-                case Chr(_) => isSemCorrect(x) && getType(x) == IntT()
-            }
-            case BinExpr(x1, op, x2) => op match {
-                case Mul(_, _) => (isSemCorrect(x1) && getType(x1) == IntT()) && (isSemCorrect(x2) && getType(x2) == IntT())
-                case Div(_, _) => (isSemCorrect(x1) && getType(x1) == IntT()) && (isSemCorrect(x2) && getType(x2) == IntT())
-                case Mod(_, _) => (isSemCorrect(x1) && getType(x1) == IntT()) && (isSemCorrect(x2) && getType(x2) == IntT())
-                case Add(_, _) => (isSemCorrect(x1) && getType(x1) == IntT()) && (isSemCorrect(x2) && getType(x2) == IntT())
-                case Minus(_, _) => (isSemCorrect(x1) && getType(x1) == IntT()) && (isSemCorrect(x2) && getType(x2) == IntT())
-                case GrT(_, _) => (isSemCorrect(x1) && (getType(x1) == IntT() || getType(x1) == CharT())) && (isSemCorrect(x2) && (getType(x2) == IntT() || getType(x2) == CharT()))
-                case GrEqT(_, _) => (isSemCorrect(x1) && (getType(x1) == IntT() || getType(x1) == CharT())) && (isSemCorrect(x2) && (getType(x2) == IntT() || getType(x2) == CharT()))
-                case LsT(_, _) => (isSemCorrect(x1) && (getType(x1) == IntT() || getType(x1) == CharT())) && (isSemCorrect(x2) && (getType(x2) == IntT() || getType(x2) == CharT()))
-                case LsEqT(_, _) => (isSemCorrect(x1) && (getType(x1) == IntT() || getType(x1) == CharT())) && (isSemCorrect(x2) && (getType(x2) == IntT() || getType(x2) == CharT()))
-                case Eq(_, _) => (isSemCorrect(x1) && getType(x1) == AnyT()) && (isSemCorrect(x2) && getType(x2) == AnyT())
-                case NEq(_, _) => (isSemCorrect(x1) && getType(x1) == AnyT()) && (isSemCorrect(x2) && getType(x2) == AnyT())
-                case And(_, _) => (isSemCorrect(x1) && getType(x1) == BoolT()) && (isSemCorrect(x2) && getType(x2) == BoolT())
-                case Or(_, _) => (isSemCorrect(x1) && getType(x1) == BoolT()) && (isSemCorrect(x2) && getType(x2) == BoolT())
-            }
+
+
+            case Not(x) => isSemCorrect(x) && getType(x) == BoolT()
+            case Neg(x) => isSemCorrect(x) && getType(x) == IntT()
+            case Len(x) => isSemCorrect(x) && getType(x) == ArrayT(AnyT())
+            case Ord(x) => isSemCorrect(x) && getType(x) == CharT()
+            case Chr(x) => isSemCorrect(x) && getType(x) == IntT()
+
+            case Mul(x1, x2) => (isSemCorrect(x1) && getType(x1) == IntT()) && (isSemCorrect(x2) && getType(x2) == IntT())
+            case Div(x1, x2) => (isSemCorrect(x1) && getType(x1) == IntT()) && (isSemCorrect(x2) && getType(x2) == IntT())
+            case Mod(x1, x2) => (isSemCorrect(x1) && getType(x1) == IntT()) && (isSemCorrect(x2) && getType(x2) == IntT())
+            case Add(x1, x2) => (isSemCorrect(x1) && getType(x1) == IntT()) && (isSemCorrect(x2) && getType(x2) == IntT())
+            case Minus(x1, x2) => (isSemCorrect(x1) && getType(x1) == IntT()) && (isSemCorrect(x2) && getType(x2) == IntT())
+            
+            case GrT(x1, x2) => (isSemCorrect(x1) && (getType(x1) == IntT() || getType(x1) == CharT())) && (isSemCorrect(x2) && (getType(x2) == IntT() || getType(x2) == CharT()))
+            case GrEqT(x1, x2) => (isSemCorrect(x1) && (getType(x1) == IntT() || getType(x1) == CharT())) && (isSemCorrect(x2) && (getType(x2) == IntT() || getType(x2) == CharT()))
+            case LsT(x1, x2) => (isSemCorrect(x1) && (getType(x1) == IntT() || getType(x1) == CharT())) && (isSemCorrect(x2) && (getType(x2) == IntT() || getType(x2) == CharT()))
+            case LsEqT(x1, x2) => (isSemCorrect(x1) && (getType(x1) == IntT() || getType(x1) == CharT())) && (isSemCorrect(x2) && (getType(x2) == IntT() || getType(x2) == CharT()))
+            
+            case Eq(x1, x2) => (isSemCorrect(x1) && getType(x1) == AnyT()) && (isSemCorrect(x2) && getType(x2) == AnyT())
+            case NEq(x1, x2) => (isSemCorrect(x1) && getType(x1) == AnyT()) && (isSemCorrect(x2) && getType(x2) == AnyT())
+            
+            case And(x1, x2) => (isSemCorrect(x1) && getType(x1) == BoolT()) && (isSemCorrect(x2) && getType(x2) == BoolT())
+            case Or(x1, x2) => (isSemCorrect(x1) && getType(x1) == BoolT()) && (isSemCorrect(x2) && getType(x2) == BoolT())
+
             case ArrElem(_, xs)  => isSemCorrect(xs)
-            case BinExpr(x1, op, x2) => isSemCorrect(x1)
-            case BinExpr(x1, op, x2) => isSemCorrect(x2)
         }
     }
 
