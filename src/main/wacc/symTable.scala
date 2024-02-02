@@ -8,8 +8,14 @@ class SymTable(parentTable: Option[SymTable]) {
 
 
     // Adding variables
-    def addVariable(id: String, te: TableEntry): Unit = {
-        symDict.addOne(id, te)
+    def addVariable(id: String, te: TableEntry): Boolean = {
+        if (definedGlobal(id)) {
+            return false
+        }
+        else {
+            symDict.addOne(id, te)
+            return true
+        }
     }
 
     // Finding variables
@@ -26,20 +32,20 @@ class SymTable(parentTable: Option[SymTable]) {
         }
     }
 
-    def variableDefinedGlobal(id: String): Boolean = {
+    def definedGlobal(id: String): Boolean = {
         return findGlobal(id) != None
     }
 
-    def variableDefinedLocal(id: String): Boolean = {
+    def definedLocal(id: String): Boolean = {
         return findLocal(id) != None
     }
 }
 
 sealed trait TableEntry 
 
-case class VARIABLE(tp: TYPE, location: Long) extends TableEntry
+case class VARIABLE(tp: TYPE) extends TableEntry
 case class PARAM(tp: TYPE) extends TableEntry
-case class FUNCTION(tp: TYPE, PARAM: Array[VARIABLE], st: SymTable, location: Long) extends TableEntry
+case class FUNCTION(tp: TYPE, PARAM: Array[VARIABLE], st: SymTable) extends TableEntry
 
 // Nested scopes may be implemented with multiple symbol tables
 // Symbol tables 
