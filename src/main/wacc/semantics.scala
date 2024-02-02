@@ -6,41 +6,46 @@ object semantics {
     var symTable = new SymTable(None)
 
     /// Expressions ///
-    def getType(e: Expr): Type = {
+    def getType(e: Expr): S_TYPE = {
         return e match {
-            case IntL(_) => IntT()
-            case BoolL(_) => BoolT()
-            case CharL(_) => CharT()
-            case StrL(_) => StringT()
-            case PairL() => Pair(AnyPet(), AnyPet())
+            case IntL(_) => S_INT()
+            case BoolL(_) => S_BOOL()
+            case CharL(_) => S_CHAR()
+            case StrL(_) => S_STRING()
+            case PairL() => S_PAIR(S_ANY(), S_ANY())
 
-            case Not(_) => BoolT()
-            case Neg(_) => IntT()
-            case Len(_) => IntT()
-            case Ord(_) => IntT()
-            case Chr(_) => CharT()
+            case Not(_) => S_BOOL()
+            case Neg(_) => S_INT()
+            case Len(_) => S_INT()
+            case Ord(_) => S_INT()
+            case Chr(_) => S_CHAR()
         
-            case Mul(_, _) => IntT()
-            case Div(_, _) => IntT()
-            case Mod(_, _) => IntT()
-            case Add(_, _) => IntT()
-            case Minus(_, _) => IntT()
+            case Mul(_, _) => S_INT()
+            case Div(_, _) => S_INT()
+            case Mod(_, _) => S_INT()
+            case Add(_, _) => S_INT()
+            case Minus(_, _) => S_INT()
 
-            case GrT(_, _) => BoolT()
-            case GrEqT(_, _) => BoolT()
-            case LsT(_, _) => BoolT()
-            case LsEqT(_, _) => BoolT()
+            case GrT(_, _) => S_BOOL()
+            case GrEqT(_, _) => S_BOOL()
+            case LsT(_, _) => S_BOOL()
+            case LsEqT(_, _) => S_BOOL()
 
-            case Eq(_, _) => BoolT()
-            case NEq(_, _) => BoolT()
+            case Eq(_, _) => S_BOOL()
+            case NEq(_, _) => S_BOOL()
 
-            case And(_, _) => BoolT()
-            case Or(_, _) => BoolT()
+            case And(_, _) => S_BOOL()
+            case Or(_, _) => S_BOOL()
             
             case ArrElem(_, List(x))  => getType(x)
         }
     }
 
+    def canWeakenTo(t1: S_TYPE, t2: S_TYPE): Boolean = ???
+    // Note, we can use canWeakenTo to get for any type.
+    // TODO: We probably need to introduce an S_ERASED() for use in Pair semantic checking!
+
+    def toSemanticType(t1: Type): S_TYPE = ???
 
     def equalType(e1: Expr, e2: Expr) = getType(e1) == getType(e2)
 
@@ -52,29 +57,31 @@ object semantics {
             case StrL(_) => true
             case PairL() => true
 
+            case Ident(id) => symTable.definedGlobal(id)
 
-            case Not(x) => isSemCorrect(x) && getType(x) == BoolT()
-            case Neg(x) => isSemCorrect(x) && getType(x) == IntT()
-            case Len(x) => isSemCorrect(x) && getType(x) == ArrayT(AnyT())
-            case Ord(x) => isSemCorrect(x) && getType(x) == CharT()
-            case Chr(x) => isSemCorrect(x) && getType(x) == IntT()
+            case Not(x) => isSemCorrect(x) && getType(x) == S_BOOL()
+            case Neg(x) => isSemCorrect(x) && getType(x) == S_INT()
+            case Len(x) => isSemCorrect(x) && getType(x) == S_ARRAY(S_ANY()) // TODO: Use canWeakenTo
+            case Ord(x) => isSemCorrect(x) && getType(x) == S_CHAR()
+            case Chr(x) => isSemCorrect(x) && getType(x) == S_INT()
 
-            case Mul(x1, x2) => (isSemCorrect(x1) && getType(x1) == IntT()) && (isSemCorrect(x2) && getType(x2) == IntT())
-            case Div(x1, x2) => (isSemCorrect(x1) && getType(x1) == IntT()) && (isSemCorrect(x2) && getType(x2) == IntT())
-            case Mod(x1, x2) => (isSemCorrect(x1) && getType(x1) == IntT()) && (isSemCorrect(x2) && getType(x2) == IntT())
-            case Add(x1, x2) => (isSemCorrect(x1) && getType(x1) == IntT()) && (isSemCorrect(x2) && getType(x2) == IntT())
-            case Minus(x1, x2) => (isSemCorrect(x1) && getType(x1) == IntT()) && (isSemCorrect(x2) && getType(x2) == IntT())
+            case Mul(x1, x2) => (isSemCorrect(x1) && getType(x1) == S_INT()) && (isSemCorrect(x2) && getType(x2) == S_INT())
+            case Div(x1, x2) => (isSemCorrect(x1) && getType(x1) == S_INT()) && (isSemCorrect(x2) && getType(x2) == S_INT())
+            case Mod(x1, x2) => (isSemCorrect(x1) && getType(x1) == S_INT()) && (isSemCorrect(x2) && getType(x2) == S_INT())
+            case Add(x1, x2) => (isSemCorrect(x1) && getType(x1) == S_INT()) && (isSemCorrect(x2) && getType(x2) == S_INT())
+            case Minus(x1, x2) => (isSemCorrect(x1) && getType(x1) == S_INT()) && (isSemCorrect(x2) && getType(x2) == S_INT())
             
-            case GrT(x1, x2) => (isSemCorrect(x1) && (getType(x1) == IntT() || getType(x1) == CharT())) && (isSemCorrect(x2) && (getType(x2) == IntT() || getType(x2) == CharT()))
-            case GrEqT(x1, x2) => (isSemCorrect(x1) && (getType(x1) == IntT() || getType(x1) == CharT())) && (isSemCorrect(x2) && (getType(x2) == IntT() || getType(x2) == CharT()))
-            case LsT(x1, x2) => (isSemCorrect(x1) && (getType(x1) == IntT() || getType(x1) == CharT())) && (isSemCorrect(x2) && (getType(x2) == IntT() || getType(x2) == CharT()))
-            case LsEqT(x1, x2) => (isSemCorrect(x1) && (getType(x1) == IntT() || getType(x1) == CharT())) && (isSemCorrect(x2) && (getType(x2) == IntT() || getType(x2) == CharT()))
+            case GrT(x1, x2) => (isSemCorrect(x1) && (getType(x1) == S_INT() || getType(x1) == S_CHAR())) && (isSemCorrect(x2) && (getType(x2) == S_INT() || getType(x2) == S_CHAR()))
+            case GrEqT(x1, x2) => (isSemCorrect(x1) && (getType(x1) == S_INT() || getType(x1) == S_CHAR())) && (isSemCorrect(x2) && (getType(x2) == S_INT() || getType(x2) == S_CHAR()))
+            case LsT(x1, x2) => (isSemCorrect(x1) && (getType(x1) == S_INT() || getType(x1) == S_CHAR())) && (isSemCorrect(x2) && (getType(x2) == S_INT() || getType(x2) == S_CHAR()))
+            case LsEqT(x1, x2) => (isSemCorrect(x1) && (getType(x1) == S_INT() || getType(x1) == S_CHAR())) && (isSemCorrect(x2) && (getType(x2) == S_INT() || getType(x2) == S_CHAR()))
             
-            case Eq(x1, x2) => (isSemCorrect(x1) && getType(x1) == AnyT()) && (isSemCorrect(x2) && getType(x2) == AnyT())
-            case NEq(x1, x2) => (isSemCorrect(x1) && getType(x1) == AnyT()) && (isSemCorrect(x2) && getType(x2) == AnyT())
+            // TODO: Rewrite using Use canWeakenTo
+            case Eq(x1, x2) => (isSemCorrect(x1) && getType(x1) == S_ANY()) && (isSemCorrect(x2) && getType(x2) == S_ANY())
+            case NEq(x1, x2) => (isSemCorrect(x1) && getType(x1) == S_ANY()) && (isSemCorrect(x2) && getType(x2) == S_ANY())
             
-            case And(x1, x2) => (isSemCorrect(x1) && getType(x1) == BoolT()) && (isSemCorrect(x2) && getType(x2) == BoolT())
-            case Or(x1, x2) => (isSemCorrect(x1) && getType(x1) == BoolT()) && (isSemCorrect(x2) && getType(x2) == BoolT())
+            case And(x1, x2) => (isSemCorrect(x1) && getType(x1) == S_BOOL()) && (isSemCorrect(x2) && getType(x2) == S_BOOL())
+            case Or(x1, x2) => (isSemCorrect(x1) && getType(x1) == S_BOOL()) && (isSemCorrect(x2) && getType(x2) == S_BOOL())
 
             case ArrElem(_, xs)  => isSemCorrect(xs)
         }
@@ -104,7 +111,7 @@ object semantics {
         
     def isSemCorrect(stmt: Stmt): Boolean = stmt match {
             case Skip() => true
-            case Decl(tp, id, rv) => tp == getType(rv) && isSemCorrect(rv)
+            case Decl(tp, id, rv) => toSemanticType(tp) == getType(rv) && isSemCorrect(rv)
         }
   
     // LValue and check
@@ -114,13 +121,13 @@ object semantics {
         case pe: PairElem => isSemCorrect(pe)
     }
 
-    def listType(list: List[Expr]): Type = ???
+    def listType(list: List[Expr]): S_TYPE = ???
 
     // RValue type and check
-    def getType(rv: RValue): Type = rv match {
+    def getType(rv: RValue): S_TYPE = rv match {
         case RExpr(e) => getType(e)
         case ArrL(xs) => listType(xs)
-        case NewPair(e1, e2) => Pair(AnyPet(), AnyPet())
+        case NewPair(e1, e2) => S_PAIR(getType(e1), getType(e2))
         case pe: PairElem => ???
         case Call(id, xs) => ???
     }

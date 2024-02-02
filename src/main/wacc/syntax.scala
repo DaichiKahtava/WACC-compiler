@@ -7,8 +7,6 @@ import parsley.token.errors._
 sealed trait Type
 sealed trait PairElemType
 
-case class AnyT() extends Type
-case class AnyPet() extends PairElemType
 
 case class IntT() extends Type with PairElemType
 case class BoolT() extends Type with PairElemType

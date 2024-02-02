@@ -43,18 +43,20 @@ class SymTable(parentTable: Option[SymTable]) {
 
 sealed trait TableEntry 
 
-case class VARIABLE(tp: TYPE) extends TableEntry
-case class PARAM(tp: TYPE) extends TableEntry
-case class FUNCTION(tp: TYPE, PARAM: Array[VARIABLE], st: SymTable) extends TableEntry
+case class VARIABLE(tp: S_TYPE) extends TableEntry
+case class PARAM(tp: S_TYPE) extends TableEntry
+case class FUNCTION(tp: S_TYPE, PARAM: Array[VARIABLE], st: SymTable) extends TableEntry
 
 // Nested scopes may be implemented with multiple symbol tables
 // Symbol tables 
 
-sealed trait TYPE
-case class INT() extends TYPE
-case class BOOL() extends TYPE
-case class STRING() extends TYPE
-case class CHAR() extends TYPE
-case class ARRAY(tp: TYPE, size: BigInt) extends TYPE
-case class PAIR(tp1: TYPE, tp2: TYPE) extends TYPE
-case class ANY() extends TYPE
+//Semantic types
+sealed trait S_TYPE
+case class S_INT() extends S_TYPE
+case class S_BOOL() extends S_TYPE
+case class S_STRING() extends S_TYPE
+case class S_CHAR() extends S_TYPE
+case class S_ARRAY(tp: S_TYPE) extends S_TYPE
+case class S_PAIR(tp1: S_TYPE, tp2: S_TYPE) extends S_TYPE
+// Could have S_ERASED() as well!
+case class S_ANY() extends S_TYPE
