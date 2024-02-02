@@ -2,6 +2,9 @@ package wacc
 
 object semantics {
 
+    /// Global pointer/reference to current symTable
+    var symTable = new SymTable(None)
+
     /// Expressions ///
     def getType(e: Expr): Type = {
         return e match {
