@@ -59,11 +59,11 @@ class lexerTests extends AnyFlatSpec {
     }
   }
 
-  // it should "correctly tokenize a string with escape sequences" in {
-  //   val input = "\"hello\\nworld\""
-  //   val expectedOutput = "hello\\nworld"
-  //   lexer.strLit.parse(input).get shouldBe expectedOutput
-  // }
+  it should "correctly tokenize a string with escape sequences" in {
+    val input = "\"hello\\nworld\""
+    val expectedOutput = "hello\nworld"
+    lexer.strLit.parse(input).get shouldBe expectedOutput
+  }
 
   it should "fail to tokenize a string with invalid escape sequences" in {
     val input = "\"hello\\xworld\""
