@@ -13,7 +13,7 @@ import lexer.{ident, intLit, charLit, strLit, fully}
 import scala.collection.immutable.IntMap
 
 object parser {
-    def parse(input: String): Result[String, BigInt] = ??? // parser.parse(input)
+    def parse(input: String): Result[String, Program] = parser.parse(input)
     private lazy val parser = fully(program)
     
     // Types
@@ -41,7 +41,7 @@ object parser {
         case Exit(_) => true
         case Print(_) => false
         case Println(_) => false
-        case Cond(_, s1: Stmt, s2: Stmt) => funcEnd(s1) && funcEnd(s2) // ?   I think it should be OR
+        case Cond(_, s1: Stmt, s2: Stmt) => funcEnd(s1) && funcEnd(s2)
         case Loop(_,_) => false
         case Body(s:Stmt) => funcEnd(s) 
         case Delimit(s1: Stmt, s2: Stmt) => funcEnd(s2)
