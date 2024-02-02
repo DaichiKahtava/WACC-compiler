@@ -46,7 +46,7 @@ object parser {
     
     private lazy val lvalue: Parsley[LValue] = arrayElem | pairElem | ident.map(LIdent(_))
     private lazy val rvalue: Parsley[RValue] = (
-        expr 
+        expr.map(RExpr(_))
         | arrayLiter 
         | ((string("newpair"), char('\"'), expr, char('\"'), expr, string(")")).zipped(constrNewPair)) 
         | pairElem 
