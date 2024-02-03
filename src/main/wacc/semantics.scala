@@ -87,49 +87,61 @@ object semantics {
         }
     }
 
-    // Semantics of a list of expressions
-    def isSemCorrect(list: List[Expr]): Boolean = list match {
+    // Semantics of a list of AST nodes..... don't know how to use generics so is a list of Any for now :(
+    def isSemCorrect(list: List[Any]): Boolean = list match {
         case Nil => true
         case (e: Expr) :: es => isSemCorrect(e) && isSemCorrect(es)
+        case (e: Func) :: es => isSemCorrect(e) && isSemCorrect(es)
+        case _ => false
     }
 
 
     
     /// Statements ///
-    def isSemCorrect(program: Program): Boolean = {
-        false
-        // if (program.funcs.isEmpty) isSemCorrect(program.funcs) else isSemCorrect(program.funcs) && isSemCorrect(program.stmt)
-    }
+    def isSemCorrect(program: Program): Boolean = isSemCorrect(program.funcs) && isSemCorrect(program.stmt)
 
     // TODO: check recursively for a return statment and make sure type is correct
-    def isSemCorrect(func: Func): Boolean = {
-        false
-        // func.tp == statementType(func.stmt) && isSemCorrect(func.stmt)
-    }
-
-    def isSemCorrect(param: Param): Boolean = ???
+    def isSemCorrect(func: Func): Boolean = ???
         
     def isSemCorrect(stmt: Stmt): Boolean = stmt match {
             case Skip() => true
             case Decl(tp, id, rv) => toSemanticType(tp) == getType(rv) && isSemCorrect(rv)
+            case Asgn(lv, rv) => isSemCorrect(lv) && isSemCorrect(rv) && getType(lv) == getType(rv)
+            case Read(lv) => getType(lv) == S_CHAR || getType(lv) == S_INT
+            case Free(x) => getType(x) == S_ARRAY || getType(x) == S_PAIR
+            case Return(x) => isSemCorrect(x) // Need to check with the given return type of the function?
+            case Exit(x) => getType(x) == S_INT
+            case Print(x) => isSemCorrect(x)
+            case Println(x) => isSemCorrect(x)
+            case Cond(x, s1, s2) => isSemCorrect(x) && isSemCorrect(s1) && isSemCorrect(s2)
+            case Loop(x, stmt) => isSemCorrect(x) && isSemCorrect(stmt)
+            case Body(stmt) => isSemCorrect(stmt)
+            case Delimit(s1, s2) => isSemCorrect(s1) && isSemCorrect(s2)
         }
   
     // LValue and check
+    def getType(lv: LValue): S_TYPE = lv match {
+        case LIdent(id) => ??? // Need to find where it is defined
+        case ArrElem(_, List(x)) => getType(x)
+        case pe: PairElem => getType(pe)
+    }
+
     def isSemCorrect(lv: LValue): Boolean = lv match {
         case LIdent(_) => true
         case ArrElem(_, xs) => isSemCorrect(xs)
         case pe: PairElem => isSemCorrect(pe)
     }
 
-    def listType(list: List[Expr]): S_TYPE = ???
+    // Type converter for arrays
+    def getType(arr: List[Expr]): S_TYPE = getType(arr.head)
 
     // RValue type and check
     def getType(rv: RValue): S_TYPE = rv match {
         case RExpr(e) => getType(e)
-        case ArrL(xs) => listType(xs)
+        case ArrL(xs) => getType(xs)
         case NewPair(e1, e2) => S_PAIR(getType(e1), getType(e2))
-        case pe: PairElem => ???
-        case Call(id, xs) => ???
+        case pe: PairElem => getType(pe)
+        case Call(_, xs) => ??? // Not sure
     }
 
     def isSemCorrect(rv: RValue): Boolean = rv match {
@@ -141,6 +153,11 @@ object semantics {
     }
 
     // PairElem check 
+    def getType(pe: PairElem): S_TYPE = pe match {
+        case First(lv) => getType(lv)
+        case Second(lv) => getType(lv)
+    }
+    
     def isSemCorrect(pe: PairElem): Boolean = pe match {
         case First(lv) => isSemCorrect(lv)
         case Second(lv) => isSemCorrect(lv)
