@@ -41,11 +41,38 @@ object semantics {
         }
     }
 
-    def canWeakenTo(t1: S_TYPE, t2: S_TYPE): Boolean = ???
-    // Note, we can use canWeakenTo to get for any type.
-    // TODO: We probably need to introduce an S_ERASED() for use in Pair semantic checking!
+    def canWeakenTo(t1: S_TYPE, t2: S_TYPE): Boolean = t2 match {
+        case S_ANY  => true
+        case S_PAIR(tp21, tp22) => t1 match {
+            case S_PAIR(tp11, tp12) => canWeakenTo(tp11, tp21) && canWeakenTo(tp12, tp22)
+            case _ => false
+        }
+        case S_STRING => t1 == S_ARRAY(S_CHAR)
+        case S_ARRAY(ta2) => t1 match {
+            case S_ARRAY(ta1) => canWeakenTo(ta1, ta2)
+            case _ => false
+        }
+        case _ => t1 == t2
+    }
+    // TODO: We might need to introduce an S_ERASED() for use in Pair semantic checking!
 
-    def toSemanticType(t1: Type): S_TYPE = ???
+    def toSemanticType(t: Type): S_TYPE = t match {
+        case IntT() => S_INT
+        case BoolT() => S_BOOL
+        case StringT() => S_STRING
+        case CharT() => S_CHAR
+        case ArrayT(tp) => S_ARRAY(toSemanticType(tp))
+        case Pair(pe1, pe2) => S_PAIR(toSemanticType(pe1), toSemanticType(pe2))
+    }
+
+    def toSemanticType(t: PairElemType): S_TYPE = t match {
+        case IntT() => S_INT
+        case BoolT() => S_BOOL
+        case StringT() => S_STRING
+        case CharT() => S_CHAR
+        case ArrayT(tp) => S_ARRAY(toSemanticType(tp))
+        case ErasedPair() => S_PAIR(S_ANY, S_ANY)
+    }
 
     def equalType(e1: Expr, e2: Expr) = getType(e1) == getType(e2)
 
