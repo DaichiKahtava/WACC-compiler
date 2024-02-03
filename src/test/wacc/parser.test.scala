@@ -8,7 +8,6 @@ class parserTest extends AnyFlatSpec with BeforeAndAfterEach {
 
     val testAtomExpr = IntL(0)
     
-
     "The funcEnd method" should "return true for Return and Exit statements" in {
         parser.funcEnd(Return(testAtomExpr)) shouldBe true
         parser.funcEnd(Exit(testAtomExpr)) shouldBe true
@@ -59,7 +58,53 @@ class parserTest extends AnyFlatSpec with BeforeAndAfterEach {
         parser.funcEnd(Body(Skip)) shouldBe false
         }
 
-
+    "The parse method" should "return the correct AST" in {
+        val testProgram = "begin end"
+        parser.parse(testProgram).isFailure shouldBe true
+        // val testFunc = "int f() is skip end"
+        // val testParam = "int x"
+        // val testDecl = "int x = 0"
+        // val testAsgn = "x = 0"
+        // val testRead = "read x"
+        // val testFree = "free x"
+        // val testReturn = "return 0"
+        // val testExit = "exit 0"
+        // val testPrint = "print 0"
+        // val testPrintln = "println 0"
+        // val testCond = "if 0 then skip else skip fi"
+        // val testLoop = "while 0 do skip done"
+        // val testBody = "begin skip end"
+        // val testDelimit = "skip; skip"
+        // val testLIdent = "x"
+        // val testLArrElem = "x[0]"
+        // val testIntL = "0"
+        // val testBoolL = "true"
+        // val testCharL = "'a'"
+        // val testStrL = "\"test\""
+        // val testIdent = "test"
+        // val testArrElem = "test[0]"
+        // val testArrLiter = "[0, 1, 2]"
+        // val testNewPair = "newpair(0, 1)"
+        // val testPairElem = "fst x"
+        // val testCall = "call test(0, 1)"
+        // val testType = "int"
+        // val testPairElemType = "pair"
+        // val testStmt = "skip"
+        // val testExpr = "0"
+        // val testLValue = "x"
+        // val testRValue = "0"
+        // val testParamList = "int x, int y"
+        // val testPair = "pair(int, int)"
+        // val testArrayT = "int[]"
+        // val testArrayT2 = "int[][]"
+        // val testArrayT3 = "pair(int, int)[]"
+        // val testArrayT4 = "pair(int, int)[][]"
+        // val testArrayT5 = "pair(int, int)[][][]"
+        // val testArrayT6 = "pair(int, int)[][][][]"
+        // val testArrayT7 = "pair(int, int)[][][][][]"
+        // val testArrayT8 = "pair(int, int)[][][][][][]"
+        // val testArrayT9 = "pair(int,
+    }
 
 
 }
