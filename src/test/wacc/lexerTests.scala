@@ -25,6 +25,11 @@ class lexerTests extends AnyFlatSpec {
     lexer.intLit.parse(input).get shouldBe (expectedOutput)
   }
 
+  it should "not tokenize a hexadecimal number" in {
+    val input = "0x12345"
+    lexer.intLit.parse(input).isFailure shouldBe false
+  }
+
   it should "correctly tokenize a character literal" in {
     val input = "'a'"
     val expectedOutput = 'a'
