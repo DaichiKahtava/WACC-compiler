@@ -7,6 +7,7 @@ import org.scalatest.BeforeAndAfterEach
 class parserTest extends AnyFlatSpec with BeforeAndAfterEach {
 
     val testAtomExpr = IntL(0)
+    val notExitingStmt = Skip
     
     "The funcEnd method" should "return true for Return and Exit statements" in {
         parser.funcEnd(Return(testAtomExpr)) shouldBe true
@@ -22,24 +23,24 @@ class parserTest extends AnyFlatSpec with BeforeAndAfterEach {
     }
 
     it should "return false for Cond statements with at least 1 of the result NOT being exiting (also checks recursively)" in {
-        parser.funcEnd(Cond(testAtomExpr, Skip, Return(testAtomExpr))) shouldBe false
-        parser.funcEnd(Cond(testAtomExpr, Exit(testAtomExpr), Skip)) shouldBe false
-        parser.funcEnd(Cond(testAtomExpr, Skip, Skip)) shouldBe false
-        parser.funcEnd(Cond(testAtomExpr, Return(testAtomExpr), Cond(testAtomExpr, Skip, Return(testAtomExpr)))) shouldBe false
+        parser.funcEnd(Cond(testAtomExpr, notExitingStmt, Return(testAtomExpr))) shouldBe false
+        parser.funcEnd(Cond(testAtomExpr, Exit(testAtomExpr), notExitingStmt)) shouldBe false
+        parser.funcEnd(Cond(testAtomExpr, notExitingStmt, notExitingStmt)) shouldBe false
+        parser.funcEnd(Cond(testAtomExpr, Return(testAtomExpr), Cond(testAtomExpr, notExitingStmt, Return(testAtomExpr)))) shouldBe false
     }
         
     it should "return true for Delimit statements with last statement being exiting (also checks recursively)" in {
         parser.funcEnd(Delimit(Return(testAtomExpr), Return(testAtomExpr))) shouldBe true
         parser.funcEnd(Delimit(Return(testAtomExpr), Exit(testAtomExpr))) shouldBe true
-        parser.funcEnd(Delimit(Skip, Return(testAtomExpr))) shouldBe true
-        parser.funcEnd(Delimit(Skip, Exit(testAtomExpr))) shouldBe true
-        parser.funcEnd(Delimit(Skip, Delimit(Skip, Exit(testAtomExpr)))) shouldBe true
+        parser.funcEnd(Delimit(notExitingStmt, Return(testAtomExpr))) shouldBe true
+        parser.funcEnd(Delimit(notExitingStmt, Exit(testAtomExpr))) shouldBe true
+        parser.funcEnd(Delimit(notExitingStmt, Delimit(notExitingStmt, Exit(testAtomExpr)))) shouldBe true
     }
 
     it should "return false for Delimit statements with last statement NOT being exiting (also checks recursively)" in {
-        parser.funcEnd(Delimit(Return(testAtomExpr), Skip)) shouldBe false
-        parser.funcEnd(Delimit(Exit(testAtomExpr), Skip)) shouldBe false
-        parser.funcEnd(Delimit(Skip, Delimit(Exit(testAtomExpr), Skip))) shouldBe false
+        parser.funcEnd(Delimit(Return(testAtomExpr), notExitingStmt)) shouldBe false
+        parser.funcEnd(Delimit(Exit(testAtomExpr), notExitingStmt)) shouldBe false
+        parser.funcEnd(Delimit(notExitingStmt, Delimit(Exit(testAtomExpr), notExitingStmt))) shouldBe false
     }
 
     it should "return false for other statements" in {
@@ -54,8 +55,8 @@ class parserTest extends AnyFlatSpec with BeforeAndAfterEach {
         parser.funcEnd(Free(testAtomExpr)) shouldBe false
         parser.funcEnd(Print(testAtomExpr)) shouldBe false
         parser.funcEnd(Println(testAtomExpr)) shouldBe false
-        parser.funcEnd(Loop(testAtomExpr, Skip)) shouldBe false
-        parser.funcEnd(Body(Skip)) shouldBe false
+        parser.funcEnd(Loop(testAtomExpr, notExitingStmt)) shouldBe false
+        parser.funcEnd(Body(notExitingStmt)) shouldBe false
         }
 
     "The parse method" should "return the correct AST" in {
