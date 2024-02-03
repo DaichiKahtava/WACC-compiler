@@ -127,8 +127,18 @@ object semantics {
     /// Statements ///
     def isSemCorrect(program: Program): Boolean = isSemCorrect(program.funcs) && isSemCorrect(program.stmt)
 
-    // TODO: check recursively for a return statment and make sure type is correct
-    def isSemCorrect(func: Func): Boolean = ???
+    def isSemCorrect(func: Func): Boolean = {
+        toSemanticType(func.tp) == getReturnType(func.stmt).get
+    }
+
+    def getReturnType(stmt: Stmt): Option[S_TYPE] = stmt match {
+        case Return(e) => Some(getType(e))
+        case Cond(_, s1, s2) => getReturnType(s1).orElse(getReturnType(s2))
+        case Loop(_, s) => getReturnType(s)
+        case Body(s) => getReturnType(s)
+        case Delimit(_, s) => getReturnType(s)
+        case _ => None
+    }
         
     def isSemCorrect(stmt: Stmt): Boolean = stmt match {
             case Skip() => true
