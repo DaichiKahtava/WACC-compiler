@@ -37,11 +37,11 @@ class lexerTests extends AnyFlatSpec {
     lexer.strLit.parse(input).get shouldBe (expectedOutput)
   }
 
-  // it should "correctly tokenize a hard keyword" in {
-  //   val input = "begin"
-  //   val expectedOutput = "begin"
-  //   lexer.ident.parse(input).get shouldBe expectedOutput
-  // }
+  it should "reject a keyword for an identifier" in {
+    val input = "begin"
+    val expectedOutput = "begin"
+    lexer.ident.parse(input).isFailure shouldBe true
+  }
 
   it should "fail to tokenize a hard operator as an identifier" in {
     val input = "&&"
@@ -71,6 +71,12 @@ class lexerTests extends AnyFlatSpec {
       case parsley.Failure(_) => succeed
       case _ => fail("Expected a Failure, but parsing succeeded.")
     }
+  }
+
+  it should "parse an escaped \"\\\" " in {
+    val input = "\"hello\\\\world\""
+    val expectedOutput = "hello\\world"
+    lexer.strLit.parse(input).get shouldBe (expectedOutput)
   }
 
 }
