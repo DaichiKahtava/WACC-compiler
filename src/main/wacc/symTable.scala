@@ -44,8 +44,8 @@ class SymTable(parentTable: Option[SymTable]) {
 sealed trait TableEntry 
 
 case class VARIABLE(tp: S_TYPE) extends TableEntry
-case class PARAM(tp: S_TYPE) extends TableEntry
-case class FUNCTION(tp: S_TYPE, PARAM: Array[VARIABLE], st: SymTable) extends TableEntry
+case class PARAMETER(tp: S_TYPE) extends TableEntry
+case class FUNCTION(tp: S_TYPE, params: Array[VARIABLE], st: SymTable) extends TableEntry
 
 // Nested scopes may be implemented with multiple symbol tables
 // Symbol tables 

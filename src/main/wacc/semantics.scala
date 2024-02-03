@@ -145,7 +145,11 @@ object semantics {
             case Decl(tp, id, rv) => toSemanticType(tp) == getType(rv) && isSemCorrect(rv)
             case Asgn(lv, rv) => isSemCorrect(lv) && isSemCorrect(rv) && getType(lv) == getType(rv)
             case Read(lv) => getType(lv) == S_CHAR || getType(lv) == S_INT
-            case Free(x) => getType(x) == S_ARRAY || getType(x) == S_PAIR
+
+            case Free(ArrElem(_, xs)) => isSemCorrect(xs)
+            case Free(x: PairElem) => isSemCorrect(x.asInstanceOf[PairElem])
+            case Free (_) => false
+
             case Return(x) => isSemCorrect(x) // Need to check with the given return type of the function?
             case Exit(x) => getType(x) == S_INT
             case Print(x) => isSemCorrect(x)
@@ -158,8 +162,12 @@ object semantics {
   
     // LValue and check
     def getType(lv: LValue): S_TYPE = lv match {
-        case LIdent(id) => ??? // Need to find where it is defined
-        case ArrElem(_, List(x)) => getType(x)
+        case LIdent(id) => symTable.findGlobal(id).get match {
+            case VARIABLE(tp) => tp
+            case PARAMETER(tp) => tp
+            case FUNCTION(tp, _, _) => tp
+        }
+        case ArrElem(_, xs) => getType(xs)
         case pe: PairElem => getType(pe)
     }
 
@@ -178,7 +186,11 @@ object semantics {
         case ArrL(xs) => getType(xs)
         case NewPair(e1, e2) => S_PAIR(getType(e1), getType(e2))
         case pe: PairElem => getType(pe)
-        case Call(_, xs) => ??? // Not sure
+        case Call(id, _) => symTable.findGlobal(id).get match {
+            case VARIABLE(tp) => tp
+            case PARAMETER(tp) => tp
+            case FUNCTION(tp, _, _) => tp
+        }
     }
 
     def isSemCorrect(rv: RValue): Boolean = rv match {
