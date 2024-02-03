@@ -13,6 +13,11 @@ object semantics {
             case CharL(_) => S_CHAR
             case StrL(_) => S_STRING
             case PairL() => S_PAIR(S_ANY, S_ANY)
+            case Ident(id) => symTable.findGlobal(id).get match {
+                case VARIABLE(tp) => tp
+                case PARAMETER(tp) => tp
+                case FUNCTION(tp, _, _) => tp
+            }
 
             case Not(_) => S_BOOL
             case Neg(_) => S_INT
@@ -37,7 +42,7 @@ object semantics {
             case And(_, _) => S_BOOL
             case Or(_, _) => S_BOOL
             
-            case ArrElem(_, List(x))  => getType(x)
+            case ArrElem(_, xs)  => getType(xs)
         }
     }
 
