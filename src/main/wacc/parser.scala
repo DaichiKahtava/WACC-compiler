@@ -32,20 +32,12 @@ object parser {
     lazy val param = Param(typep, ident) // TODO: RETURN IT TO PRIVATE ONCE TESTING IS DONE
 
     def funcEnd(stmt:Stmt):Boolean = stmt match {
-        case Skip => false
-        case Decl(_,_,_) => false
-        case Asgn(_, _) => false
-        case Read(_) => false
-        case Free(_) => false
         case Return(_) => true
         case Exit(_) => true
-        case Print(_) => false
-        case Println(_) => false
-        case Cond(_, s1: Stmt, s2: Stmt) => funcEnd(s1) && funcEnd(s2)
-        case Loop(_,_) => false
-        case Body(s:Stmt) => funcEnd(s) 
-        case Delimit(_, s: Stmt) => funcEnd(s)
-        
+        case Cond(_, s1, s2) => funcEnd(s1) && funcEnd(s2)
+        case Body(s) => funcEnd(s) 
+        case Delimit(_, s) => funcEnd(s)
+        case _ => false
     }
 
     lazy val stmt: Parsley[Stmt] = (
