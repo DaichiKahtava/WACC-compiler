@@ -56,8 +56,8 @@ object parser {
 
     
     
-    lazy val lvalue: Parsley[LValue] = LIdent(ident) | leftArrayElem | pairElem // TODO: BACKTRACKING
-    private lazy val rvalue: Parsley[RValue] = (
+    lazy val lvalue: Parsley[LValue] = LIdent(ident) | leftArrayElem | pairElem // TODO: BACKTRACKING // [tm1722] MADE PUBLIC FOR TESTING
+    lazy val rvalue: Parsley[RValue] = ( // [tm1722] MADE PUBLIC FOR TESTING
         expr 
         | arrayLiter 
         | NewPair("newpair" ~> "(" ~> expr, "," ~> expr <~ ")")
@@ -72,7 +72,7 @@ object parser {
     // Expressions
 
     private lazy val arrayElem = ArrElem(ident, some("[" ~> expr <~ "]"))
-    private lazy val leftArrayElem = LArrElem(ident, some("[" ~> expr <~ "]"))
+    lazy val leftArrayElem = LArrElem(ident, some("[" ~> expr <~ "]"))
 
     private lazy val boolLit = "true" #> BoolL(true) | "false" #> BoolL(false)
     private lazy val pairLit = PairL <# "null"

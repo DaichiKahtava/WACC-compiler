@@ -11,6 +11,8 @@ class parserTest extends AnyFlatSpec with BeforeAndAfterEach {
 
     val testAtomExpr = IntL(0)
     val notExitingStmt = Skip
+    val testIdent = "test"
+    val testLValue = LIdent("test")
     
     "The funcEnd method" should "return true for Return and Exit statements" in {
         parser.funcEnd(Return(testAtomExpr)) shouldBe true
@@ -47,8 +49,6 @@ class parserTest extends AnyFlatSpec with BeforeAndAfterEach {
     }
 
     it should "return false for other statements" in {
-        val testLValue = LIdent("test")
-        val testIdent = "test"
         val testType = IntT
 
         parser.funcEnd(Skip) shouldBe false
@@ -62,54 +62,37 @@ class parserTest extends AnyFlatSpec with BeforeAndAfterEach {
         parser.funcEnd(Body(notExitingStmt)) shouldBe false
         }
 
-    "The parse method" should "return the correct AST" in {
-        parser.lvalue.parse("x").contains(LIdent("x"))
-        // val testProgram = "int x"
-        // // program.parse(testProgram) shouldBe Program(List(), Decl(IntT, "x", IntL(0)))
-        // parser.stmt.parse("skip;") shouldBe Skip
-        // val testFunc = "int f() is skip end"
-        // val testParam = "int x"
-        // val testDecl = "int x = 0"
-        // val testAsgn = "x = 0"
-        // val testRead = "read x"
-        // val testFree = "free x"
-        // val testReturn = "return 0"
-        // val testExit = "exit 0"
-        // val testPrint = "print 0"
-        // val testPrintln = "println 0"
-        // val testCond = "if 0 then skip else skip fi"
-        // val testLoop = "while 0 do skip done"
-        // val testBody = "begin skip end"
-        // val testDelimit = "skip; skip"
-        // val testLIdent = "x"
-        // val testLArrElem = "x[0]"
-        // val testIntL = "0"
-        // val testBoolL = "true"
-        // val testCharL = "'a'"
-        // val testStrL = "\"test\""
-        // val testIdent = "test"
-        // val testArrElem = "test[0]"
-        // val testArrLiter = "[0, 1, 2]"
-        // val testNewPair = "newpair(0, 1)"
-        // val testPairElem = "fst x"
-        // val testCall = "call test(0, 1)"
-        // val testType = "int"
-        // val testPairElemType = "pair"
-        // val testStmt = "skip"
-        // val testExpr = "0"
-        // val testLValue = "x"
-        // val testRValue = "0"
-        // val testParamList = "int x, int y"
-        // val testPair = "pair(int, int)"
-        // val testArrayT = "int[]"
-        // val testArrayT2 = "int[][]"
-        // val testArrayT3 = "pair(int, int)[]"
-        // val testArrayT4 = "pair(int, int)[][]"
-        // val testArrayT5 = "pair(int, int)[][][]"
-        // val testArrayT6 = "pair(int, int)[][][][]"
-        // val testArrayT7 = "pair(int, int)[][][][][]"
-        // val testArrayT8 = "pair(int, int)[][][][][][]"
-        // val testArrayT9 = "pair(int,
+    "The parse method" should "return the correct AST for the lvalue" in {
+        parser.lvalue.parse(testIdent).contains(testLValue) shouldBe true // LIdent
+
+        /* TODO: tests for LArrElem */
+        // val testArrElement0 = "[0]"
+        // val testArrElement1 = "[1]"
+        // parser.lvalue.parse(testIdent+testArrElement0).contains(LArrElem(testIdent, Some(IntL(0)))) shouldBe true // LArrElem
+        // parser.lvalue.parse(testIdent+testArrElement0+testArrElement1).contains(LArrElem(testIdent, Some(IntL(0)), Some(IntL(1)))) shouldBe true // LArrElem
+        
+        parser.lvalue.parse("fst test").contains(First(testLValue)) shouldBe true // PairElem
+        parser.lvalue.parse("snd test").contains(Second(testLValue)) shouldBe true // PairElem
+
+    }
+
+    it should "return the correct AST for the rvalue" in {
+        val testIdentExpr = Ident("test")
+
+        parser.rvalue.parse(testIdent).contains(testIdentExpr) shouldBe true // Ident
+
+        /* TODO: tests for ArrElem */
+        // parser.rvalue.parse("test[0]").contains(ArrElem("test", List(IntL(0)))) shouldBe true // ArrElem
+        // parser.rvalue.parse("test[0][1]").contains(ArrElem("test", List(IntL(0), IntL(1)))) shouldBe true // ArrElem
+
+        /* TODO: tests for newPair */
+        // parser.rvalue.parse("newpair(0,1)").contains(NewPair(IntL(0), IntL(1))) shouldBe true // NewPair
+
+        parser.lvalue.parse("fst test").contains(First(testLValue)) shouldBe true // PairElem
+        parser.lvalue.parse("snd test").contains(Second(testLValue)) shouldBe true // PairElem
+
+        /* TODO: tests for Call */
+        
     }
 
 
