@@ -17,7 +17,7 @@ object parser {
     private lazy val parser = fully(program)
     
     // Types
-    private lazy val typep: Parsley[Type] = baseType | arrayType | pairType
+    private lazy val typep: Parsley[Type] = baseType | arrayType | pairType // TODO: ARRAY TYPE RECURSIVE ERROR
 
     private lazy val baseType = IntT <# "int" | BoolT <# "bool" | CharT <# "char" | StringT <# "string"
     private lazy val arrayType = ArrayT(typep <~ "[" <~ "]")
@@ -29,7 +29,7 @@ object parser {
     private lazy val program = Program("begin" ~> many(func), stmt <~ "end")
     private lazy val func = Func(typep, ident, "(" ~> paramList <~ ")", "is" ~> stmt.filter(funcEnd) <~ "end")
     private lazy val paramList = sepBy(param, ",")
-    private lazy val param = Param(typep, ident)
+    lazy val param = Param(typep, ident) // TODO: RETURN IT TO PRIVATE ONCE TESTING IS DONE
 
     def funcEnd(stmt:Stmt):Boolean = stmt match {
         case Skip => false
@@ -44,11 +44,11 @@ object parser {
         case Cond(_, s1: Stmt, s2: Stmt) => funcEnd(s1) && funcEnd(s2)
         case Loop(_,_) => false
         case Body(s:Stmt) => funcEnd(s) 
-        case Delimit(s1: Stmt, s2: Stmt) => funcEnd(s2)
+        case Delimit(_, s: Stmt) => funcEnd(s)
         
     }
 
-    private lazy val stmt: Parsley[Stmt] = (
+    lazy val stmt: Parsley[Stmt] = (
         Skip <# "skip"
         | Read("read" ~> lvalue)
         | Free("free" ~> expr)
@@ -64,7 +64,7 @@ object parser {
 
     
     
-    private lazy val lvalue: Parsley[LValue] = leftArrayElem | pairElem | LIdent(ident)
+    lazy val lvalue: Parsley[LValue] = LIdent(ident) | leftArrayElem | pairElem // TODO: BACKTRACKING
     private lazy val rvalue: Parsley[RValue] = (
         expr 
         | arrayLiter 

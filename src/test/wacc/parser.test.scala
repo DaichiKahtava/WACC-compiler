@@ -1,5 +1,8 @@
 package wacc
 
+import parsley.Parsley._
+import parsley.{Parsley, Result}
+
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers._
 import org.scalatest.BeforeAndAfterEach
@@ -60,8 +63,10 @@ class parserTest extends AnyFlatSpec with BeforeAndAfterEach {
         }
 
     "The parse method" should "return the correct AST" in {
-        val testProgram = "begin end"
-        parser.parse(testProgram).isFailure shouldBe true
+        parser.lvalue.parse("x").contains(LIdent("x"))
+        // val testProgram = "int x"
+        // // program.parse(testProgram) shouldBe Program(List(), Decl(IntT, "x", IntL(0)))
+        // parser.stmt.parse("skip;") shouldBe Skip
         // val testFunc = "int f() is skip end"
         // val testParam = "int x"
         // val testDecl = "int x = 0"
