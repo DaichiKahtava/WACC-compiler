@@ -9,6 +9,7 @@ import parsley.token.text.Escape
 import parsley.token.descriptions.text.EscapeDesc
 import parsley.token.descriptions.numeric.NumericDesc
 import parsley.token.descriptions.text.TextDesc
+import parsley.token.errors._
 
 object lexer {
     private val desc = LexicalDesc.plain.copy(
@@ -56,7 +57,7 @@ object lexer {
     // This may need to be defined somewhere else (info in lectures?)
     // len, ord, chr, may able to be just themselves unless they can be categorised nicely
     private val errConfig = new ErrorConfig{
-        def labelSymbol = Map(
+        override def labelSymbol = Map(
             "+" -> Label("arithmetic operator"),
             "*" -> Label("arithmetic operator"),
             "/" -> Label("arithmetic operator"),
