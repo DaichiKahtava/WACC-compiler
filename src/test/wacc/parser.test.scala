@@ -163,7 +163,7 @@ class parserTest extends AnyFlatSpec with BeforeAndAfterEach // with PrivateMeth
         p.get shouldBe ArrayT(IntT)
     }
 
-    it should "not accept anything between \"[ and \"]" in {
+    it should "not accept anything between \"[\" and \"]\"" in {
         val p = parser.typep.parse("int[gta]")
         // TODO: As of now it stops at the right bracket
         //       Should it fail instead?
@@ -171,11 +171,14 @@ class parserTest extends AnyFlatSpec with BeforeAndAfterEach // with PrivateMeth
         p.get shouldBe IntT
     }
 
-    ignore should "recognise a double array" in {
-        val p = parser.typep.parse("int[][]")
+    it should "recognise a arbitrary dimention array" in {
+        var p = parser.typep.parse("int[][]")
         //It currently stops at the first brackets
         p.isSuccess shouldBe true
         p.get shouldBe ArrayT(ArrayT(IntT))
+        p = parser.typep.parse("int[][][][]")
+        p.isSuccess shouldBe true
+        p.get shouldBe ArrayT(ArrayT(ArrayT(ArrayT(IntT))))
     }
 
     it should "parse pairs" in {
@@ -184,21 +187,38 @@ class parserTest extends AnyFlatSpec with BeforeAndAfterEach // with PrivateMeth
         p.get shouldBe Pair(IntT, StringT)
     }
 
-    ignore should "reject nested pairs" in {
+    it should "parse list of pairs" in {
+        val p = parser.typep.parse("pair(int, string)[]")
+        p.isSuccess shouldBe true
+        p.get shouldBe ArrayT(Pair(IntT, StringT))
+        val q = parser.arrayType.parse("pair(int, string)[]")
+        q.isSuccess shouldBe true
+        q.get shouldBe ArrayT(Pair(IntT, StringT))
+    }
+
+    it should "reject nested pairs" in {
         // Need to check the typecast. It does what we want but not *how* we want
         val p = parser.typep.parse("pair(int, pair(string, int))")
         p.isFailure shouldBe true
     }
 
-    ignore should "accept pair *lists* inside pairs" in {
+    it should "accept pair *lists* inside pairs" in {
         // Rejects the lists
         val p = parser.typep.parse("pair(int, pair(string, int)[])")
         p.isSuccess shouldBe true
         p.get shouldBe Pair(IntT, ArrayT(Pair(StringT, IntT)))
     }
 
-    it should "reject unknown types insie pairs" in {
+    it should "reject unknown types inside pairs" in {
         val p = parser.typep.parse("pair(int, bar)")
         p.isFailure shouldBe true
+    }
+
+    it should "hanle nested arrays in pairs" in {
+        var p = parser.typep.parse("pair(string[][], pair(int [], char [] [])[])")
+        p.isSuccess shouldBe true
+        p.get shouldBe Pair(ArrayT(ArrayT(StringT)), ArrayT(Pair(ArrayT(IntT), ArrayT(ArrayT(CharT)))))
+        p = parser.typep.parse("pair(string[][], pair(int [], char [] []))")
+        p.isSuccess shouldBe false
     }
 }

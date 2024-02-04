@@ -28,11 +28,9 @@ object parser {
         <arrayType> -> <type> {iff arrayT}
     */
 
-    protected [wacc] lazy val typep: Parsley[Type] = ((baseType | pairType), option(atomic("[" ~> "]"))).zipped((t, a) => {
-        a match {
-            case None => t
-            case Some(_) => ArrayT(t)
-        }
+    protected [wacc] lazy val typep: Parsley[Type] = (
+        (baseType | pairType), many(atomic("[" ~> "]"))).zipped((t, as) => {
+        as.foldRight(t)((_, ts) => ArrayT(ts))
     })
 
     protected [wacc] lazy val baseType = (        
@@ -42,10 +40,13 @@ object parser {
         | StringT <# "string"
     )
 
-    protected [wacc] lazy val arrayType = typep.filter(isArray)
+    protected [wacc] lazy val arrayType: Parsley[ArrayT] 
+      = typep.filter(isArray).map((x) => x.asInstanceOf[ArrayT])
+
     protected [wacc] lazy val pairType = Pair("pair" ~> "(" ~> pairElemType, "," ~> pairElemType <~ ")")
-    protected [wacc] lazy val pairElemType: Parsley[PairElemType] = (typep.filter(!isArray(_)).map((x) => x.asInstanceOf[PairElemType]) 
-        | baseType 
+    protected [wacc] lazy val pairElemType: Parsley[PairElemType] = (
+        atomic(arrayType) 
+        | baseType
         | ErasedPair <# "pair"
     )
     
