@@ -41,7 +41,7 @@ class parserTest extends AnyFlatSpec with BeforeAndAfterEach // with PrivateMeth
         
     it should "return true for Delimit statements with last statement being exiting (also checks recursively)" in {
         parser.funcEnd(Delimit(Return(testAtomExpr), Return(testAtomExpr))) shouldBe true
-        parser.funcEnd(Delimit(RExpreturn(testAtomExpr), Exit(testAtomExpr))) shouldBe true
+        parser.funcEnd(Delimit(Return(testAtomExpr), Exit(testAtomExpr))) shouldBe true
         parser.funcEnd(Delimit(notExitingStmt, Return(testAtomExpr))) shouldBe true
         parser.funcEnd(Delimit(notExitingStmt, Exit(testAtomExpr))) shouldBe true
         parser.funcEnd(Delimit(notExitingStmt, Delimit(notExitingStmt, Exit(testAtomExpr)))) shouldBe true
