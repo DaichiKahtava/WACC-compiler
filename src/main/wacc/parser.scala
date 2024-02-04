@@ -17,19 +17,19 @@ object parser {
     private lazy val parser = fully(program)
     
     // Types
-    private lazy val typep: Parsley[Type] = baseType | arrayType | pairType // TODO: ARRAY TYPE RECURSIVE ERROR
+    lazy val typep: Parsley[Type] = baseType | arrayType | pairType // TODO: ARRAY TYPE RECURSIVE ERROR
 
-    private lazy val baseType = IntT <# "int" | BoolT <# "bool" | CharT <# "char" | StringT <# "string"
-    private lazy val arrayType = ArrayT(typep <~ "[" <~ "]")
-    private lazy val pairType = Pair("pair" ~> "(" ~> pairElemType, "," ~> pairElemType <~ ")")
-    private lazy val pairElemType: Parsley[PairElemType] = baseType | arrayType | ErasedPair <# "pair"
+    lazy val baseType = IntT <# "int" | BoolT <# "bool" | CharT <# "char" | StringT <# "string"
+    lazy val arrayType = ArrayT(typep <~ "[" <~ "]")
+    lazy val pairType = Pair("pair" ~> "(" ~> pairElemType, "," ~> pairElemType <~ ")")
+    lazy val pairElemType: Parsley[PairElemType] = baseType | arrayType | ErasedPair <# "pair"
 
     // Statments
     
     private lazy val program = Program("begin" ~> many(func), stmt <~ "end")
     private lazy val func = Func(typep, ident, "(" ~> paramList <~ ")", "is" ~> stmt.filter(funcEnd) <~ "end")
     private lazy val paramList = sepBy(param, ",")
-    lazy val param = Param(typep, ident) // TODO: RETURN IT TO PRIVATE ONCE TESTING IS DONE
+    lazy val param = Param(typep, ident)
 
     def funcEnd(stmt:Stmt):Boolean = stmt match {
         case Return(_) => true
@@ -56,8 +56,8 @@ object parser {
 
     
     
-    lazy val lvalue: Parsley[LValue] = LIdent(ident) | leftArrayElem | pairElem // TODO: BACKTRACKING // [tm1722] MADE PUBLIC FOR TESTING
-    lazy val rvalue: Parsley[RValue] = ( // [tm1722] MADE PUBLIC FOR TESTING
+    lazy val lvalue: Parsley[LValue] = LIdent(ident) | leftArrayElem | pairElem // TODO: BACKTRACKING
+    lazy val rvalue: Parsley[RValue] = (
         expr 
         | arrayLiter 
         | NewPair("newpair" ~> "(" ~> expr, "," ~> expr <~ ")")
