@@ -6,7 +6,6 @@ import scala.collection.mutable.Map
 class SymTable(parentTable: Option[SymTable]) {
     val symDict = Map.empty[String, TableEntry]
 
-
     // Adding variables
     def addVariable(id: String, te: TableEntry): Boolean = {
         if (definedGlobal(id)) {

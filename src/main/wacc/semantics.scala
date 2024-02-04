@@ -46,6 +46,39 @@ object semantics {
         }
     }
 
+    // LValue and check
+    def getType(lv: LValue): S_TYPE = lv match {
+        case LIdent(id) => symTable.findGlobal(id).get match {
+            case VARIABLE(tp) => tp
+            case PARAMETER(tp) => tp
+            case FUNCTION(tp, _, _) => tp
+        }
+        case ArrElem(_, xs) => getType(xs)
+        case pe: PairElem => getType(pe)
+    }
+
+        // RValue type and check
+    def getType(rv: RValue): S_TYPE = rv match {
+        case RExpr(e) => getType(e)
+        case ArrL(xs) => getType(xs)
+        case NewPair(e1, e2) => S_PAIR(getType(e1), getType(e2))
+        case pe: PairElem => getType(pe)
+        case Call(id, _) => symTable.findGlobal(id).get match {
+            case VARIABLE(tp) => tp
+            case PARAMETER(tp) => tp
+            case FUNCTION(tp, _, _) => tp
+        }
+    }
+
+    // Type converter for arrays
+    def getType(arr: List[Expr]): S_TYPE = getType(arr.head)
+
+    def getType(pe: PairElem): S_TYPE = pe match {
+        case First(lv) => getType(lv)
+        case Second(lv) => getType(lv)
+    }
+    
+
     def canWeakenTo(t1: S_TYPE, t2: S_TYPE): Boolean = t2 match {
         case S_ANY  => true
         case S_PAIR(tp21, tp22) => t1 match {
@@ -131,6 +164,7 @@ object semantics {
     
     /// Statements ///
     def isSemCorrect(program: Program): Boolean = isSemCorrect(program.funcs) && isSemCorrect(program.stmt)
+    // Populate symbol table for ALL functions first
 
     def isSemCorrect(func: Func): Boolean = {
         toSemanticType(func.tp) == getReturnType(func.stmt).get
@@ -144,6 +178,8 @@ object semantics {
         case Delimit(_, s) => getReturnType(s)
         case _ => None
     }
+
+    // TODO: Param using symbol table
         
     def isSemCorrect(stmt: Stmt): Boolean = stmt match {
             case Skip() => true
@@ -165,16 +201,6 @@ object semantics {
             case Delimit(s1, s2) => isSemCorrect(s1) && isSemCorrect(s2)
         }
   
-    // LValue and check
-    def getType(lv: LValue): S_TYPE = lv match {
-        case LIdent(id) => symTable.findGlobal(id).get match {
-            case VARIABLE(tp) => tp
-            case PARAMETER(tp) => tp
-            case FUNCTION(tp, _, _) => tp
-        }
-        case ArrElem(_, xs) => getType(xs)
-        case pe: PairElem => getType(pe)
-    }
 
     def isSemCorrect(lv: LValue): Boolean = lv match {
         case LIdent(_) => true
@@ -182,21 +208,6 @@ object semantics {
         case pe: PairElem => isSemCorrect(pe)
     }
 
-    // Type converter for arrays
-    def getType(arr: List[Expr]): S_TYPE = getType(arr.head)
-
-    // RValue type and check
-    def getType(rv: RValue): S_TYPE = rv match {
-        case RExpr(e) => getType(e)
-        case ArrL(xs) => getType(xs)
-        case NewPair(e1, e2) => S_PAIR(getType(e1), getType(e2))
-        case pe: PairElem => getType(pe)
-        case Call(id, _) => symTable.findGlobal(id).get match {
-            case VARIABLE(tp) => tp
-            case PARAMETER(tp) => tp
-            case FUNCTION(tp, _, _) => tp
-        }
-    }
 
     def isSemCorrect(rv: RValue): Boolean = rv match {
         case RExpr(e) => isSemCorrect(e)
@@ -207,11 +218,7 @@ object semantics {
     }
 
     // PairElem check 
-    def getType(pe: PairElem): S_TYPE = pe match {
-        case First(lv) => getType(lv)
-        case Second(lv) => getType(lv)
-    }
-    
+
     def isSemCorrect(pe: PairElem): Boolean = pe match {
         case First(lv) => isSemCorrect(lv)
         case Second(lv) => isSemCorrect(lv)
