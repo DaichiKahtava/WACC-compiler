@@ -107,6 +107,14 @@ class parserTest extends AnyFlatSpec with BeforeAndAfterEach // with PrivateMeth
 
     }
 
+    it should "not fail because of the type structure recursion" in {
+        parser.typep.parse("int").isSuccess shouldBe true
+    }
+
+    it should "not fail because of the type structure recursion" in {
+        parser.typep.parse("int").isSuccess shouldBe true
+    }
+
     it should "return the correct AST for the rvalue" in {
         val testIdentExpr = Ident("test")
         parser.rvalue.parse(testIdent).contains(testIdentExpr) shouldBe true // Ident
