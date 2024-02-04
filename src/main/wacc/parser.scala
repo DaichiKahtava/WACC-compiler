@@ -15,17 +15,44 @@ import scala.collection.immutable.IntMap
 object parser {
     def parse(input: String): Result[String, Program] = parser.parse(input)
     protected [wacc] lazy val parser = fully(program)
+
+    /* Types
+
+    The following system had been applied:
+        <type> -> (baseType | "pair" "(" <pair-elem-type> "," <pair-elem-type> ")") ('[' ']')+
+        |                                                                             ^^^^^^
+        |                                                      if present it is an <array-type> === arrayT
+
+        <pair-elem-type> -> (baseType | "pair" | type {iff arrayT})
+
+        <arrayType> -> <type> {iff arrayT}
+    */
+
+    protected [wacc] lazy val typep: Parsley[Type] = ((baseType | pairType), option(atomic("[" ~> "]"))).zipped((t, a) => {
+        a match {
+            case None => t
+            case Some(_) => ArrayT(t)
+        }
+    })
+
+    protected [wacc] lazy val baseType = (        
+        IntT <# "int" 
+        | BoolT <# "bool" 
+        | CharT <# "char" 
+        | StringT <# "string"
+    )
+
+    protected [wacc] lazy val arrayType = typep.filter(isArray)
+    protected [wacc] lazy val pairType = Pair("pair" ~> "(" ~> pairElemType, "," ~> pairElemType <~ ")")
+    protected [wacc] lazy val pairElemType: Parsley[PairElemType] = (typep.filter(!isArray(_)).map((x) => x.asInstanceOf[PairElemType]) 
+        | baseType 
+        | ErasedPair <# "pair"
+    )
     
-    // Types
-    protected [wacc] lazy val typep: Parsley[Type] =  chain.left1(nonArrayType)(("[" ~> "]").as(ArrayT)) // TODO: ARRAY TYPE RECURSIVE ERROR
-
-    protected [wacc] lazy val nonArrayType: Parsley[Type] = atomic(baseType) | atomic(pairType)
-
-    protected [wacc] lazy val baseType = IntT <# "int" | BoolT <# "bool" | CharT <# "char" | StringT <# "string"
-    // protected [wacc] lazy val arrayType = ArrayT(typep <~ "[" <~ "]")
-    // protected [wacc] lazy val arrayType = chain.postfix1(typep)(("[" ~> "]").as((t: Type) => ArrayT(t)))
-    protected [wacc] lazy val pairType = ???//Pair("pair" ~> "(" ~> pairElemType, "," ~> pairElemType <~ ")")
-    protected [wacc] lazy val pairElemType: Parsley[PairElemType] = ???// baseType | arrayType | ErasedPair <# "pair"
+    private def isArray(t: Type): Boolean = t match {
+        case ArrayT(tp) => true
+        case _ => false
+    }
 
     // Statments
     
@@ -54,7 +81,7 @@ object parser {
         | Cond("if" ~> expr, "then" ~> stmt, "else" ~> stmt <~ "fi")
         | Loop("while" ~> expr, "do" ~> stmt <~ "done")
         | Body("begin" ~> stmt <~ "end")
-        | Delimit(stmt <~ ";", stmt)
+        | Delimit(stmt <~ ";", stmt) // Rewrite with sepBy
     )
 
     
