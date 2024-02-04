@@ -1,5 +1,10 @@
 # THIS CAN RUN ON cloud-vm-45-72 ONLY
 
+stages:
+  - build
+  - unit_test
+  - test
+
 compile:
   stage: build
   artifacts:
@@ -10,10 +15,18 @@ compile:
   script:
     - make
 
+unit_tests:
+  stage: unit_test
+  needs:
+    - job: compile
+      artifacts: true
+  script:
+    - scala-cli test .
+
 test:
   stage: test
   needs:
-    - job: compile
+    - job: unit_tests
       artifacts: true
   artifacts:
     when: always
