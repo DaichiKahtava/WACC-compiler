@@ -242,6 +242,7 @@ object semantics {
         case (_, _) => S_ANY // The default case if no match.
       }
 
-      types.reduceLeft((t1, t2) => findCommonAncestor(t1, t2)) // Reduces to pairs for comparison.
+      // Option is used in the case the list is empty, where then S_ANY is given.
+      types.reduceLeftOption((t1, t2) => findCommonAncestor(t1, t2)).getOrElse(S_ANY)
     }
 }
