@@ -4,6 +4,7 @@ object semantics {
 
     /// Global pointer/reference to current SymTable
     var curSymTable = new SymTable(None)
+    var errorFlag = false
 
     /// Expressions ///
     def getType(e: Expr): S_TYPE = {
@@ -163,12 +164,40 @@ object semantics {
 
     
     /// Statements ///
-    def isSemCorrect(program: Program): Boolean = isSemCorrect(program.funcs) && isSemCorrect(program.stmt)
-    // Populate symbol table for ALL functions first
-
-    def isSemCorrect(func: Func): Boolean = {
-        toSemanticType(func.tp) == getReturnType(func.stmt).get
+    def isSemCorrect(program: Program): Boolean = {
+        // Populate symbol table for ALL functions first
+        program.funcs.foreach((f) =>
+            {
+                if (curSymTable.findGlobal(f.id).isDefined) {
+                    println("Semantic error: Function \""+f.id+"\" is defined more than once!")
+                    return false
+                }
+                if (curSymTable.addSymbol(f.id, FUNCTION(toSemanticType(f.tp), new SymTable(Some(curSymTable))))) {
+                    return true   
+                } else {
+                    println("[KEY PROBLEM!] Apparently could not add to symbol table")
+                    return false
+                }
+            }
+        )
+        program.funcs.foreach((f) => {
+            curSymTable = curSymTable.findGlobal(f.id).get.asInstanceOf[FUNCTION].st
+            f.params.foreach((p) => {
+                if (!curSymTable.addSymbol(p.id, VARIABLE(toSemanticType(p.tp)))) {
+                    println("Semantic error: Parameter \""+p.id+"\" is already defined!")
+                    return false 
+                }
+            })
+            isSemCorrect(f.stmt)
+            if (toSemanticType(f.tp) != getReturnType(f.stmt).get) {
+                return false
+            }
+            curSymTable = curSymTable.parent().get
+        })
+        return isSemCorrect(program.stmt)
     }
+    
+
 
     def getReturnType(stmt: Stmt): Option[S_TYPE] = stmt match {
         case Return(e) => Some(getType(e))
@@ -183,7 +212,13 @@ object semantics {
         
     def isSemCorrect(stmt: Stmt): Boolean = stmt match {
             case Skip() => true
-            case Decl(tp, id, rv) => toSemanticType(tp) == getType(rv) && isSemCorrect(rv)
+            case Decl(tp, id, rv) => {
+                if (!curSymTable.addSymbol(id, VARIABLE(toSemanticType(tp)))) {
+                    println("Semantic error: Parameter \""+id+"\" is already a used identifier!")
+                    return false 
+                }
+                return toSemanticType(tp) == getType(rv) && isSemCorrect(rv)
+            }
             case Asgn(lv, rv) => isSemCorrect(lv) && isSemCorrect(rv) && getType(lv) == getType(rv)
             case Read(lv) => getType(lv) == S_CHAR || getType(lv) == S_INT
 
@@ -197,7 +232,12 @@ object semantics {
             case Println(x) => isSemCorrect(x)
             case Cond(x, s1, s2) => isSemCorrect(x) && isSemCorrect(s1) && isSemCorrect(s2)
             case Loop(x, stmt) => isSemCorrect(x) && isSemCorrect(stmt)
-            case Body(stmt) => isSemCorrect(stmt)
+            case Body(stmt) => {
+                curSymTable = curSymTable.unamedScope()
+                val res = isSemCorrect(stmt)
+                curSymTable = curSymTable.parent().get
+                return res
+            }
             case Delimit(s1, s2) => isSemCorrect(s1) && isSemCorrect(s2)
         }
   
