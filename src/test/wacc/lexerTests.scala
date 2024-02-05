@@ -83,5 +83,4 @@ class lexerTests extends AnyFlatSpec {
     val expectedOutput = "hello\\world"
     lexer.strLit.parse(input).get shouldBe (expectedOutput)
   }
-
 }
