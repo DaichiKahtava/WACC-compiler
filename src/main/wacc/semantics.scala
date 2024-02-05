@@ -225,22 +225,23 @@ object semantics {
     }
 
     // Finds the lowest common ancestor in a list of expressions.
-    def getLowestCommonAncestor(expressions: List[Expr]): S_TYPE = {
-      val types = expressions.map(getType) // Gets the semantic type of every item in the list.
-      types.reduceLeft((t1, t2) => findCommonAncestor(t1, t2)) // Reduces to pairs for comparison.
-    }
+    def getLowestCommonAncestor(exprs: List[Expr]): S_TYPE = {
+      val types = exprs.map(getType) // Gets the semantic type of every item in the list.
+    
+      // Finds the common ancestor between 2 items. // CA = Common Ancestor.
+      def findCommonAncestor(t1: S_TYPE, t2: S_TYPE): S_TYPE = (t1, t2) match {
+        case (S_ANY, _) | (_, S_ANY) => S_ANY // If either is S_ANY, the CA is S_ANY.
+        // Recursively finds the CA if they are both pairs.
+        case (S_PAIR(tp11, tp12), S_PAIR(tp21, tp22)) => 
+            S_PAIR(findCommonAncestor(tp11, tp21), findCommonAncestor(tp12, tp22))
+        // If either is a string, the CA is a string.
+        case (S_STRING, S_ARRAY(S_CHAR)) | (S_ARRAY(S_CHAR), S_STRING) => S_STRING
+        // Recusively finds the CA if they are both arrays.
+        case (S_ARRAY(ta1), S_ARRAY(ta2)) => S_ARRAY(findCommonAncestor(ta1, ta2))
+        case (_, _) if t1 == t2 => t1 // If they are equal, the type is either.
+        case (_, _) => S_ANY // The default case if no match.
+      }
 
-    // Finds the common ancestor between 2 items. // CA = Common Ancestor
-    def findCommonAncestor(t1: S_TYPE, t2: S_TYPE): S_TYPE = (t1, t2) match {
-      case (S_ANY, _) | (_, S_ANY) => S_ANY // If either is S_ANY, the CA is S_ANY
-      // Recursively finds the CA if they are both pairs.
-      case (S_PAIR(tp11, tp12), S_PAIR(tp21, tp22)) => 
-        S_PAIR(findCommonAncestor(tp11, tp12), findCommonAncestor(tp21, tp22))
-      // If either is a string, the CA is a string.
-      case (S_STRING, S_ARRAY(S_CHAR)) | (S_ARRAY(S_CHAR), S_STRING) => S_STRING
-      // Recusively finds the CA if they are both arrays.
-      case (S_ARRAY(ta1), S_ARRAY(ta2)) => S_ARRAY(findCommonAncestor(ta1, ta2))
-      case (_, _) if t1 == t2 => t1 // If they are equal, the type is either.
-      case (_, _) => S_ANY // The default case if no match.
+      types.reduceLeft((t1, t2) => findCommonAncestor(t1, t2)) // Reduces to pairs for comparison.
     }
 }
