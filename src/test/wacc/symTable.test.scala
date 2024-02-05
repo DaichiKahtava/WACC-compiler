@@ -10,7 +10,7 @@ class symTableTest extends AnyFlatSpec with BeforeAndAfterEach {
 
     override protected def beforeEach(): Unit = {
         symTable = new SymTable(None)
-    }    
+    }                                                                                                
 
     "The symbol table" should "not have anything inside it at first" in {
         symTable.findGlobal("gta") shouldBe None
@@ -36,10 +36,20 @@ class symTableTest extends AnyFlatSpec with BeforeAndAfterEach {
 
     it should "recognise a variable from an enclosing scope" in {
         val symTable2 = new SymTable(Some(symTable))
-        symTable.addVariable("gta", VARIABLE(S_INT)) shouldBe true
+        symTable.addVariable("gta", VARIABLE(S_INT))
         symTable2.definedGlobal("gta") shouldBe true
-        symTable2.addVariable("gta", VARIABLE(S_STRING)) shouldBe false
-        symTable2.findGlobal("gta") shouldBe Some(VARIABLE(S_INT))
+
+    }
+
+    it should "shadow a variable from an enclosing scope" in {
+        val symTable2 = new SymTable(Some(symTable))
+        symTable.addVariable("gta", VARIABLE(S_INT))
+        symTable2.findLocal("gta") shouldBe None
+        symTable2.addVariable("gta", VARIABLE(S_STRING)) shouldBe true
+        symTable2.findGlobal("gta") shouldBe Some(VARIABLE(S_STRING))
+        symTable2.findLocal("gta") shouldBe Some(VARIABLE(S_STRING))
+        symTable.findGlobal("gta") shouldBe Some(VARIABLE(S_INT))
+        symTable.findLocal("gta") shouldBe Some(VARIABLE(S_INT))
     }
 
     it should "not return variables from enclosing scopes for local methods" in {

@@ -8,7 +8,7 @@ class SymTable(parentTable: Option[SymTable]) {
 
     // Adding variables
     def addVariable(id: String, te: TableEntry): Boolean = {
-        if (definedGlobal(id)) {
+        if (definedLocal(id)) {
             return false
         }
         else {
