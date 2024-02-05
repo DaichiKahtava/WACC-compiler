@@ -2,8 +2,8 @@ package wacc
 
 object semantics {
 
-    /// Global pointer/reference to current symTable
-    var symTable = new SymTable(None)
+    /// Global pointer/reference to current SymTable
+    var curSymTable = new SymTable(None)
 
     /// Expressions ///
     def getType(e: Expr): S_TYPE = {
@@ -13,10 +13,9 @@ object semantics {
             case CharL(_) => S_CHAR
             case StrL(_) => S_STRING
             case PairL() => S_PAIR(S_ANY, S_ANY)
-            case Ident(id) => symTable.findGlobal(id).get match {
+            case Ident(id) => curSymTable.findGlobal(id).get match {
                 case VARIABLE(tp) => tp
-                case PARAMETER(tp) => tp
-                case FUNCTION(tp, _, _) => tp
+                case FUNCTION(tp, _) => tp
             }
 
             case Not(_) => S_BOOL
@@ -48,10 +47,9 @@ object semantics {
 
     // LValue and check
     def getType(lv: LValue): S_TYPE = lv match {
-        case LIdent(id) => symTable.findGlobal(id).get match {
+        case LIdent(id) => curSymTable.findGlobal(id).get match {
             case VARIABLE(tp) => tp
-            case PARAMETER(tp) => tp
-            case FUNCTION(tp, _, _) => tp
+            case FUNCTION(tp, _) => tp
         }
         case ArrElem(_, xs) => getType(xs)
         case pe: PairElem => getType(pe)
@@ -63,10 +61,9 @@ object semantics {
         case ArrL(xs) => getType(xs)
         case NewPair(e1, e2) => S_PAIR(getType(e1), getType(e2))
         case pe: PairElem => getType(pe)
-        case Call(id, _) => symTable.findGlobal(id).get match {
-            case VARIABLE(tp) => tp
-            case PARAMETER(tp) => tp
-            case FUNCTION(tp, _, _) => tp
+        case Call(id, _) => curSymTable.findGlobal(id).get match {
+            case VARIABLE(tp) => tp 
+            case FUNCTION(tp, _) => tp
         }
     }
 
@@ -126,7 +123,7 @@ object semantics {
             case StrL(_) => true
             case PairL() => true
 
-            case Ident(id) => symTable.definedGlobal(id)
+            case Ident(id) => curSymTable.definedGlobal(id)
 
             case Not(x) => isSemCorrect(x) && getType(x) == S_BOOL
             case Neg(x) => isSemCorrect(x) && getType(x) == S_INT
@@ -160,7 +157,6 @@ object semantics {
     def isSemCorrect(list: List[Any]): Boolean = list match {
         case Nil => true
         case (e: Expr) :: es => isSemCorrect(e) && isSemCorrect(es)
-        case (e: Func) :: es => isSemCorrect(e) && isSemCorrect(es)
         case _ => false
     }
 

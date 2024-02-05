@@ -1,13 +1,18 @@
 package wacc
 
 import scala.collection.mutable.Map
+import scala.collection.mutable.ListBuffer
 
 // Symbol table class inspired from week 4 Compiler's lectures
 class SymTable(parentTable: Option[SymTable]) {
     val symDict = Map.empty[String, TableEntry]
 
+    val childScopes = ListBuffer.empty[SymTable]
+
+    def parent() = parentTable
+
     // Adding variables
-    def addVariable(id: String, te: TableEntry): Boolean = {
+    def addSymbol(id: String, te: TableEntry): Boolean = {
         if (definedLocal(id)) {
             return false
         }
@@ -38,13 +43,19 @@ class SymTable(parentTable: Option[SymTable]) {
     def definedLocal(id: String): Boolean = {
         return findLocal(id) != None
     }
+
+    def unamedScope(): SymTable = {
+        // TODO: Needs to get tested!
+        val st = new SymTable(Some(this))
+        childScopes.append(st)
+        return st;
+    }
 }
 
 sealed trait TableEntry 
 
 case class VARIABLE(tp: S_TYPE) extends TableEntry
-case class PARAMETER(tp: S_TYPE) extends TableEntry
-case class FUNCTION(tp: S_TYPE, params: Array[VARIABLE], st: SymTable) extends TableEntry
+case class FUNCTION(tp: S_TYPE, st: SymTable) extends TableEntry
 
 // Nested scopes may be implemented with multiple symbol tables
 // Symbol tables 
