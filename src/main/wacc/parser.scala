@@ -41,7 +41,7 @@ object parser {
     )
 
     protected [wacc] lazy val arrayType: Parsley[ArrayT] 
-      = typep.filter(isArray).map((x) => x.asInstanceOf[ArrayT])
+      = typep.filter(isArray).map(_.asInstanceOf[ArrayT])
 
     protected [wacc] lazy val pairType = Pair("pair" ~> "(" ~> pairElemType, "," ~> pairElemType <~ ")")
     protected [wacc] lazy val pairElemType: Parsley[PairElemType] = (
@@ -79,11 +79,12 @@ object parser {
         | Exit("exit" ~> expr)
         | Print("print" ~> expr)
         | Println("println" ~> expr)
-        | Cond("if" ~> expr, "then" ~> stmt, "else" ~> stmt <~ "fi")
-        | Loop("while" ~> expr, "do" ~> stmt <~ "done")
-        | Body("begin" ~> stmt <~ "end")
-        | Delimit(stmt <~ ";", stmt) // Rewrite with sepBy
+        | Cond("if" ~> expr, "then" ~> stmts, "else" ~> stmts <~ "fi")
+        | Loop("while" ~> expr, "do" ~> stmts <~ "done")
+        | Body("begin" ~> stmts <~ "end")
     )
+
+    protected [wacc] lazy val stmts: Parsley[Stmt] = chain.left1(stmt)(";".as(Delimit(_, _)))
 
     
     
