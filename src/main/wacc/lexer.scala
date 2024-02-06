@@ -39,10 +39,8 @@ object lexer {
                     "t" -> 0x9,
                     "n" -> 0xa,
                     "f" -> 0xc,
-                    "r" -> 0xd,
-                    "\"" -> 0x22,
-                    "\'" -> 0x27,
-                    "\\" -> 0x5c),
+                    "r" -> 0xd),
+                literals = Set('\\' , '\'', '\"')
             ),
             characterLiteralEnd = '\'',
             stringEnds = Set(("\"", "\"")),
