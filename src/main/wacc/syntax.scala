@@ -1,21 +1,26 @@
 package wacc
 
-import parsley.generic.{ParserBridge0, ParserBridge1, ParserBridge2, ParserBridge3, ParserBridge4}
 import parsley.token.errors._
+import parsley.generic._
+import parsley.position.pos
+import parsley.character._
+import lexer.implicits.implicitSymbol
+import parsley.Parsley
+import parsley.syntax._
 
 // Types
 sealed trait Type
 sealed trait PairElemType
 
-case object IntT extends Type with PairElemType with ParserBridge0[Type with PairElemType]
-case object BoolT extends Type with PairElemType with ParserBridge0[Type with PairElemType]
-case object CharT extends Type with PairElemType with ParserBridge0[Type with PairElemType]
-case object StringT extends Type with PairElemType with ParserBridge0[Type with PairElemType]
-case class ArrayT(tp: Type) extends Type with PairElemType
+case class IntT()(val pos: (Int, Int)) extends Type with PairElemType
+case class BoolT()(val pos: (Int, Int)) extends Type with PairElemType
+case class CharT()(val pos: (Int, Int)) extends Type with PairElemType
+case class StringT()(val pos: (Int, Int)) extends Type with PairElemType
+case class ArrayT(tp: Type)(val pos: (Int, Int)) extends Type with PairElemType
 
-case class Pair(pe1: PairElemType, pe2: PairElemType) extends Type
+case class Pair(pe1: PairElemType, pe2: PairElemType)(val pos: (Int, Int)) extends Type
 
-case object ErasedPair extends PairElemType with ParserBridge0[PairElemType]
+case class ErasedPair()(val pos: (Int, Int)) extends PairElemType with ParserBridge0[PairElemType]
 
 
 // Expressions
@@ -50,7 +55,7 @@ case class IntL(n: Int)(val pos: (Int, Int)) extends Atom
 case class BoolL(b: Boolean)(val pos: (Int, Int)) extends Atom
 case class CharL(c: Char)(val pos: (Int, Int)) extends Atom
 case class StrL(s: String)(val pos: (Int, Int)) extends Atom
-case object PairL extends Atom with ParserBridge0[Atom]
+case class PairL()(val pos: (Int, Int)) extends Atom
 case class Ident(id: String)(val pos: (Int, Int)) extends Atom
 case class ArrElem(id: String, xs: List[Expr])(val pos: (Int, Int)) extends Atom
 
@@ -72,7 +77,7 @@ case class Println(x: Expr)(val pos: (Int, Int)) extends Stmt
 case class Cond(x: Expr, s1: Stmt, s2: Stmt)(val pos: (Int, Int)) extends Stmt
 case class Loop(x: Expr, s: Stmt)(val pos: (Int, Int)) extends Stmt
 case class Body(s: Stmt)(val pos: (Int, Int)) extends Stmt
-case class Delimit(s1: Stmt, s2: Stmt)(val pos: (Int, Int)) extends Stmt
+case class Delimit(s1: Stmt, s2: Stmt)/*(val pos: (Int, Int))*/ extends Stmt
 
 sealed trait LValue
 case class LIdent(id: String)(val pos: (Int, Int)) extends LValue
@@ -80,7 +85,7 @@ case class LArrElem(id: String, xs: List[Expr])(val pos: (Int, Int)) extends LVa
 
 sealed trait RValue
 case class RExpr(x: Expr)(val pos: (Int, Int)) extends RValue
-case class ArrL(xs: List[Expr])(val pos: (Int, Int)) extends RValue
+case class ArrL(xs: List[Expr])/*(val pos: (Int, Int))*/ extends RValue // Could use the position of the first value!
 case class NewPair(x1: Expr, x2: Expr)(val pos: (Int, Int)) extends RValue
 case class Call(id: String, xs: List[Expr])(val pos: (Int, Int)) extends RValue
 
@@ -90,10 +95,30 @@ case class Second(lv: LValue)(val pos: (Int, Int)) extends PairElem
 // TODO [for parser]: RArrL and Call's List[Expr] have different min # of elements
 
 
-/// Companion objects for each AST node ///
+/// Companion objects - bridges for each AST node ///
 
 // Types
-object ArrayT extends ParserBridgePos1[Type, Type with PairElemType]
+
+// *** The following stuff could not be applied where an | is needed. So I implemented them
+//     Directly without bridges
+
+// object IntT extends {
+//   def apply: Parsley[Type] = (pos <~ "int").map((p) => IntT()(p))
+// }
+
+// object BoolT {
+//   def apply: Parsley[Type] = (pos <~ "bool").map((p) => BoolT()(p))
+// }
+
+// object CharT {
+//   def apply: Parsley[Type] = (pos <~ "char").map((p) => CharT()(p))
+// }
+
+// object StringT {
+//   def apply: Parsley[Type] = (pos <~ "string").map((p) => StringT()(p))
+// }
+
+object ArrayT extends ParserBridgePos1[Type, Type with PairElemType] // TODO: Needs review; not needed?
 object Pair extends ParserBridgePos2[PairElemType, PairElemType, Type]
 
 // Expressions
@@ -143,13 +168,13 @@ object Println extends ParserBridgePos1[Expr, Stmt]
 object Cond extends ParserBridgePos3[Expr, Stmt, Stmt, Stmt]
 object Loop extends ParserBridgePos2[Expr, Stmt, Stmt]
 object Body extends ParserBridgePos1[Stmt, Stmt]
-object Delimit extends ParserBridgePos2[Stmt, Stmt, Stmt]
+object Delimit extends ParserBridge2[Stmt, Stmt, Stmt] // Not using position
 
 object LIdent extends ParserBridgePos1[String, LValue]
 object LArrElem extends ParserBridgePos2[String, List[Expr], LValue]
 
 object RExpr extends ParserBridgePos1[Expr, RValue]
-object ArrL extends ParserBridgePos1[List[Expr], RValue]
+object ArrL extends ParserBridge1[List[Expr], RValue] // Not using position (we will use tthe elements instead)
 object NewPair extends ParserBridgePos2[Expr, Expr, RValue]
 object Call extends ParserBridgePos2[String, List[Expr], RValue]
 

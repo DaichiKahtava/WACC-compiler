@@ -11,61 +11,71 @@ import org.scalatest.Ignore
 
 class parserTest extends AnyFlatSpec with BeforeAndAfterEach // with PrivateMethodTester
 {
+
+    /* Key consideration for the tests!
+       The position is NOT used for comparisons (although they always need to be defined).
+       They will need to be accessed either through direct pattern matching or by typecasting
+       using asInstance[foo].
+    */
+
     val testAtom = 0
     val testAtomIdent = testAtom.toString
-    val testAtomExpr = IntL(0)
+    val testAtomExpr = IntL(0)(0,0)
     
-    val notExitingStmt = Skip
+    val notExitingStmt = Skip // Should have a location!!!
 
     val testIdent = "test"
-    val testLValue = LIdent("test")
+    val testLValue = LIdent("test")(0,0)
     
+    // The following tests DO NOT check the position of anything. So we just put everything
+    // at (0,0)
     "The funcEnd method" should "return true for Return and Exit statements" in {
-        parser.funcEnd(Return(testAtomExpr)) shouldBe true
-        parser.funcEnd(Exit(testAtomExpr)) shouldBe true
+        parser.funcEnd(Return(testAtomExpr)(0,0)) shouldBe true
+        parser.funcEnd(Exit(testAtomExpr)(0,0)) shouldBe true
     }
 
     it should "return true for Cond statements with both of the results being exiting (also checks recursively)" in {
-        parser.funcEnd(Cond(testAtomExpr, Return(testAtomExpr), Return(testAtomExpr))) shouldBe true
-        parser.funcEnd(Cond(testAtomExpr, Exit(testAtomExpr), Exit(testAtomExpr))) shouldBe true
-        parser.funcEnd(Cond(testAtomExpr, Return(testAtomExpr), Exit(testAtomExpr))) shouldBe true
-        parser.funcEnd(Cond(testAtomExpr, Exit(testAtomExpr), Return(testAtomExpr))) shouldBe true
-        parser.funcEnd(Cond(testAtomExpr, Cond(testAtomExpr, Return(testAtomExpr), Return(testAtomExpr)), Return(testAtomExpr))) shouldBe true
+        parser.funcEnd(Cond(testAtomExpr, Return(testAtomExpr)(0,0), Return(testAtomExpr)(0,0))(0,0)) shouldBe true
+        parser.funcEnd(Cond(testAtomExpr, Exit(testAtomExpr)(0,0), Exit(testAtomExpr)(0,0))(0,0)) shouldBe true
+        parser.funcEnd(Cond(testAtomExpr, Return(testAtomExpr)(0,0), Exit(testAtomExpr)(0,0))(0,0)) shouldBe true
+        parser.funcEnd(Cond(testAtomExpr, Exit(testAtomExpr)(0,0), Return(testAtomExpr)(0,0))(0,0)) shouldBe true
+        parser.funcEnd(Cond(testAtomExpr, Cond(testAtomExpr, Return(testAtomExpr)(0,0), Return(testAtomExpr)(0,0))(0,0),
+         Return(testAtomExpr)(0,0))(0,0)) shouldBe true
     }
 
     it should "return false for Cond statements with at least 1 of the result NOT being exiting (also checks recursively)" in {
-        parser.funcEnd(Cond(testAtomExpr, notExitingStmt, Return(testAtomExpr))) shouldBe false
-        parser.funcEnd(Cond(testAtomExpr, Exit(testAtomExpr), notExitingStmt)) shouldBe false
-        parser.funcEnd(Cond(testAtomExpr, notExitingStmt, notExitingStmt)) shouldBe false
-        parser.funcEnd(Cond(testAtomExpr, Return(testAtomExpr), Cond(testAtomExpr, notExitingStmt, Return(testAtomExpr)))) shouldBe false
+        parser.funcEnd(Cond(testAtomExpr, notExitingStmt, Return(testAtomExpr)(0,0))(0,0)) shouldBe false
+        parser.funcEnd(Cond(testAtomExpr, Exit(testAtomExpr)(0,0), notExitingStmt)(0,0)) shouldBe false
+        parser.funcEnd(Cond(testAtomExpr, notExitingStmt, notExitingStmt)(0,0)) shouldBe false
+        parser.funcEnd(Cond(testAtomExpr, Return(testAtomExpr)(0,0), Cond(testAtomExpr, notExitingStmt, Return(testAtomExpr)(0,0))(0,0))(0,0)) shouldBe false
     }
         
     it should "return true for Delimit statements with last statement being exiting (also checks recursively)" in {
-        parser.funcEnd(Delimit(Return(testAtomExpr), Return(testAtomExpr))) shouldBe true
-        parser.funcEnd(Delimit(Return(testAtomExpr), Exit(testAtomExpr))) shouldBe true
-        parser.funcEnd(Delimit(notExitingStmt, Return(testAtomExpr))) shouldBe true
-        parser.funcEnd(Delimit(notExitingStmt, Exit(testAtomExpr))) shouldBe true
-        parser.funcEnd(Delimit(notExitingStmt, Delimit(notExitingStmt, Exit(testAtomExpr)))) shouldBe true
+        parser.funcEnd(Delimit(Return(testAtomExpr)(0,0), Return(testAtomExpr)(0,0))) shouldBe true
+        parser.funcEnd(Delimit(Return(testAtomExpr)(0,0), Exit(testAtomExpr)(0,0))) shouldBe true
+        parser.funcEnd(Delimit(notExitingStmt, Return(testAtomExpr)(0,0))) shouldBe true
+        parser.funcEnd(Delimit(notExitingStmt, Exit(testAtomExpr)(0,0))) shouldBe true
+        parser.funcEnd(Delimit(notExitingStmt, Delimit(notExitingStmt, Exit(testAtomExpr)(0,0)))) shouldBe true
     }
 
     it should "return false for Delimit statements with last statement NOT being exiting (also checks recursively)" in {
-        parser.funcEnd(Delimit(Return(testAtomExpr), notExitingStmt)) shouldBe false
-        parser.funcEnd(Delimit(Exit(testAtomExpr), notExitingStmt)) shouldBe false
-        parser.funcEnd(Delimit(notExitingStmt, Delimit(Exit(testAtomExpr), notExitingStmt))) shouldBe false
+        parser.funcEnd(Delimit(Return(testAtomExpr)(0,0), notExitingStmt)) shouldBe false
+        parser.funcEnd(Delimit(Exit(testAtomExpr)(0,0), notExitingStmt)) shouldBe false
+        parser.funcEnd(Delimit(notExitingStmt, Delimit(Exit(testAtomExpr)(0,0), notExitingStmt))) shouldBe false
     }
 
     it should "return false for other statements" in {
-        val testType = IntT
+        val testType = IntT()(0,0)
 
         parser.funcEnd(Skip) shouldBe false
-        parser.funcEnd(Decl(testType, testIdent, testAtomExpr)) shouldBe false
-        parser.funcEnd(Asgn(testLValue, testAtomExpr)) shouldBe false
-        parser.funcEnd(Read(testLValue)) shouldBe false
-        parser.funcEnd(Free(testAtomExpr)) shouldBe false
-        parser.funcEnd(Print(testAtomExpr)) shouldBe false
-        parser.funcEnd(Println(testAtomExpr)) shouldBe false
-        parser.funcEnd(Loop(testAtomExpr, notExitingStmt)) shouldBe false
-        parser.funcEnd(Body(notExitingStmt)) shouldBe false
+        parser.funcEnd(Decl(testType, testIdent, testAtomExpr)(0,0)) shouldBe false
+        parser.funcEnd(Asgn(testLValue, testAtomExpr)(0,0)) shouldBe false
+        parser.funcEnd(Read(testLValue)(0,0)) shouldBe false
+        parser.funcEnd(Free(testAtomExpr)(0,0)) shouldBe false
+        parser.funcEnd(Print(testAtomExpr)(0,0)) shouldBe false
+        parser.funcEnd(Println(testAtomExpr)(0,0)) shouldBe false
+        parser.funcEnd(Loop(testAtomExpr, notExitingStmt)(0,0)) shouldBe false
+        parser.funcEnd(Body(notExitingStmt)(0,0)) shouldBe false
         }
 
     "The parse method" should "return the correct AST for the typep" in {
@@ -81,17 +91,17 @@ class parserTest extends AnyFlatSpec with BeforeAndAfterEach // with PrivateMeth
     }
     it should "return the correct AST for the arrayType" in {
         /* TODO: Fix arrayType */
-        parser.arrayType.parse("int[]").contains(ArrayT(IntT)) shouldBe true
-        parser.arrayType.parse("bool[]").contains(ArrayT(BoolT)) shouldBe true
-        parser.arrayType.parse("char[]").contains(ArrayT(CharT)) shouldBe true
-        parser.arrayType.parse("string[]").contains(ArrayT(StringT)) shouldBe true
+        parser.arrayType.parse("int[]").contains(ArrayT(IntT()(0,0))(0,0)) shouldBe true
+        parser.arrayType.parse("bool[]").contains(ArrayT(BoolT()(0,0))(0,0)) shouldBe true
+        parser.arrayType.parse("char[]").contains(ArrayT(CharT()(0,0))(0,0)) shouldBe true
+        parser.arrayType.parse("string[]").contains(ArrayT(StringT()(0,0))(0,0)) shouldBe true
     }
     it should "return the correct AST for the pairType" in {
         /* TODO: Fix pairType */
-        parser.pairType.parse("pair(int,int)").contains(Pair(IntT, IntT)) shouldBe true
-        parser.pairType.parse("pair(bool,bool)").contains(Pair(BoolT, BoolT)) shouldBe true
-        parser.pairType.parse("pair(char,char)").contains(Pair(CharT, CharT)) shouldBe true
-        parser.pairType.parse("pair(string,string)").contains(Pair(StringT, StringT)) shouldBe true
+        parser.pairType.parse("pair(int,int)").contains(Pair(IntT()(0,0), IntT()(0,0))(0,0)) shouldBe true
+        parser.pairType.parse("pair(bool,bool)").contains(Pair(BoolT()(0,0), BoolT()(0,0))(0,0)) shouldBe true
+        parser.pairType.parse("pair(char,char)").contains(Pair(CharT()(0,0), CharT()(0,0))(0,0)) shouldBe true
+        parser.pairType.parse("pair(string,string)").contains(Pair(StringT()(0,0), StringT()(0,0))(0,0)) shouldBe true
     }
     
     it should "return the correct AST for the lvalue" in {
@@ -101,16 +111,16 @@ class parserTest extends AnyFlatSpec with BeforeAndAfterEach // with PrivateMeth
         val testArrElement0 = "[0]"
         val testArrElement1 = "[1]"
 
-        parser.lvalue.parse(testIdent + testArrElement0).contains(LArrElem(testIdent, List(IntL(0)))) shouldBe true // LArrElem
-        parser.lvalue.parse(testIdent+testArrElement0+testArrElement1).contains(LArrElem(testIdent, List(IntL(0), IntL(1)))) shouldBe true // LArrElem
+        parser.lvalue.parse(testIdent + testArrElement0).contains(LArrElem(testIdent, List(IntL(0)(0,0)))(0,0)) shouldBe true // LArrElem
+        parser.lvalue.parse(testIdent+testArrElement0+testArrElement1).contains(LArrElem(testIdent, List(IntL(0)(0,0), IntL(1)(0,0)))(0,0)) shouldBe true // LArrElem
         
-        parser.lvalue.parse("fst "+testIdent).contains(First(testLValue)) shouldBe true // PairElem
-        parser.lvalue.parse("snd "+testIdent).contains(Second(testLValue)) shouldBe true // PairElem
+        parser.lvalue.parse("fst "+testIdent).contains(First(testLValue)(0,0)) shouldBe true // PairElem
+        parser.lvalue.parse("snd "+testIdent).contains(Second(testLValue)(0,0)) shouldBe true // PairElem
 
     }
 
     it should "return the correct AST for the rvalue" in {
-        val testIdentExpr = Ident("test")
+        val testIdentExpr = Ident("test")(0,0)
         parser.rvalue.parse(testIdent).contains(testIdentExpr) shouldBe true // Ident
 
         /* TODO: tests for ArrElem */
@@ -152,17 +162,17 @@ class parserTest extends AnyFlatSpec with BeforeAndAfterEach // with PrivateMeth
     it should "be able to parse a simple array" in {
         var p = parser.typep.parse("int []")
         p.isSuccess shouldBe true
-        p.get shouldBe ArrayT(IntT)
+        p.get shouldBe ArrayT(IntT()(0,0))(0,0)
         p = parser.typep.parse("string []")
         p.isSuccess shouldBe true
-        p.get shouldBe ArrayT(StringT)
+        p.get shouldBe ArrayT(StringT()(0,0))(0,0)
 
     }
 
     it should "be able to handle no whitespace between the name and \"[\"" in {
         val p = parser.typep.parse("int[]")
         p.isSuccess shouldBe true
-        p.get shouldBe ArrayT(IntT)
+        p.get shouldBe ArrayT(IntT()(0,0))(0,0)
     }
 
     it should "not accept anything between \"[\" and \"]\"" in {
@@ -177,25 +187,25 @@ class parserTest extends AnyFlatSpec with BeforeAndAfterEach // with PrivateMeth
         var p = parser.typep.parse("int[][]")
         //It currently stops at the first brackets
         p.isSuccess shouldBe true
-        p.get shouldBe ArrayT(ArrayT(IntT))
+        p.get shouldBe ArrayT(ArrayT(IntT()(0,0))(0,0))(0,0)
         p = parser.typep.parse("int[][][][]")
         p.isSuccess shouldBe true
-        p.get shouldBe ArrayT(ArrayT(ArrayT(ArrayT(IntT))))
+        p.get shouldBe ArrayT(ArrayT(ArrayT(ArrayT(IntT()(0,0))(0,0))(0,0))(0,0))(0,0)
     }
 
     it should "parse pairs" in {
         val p = parser.typep.parse("pair(int, string)")
         p.isSuccess shouldBe true
-        p.get shouldBe Pair(IntT, StringT)
+        p.get shouldBe Pair(IntT()(0,0), StringT()(0,0))(0,0)
     }
 
     it should "parse list of pairs" in {
         val p = parser.typep.parse("pair(int, string)[]")
         p.isSuccess shouldBe true
-        p.get shouldBe ArrayT(Pair(IntT, StringT))
+        p.get shouldBe ArrayT(Pair(IntT()(0,0), StringT()(0,0))(0,0))(0,0)
         val q = parser.arrayType.parse("pair(int, string)[]")
         q.isSuccess shouldBe true
-        q.get shouldBe ArrayT(Pair(IntT, StringT))
+        q.get shouldBe ArrayT(Pair(IntT()(0,0), StringT()(0,0))(0,0))(0,0)
     }
 
     it should "reject nested pairs" in {
@@ -208,7 +218,7 @@ class parserTest extends AnyFlatSpec with BeforeAndAfterEach // with PrivateMeth
         // Rejects the lists
         val p = parser.typep.parse("pair(int, pair(string, int)[])")
         p.isSuccess shouldBe true
-        p.get shouldBe Pair(IntT, ArrayT(Pair(StringT, IntT)))
+        p.get shouldBe Pair(IntT()(0,0), ArrayT(Pair(StringT()(0,0), IntT()(0,0))(0,0))(0,0))(0,0)
     }
 
     it should "reject unknown types inside pairs" in {
@@ -216,11 +226,48 @@ class parserTest extends AnyFlatSpec with BeforeAndAfterEach // with PrivateMeth
         p.isFailure shouldBe true
     }
 
-    it should "hanle nested arrays in pairs" in {
+    it should "handle nested arrays in pairs" in {
         var p = parser.typep.parse("pair(string[][], pair(int [], char [] [])[])")
         p.isSuccess shouldBe true
-        p.get shouldBe Pair(ArrayT(ArrayT(StringT)), ArrayT(Pair(ArrayT(IntT), ArrayT(ArrayT(CharT)))))
+        p.get shouldBe Pair(ArrayT(ArrayT(StringT()(0,0))(0,0))(0,0),
+         ArrayT(Pair(ArrayT(IntT()(0,0))(0,0), ArrayT(ArrayT(CharT()(0,0))(0,0))(0,0))(0,0))(0,0))(0,0)
         p = parser.typep.parse("pair(string[][], pair(int [], char [] []))")
         p.isSuccess shouldBe false
     }
+
+    "The parserBridgeposX class" should "give coorect position for leafs" in {
+        var p = parser.typep.parse("string")
+        p.isSuccess shouldBe true
+        p.get shouldBe StringT()(0,0)
+    }
+
+    it should "give correct position for binary nodes" in {
+        var p = parser.typep.parse("1 + 2")
+        p.isSuccess shouldBe true
+        p.get shouldBe Add(IntL(1)(0,0), IntL(2)(0,0))(1,1)
+    } 
+
+    // "temptest.gta" should "Identify correct location?" in {
+    //     var p = parser.expr.parse("1 + 2")
+    //     val ast = p.get
+    //     ast shouldBe Add(IntL(1)(1, 1), IntL(2)(3, 1))(1, 1)
+    //     ast match {
+    //         case a@Add(x, y) => println(a.pos)
+    //         case _: Atom => println("Achievement: How did we get here")
+    //     }
+    //     println(ast.asInstanceOf[Add])
+    // }
 }
+
+// class parserTest extends AnyFlatSpec with BeforeAndAfterEach {
+//     "temptest.gta" should "parse an int" in {
+//         var p = parser.expr.parse("1 + 2")
+//         val ast = p.get
+//         ast shouldBe Add(IntL(1)(1, 1), IntL(2)(3, 1))(1, 1)
+//         ast match {
+//             case a@Add(x, y) => println(a.pos)
+//             case _: Atom => println("Achievement: How did we get here")
+//         }
+//         println(ast.asInstanceOf[Add])
+//     }
+// }

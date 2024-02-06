@@ -7,6 +7,7 @@ import parsley.syntax.zipped._
 import parsley.combinator._
 import parsley.character._
 import parsley.expr.{chain, precedence, Ops, InfixL, InfixN, InfixR, Prefix}
+import parsley.position.pos
 
 import lexer.implicits.implicitSymbol
 import lexer.{ident, intLit, charLit, strLit, fully}
@@ -28,16 +29,15 @@ object parser {
         <arrayType> -> <type> {iff arrayT}
     */
 
-    protected [wacc] lazy val typep: Parsley[Type] = (
-        (baseType | pairType), many(atomic("[" ~> "]"))).zipped((t, as) => {
-        as.foldRight(t)((_, ts) => ArrayT(ts))
+    protected [wacc] lazy val typep: Parsley[Type] = 
+        (pos, (baseType | pairType), many(atomic("[" ~> "]"))).zipped((p, t, as) => {
+        as.foldRight(t)((_, ts) => ArrayT(ts)(p)) 
+        // TODO: Use bridges?
     })
 
     protected [wacc] lazy val baseType = (        
-        IntT <# "int" 
-        | BoolT <# "bool" 
-        | CharT <# "char" 
-        | StringT <# "string"
+        (pos <~ "int").map(IntT()(_)) | (pos <~ "bool").map(BoolT()(_))
+        | (pos <~ "char").map(CharT()(_)) | (pos <~ "string").map(StringT()(_))
     )
 
     protected [wacc] lazy val arrayType: Parsley[ArrayT] 
@@ -47,7 +47,7 @@ object parser {
     protected [wacc] lazy val pairElemType: Parsley[PairElemType] = (
         atomic(arrayType) 
         | baseType
-        | ErasedPair <# "pair"
+        | (pos <~ "pair").map(ErasedPair()(_))
     )
     
     private def isArray(t: Type): Boolean = t match {
@@ -106,8 +106,10 @@ object parser {
     protected [wacc] lazy val arrayElem = ArrElem(ident, some("[" ~> expr <~ "]"))
     lazy val leftArrayElem = LArrElem(ident, some("[" ~> expr <~ "]"))
 
-    protected [wacc] lazy val boolLit = "true" #> BoolL(true) | "false" #> BoolL(false)
-    protected [wacc] lazy val pairLit = PairL <# "null"
+    protected [wacc] lazy val boolLit = (
+        (pos <~ "true").map(BoolL(true)(_)) 
+        | (pos <~ "false").map(BoolL(false)(_))) 
+    protected [wacc] lazy val pairLit = (pos, string("null")).zipped((p, _) => PairL()(p))
     protected [wacc] lazy val expr: Parsley[Expr] = 
         precedence(
             IntL(intLit),
