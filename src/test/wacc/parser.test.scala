@@ -81,27 +81,28 @@ class parserTest extends AnyFlatSpec with BeforeAndAfterEach // with PrivateMeth
     }
     it should "return the correct AST for the arrayType" in {
         /* TODO: Fix arrayType */
-        // parser.arrayType.parse("int[]").contains(ArrayT(IntT)) shouldBe true
-        // parser.arrayType.parse("bool[]").contains(ArrayT(BoolT)) shouldBe true
-        // parser.arrayType.parse("char[]").contains(ArrayT(CharT)) shouldBe true
-        // parser.arrayType.parse("string[]").contains(ArrayT(StringT)) shouldBe true
+        parser.arrayType.parse("int[]").contains(ArrayT(IntT)) shouldBe true
+        parser.arrayType.parse("bool[]").contains(ArrayT(BoolT)) shouldBe true
+        parser.arrayType.parse("char[]").contains(ArrayT(CharT)) shouldBe true
+        parser.arrayType.parse("string[]").contains(ArrayT(StringT)) shouldBe true
     }
     it should "return the correct AST for the pairType" in {
         /* TODO: Fix pairType */
-        // parser.pairType.parse("pair(int,int)").contains(Pair(IntT, IntT)) shouldBe true
-        // parser.pairType.parse("pair(bool,bool)").contains(Pair(BoolT, BoolT)) shouldBe true
-        // parser.pairType.parse("pair(char,char)").contains(Pair(CharT, CharT)) shouldBe true
-        // parser.pairType.parse("pair(string,string)").contains(Pair(StringT, StringT)) shouldBe true
+        parser.pairType.parse("pair(int,int)").contains(Pair(IntT, IntT)) shouldBe true
+        parser.pairType.parse("pair(bool,bool)").contains(Pair(BoolT, BoolT)) shouldBe true
+        parser.pairType.parse("pair(char,char)").contains(Pair(CharT, CharT)) shouldBe true
+        parser.pairType.parse("pair(string,string)").contains(Pair(StringT, StringT)) shouldBe true
     }
     
     it should "return the correct AST for the lvalue" in {
         parser.lvalue.parse(testIdent).contains(testLValue) shouldBe true // LIdent
 
         /* TODO: tests for LArrElem */
-        // val testArrElement0 = "[0]"
-        // val testArrElement1 = "[1]"
-        // parser.lvalue.parse(testIdent+testArrElement0).contains(LArrElem(testIdent, Some(IntL(0)))) shouldBe true // LArrElem
-        // parser.lvalue.parse(testIdent+testArrElement0+testArrElement1).contains(LArrElem(testIdent, Some(IntL(0)), Some(IntL(1)))) shouldBe true // LArrElem
+        val testArrElement0 = "[0]"
+        val testArrElement1 = "[1]"
+
+        parser.lvalue.parse(testIdent + testArrElement0).contains(LArrElem(testIdent, List(IntL(0)))) shouldBe true // LArrElem
+        parser.lvalue.parse(testIdent+testArrElement0+testArrElement1).contains(LArrElem(testIdent, List(IntL(0), IntL(1)))) shouldBe true // LArrElem
         
         parser.lvalue.parse("fst "+testIdent).contains(First(testLValue)) shouldBe true // PairElem
         parser.lvalue.parse("snd "+testIdent).contains(Second(testLValue)) shouldBe true // PairElem
@@ -114,13 +115,14 @@ class parserTest extends AnyFlatSpec with BeforeAndAfterEach // with PrivateMeth
 
         /* TODO: tests for ArrElem */
         // parser.rvalue.parse("test[0]").contains(ArrElem("test", List(IntL(0)))) shouldBe true // ArrElem
+        // parser.rvalue.parse("test[0]").contains(ArrElem("test", List(IntL(0)))) shouldBe true // ArrElem
         // parser.rvalue.parse("test[0][1]").contains(ArrElem("test", List(IntL(0), IntL(1)))) shouldBe true // ArrElem
 
         /* TODO: tests for newPair */
         // parser.rvalue.parse("newpair(0,1)").contains(NewPair(IntL(0), IntL(1))) shouldBe true // NewPair
         // println(parser.rvalue.parse("fst "+testIdent))
-        parser.rvalue.parse("fst "+testIdent).contains(First(testLValue)) shouldBe true // PairElem
-        parser.rvalue.parse("snd "+testIdent).contains(Second(testLValue)) shouldBe true // PairElem
+        // parser.rvalue.parse("fst "+testIdent).contains(First(testLValue)) shouldBe true // PairElem
+        // parser.rvalue.parse("snd "+testIdent).contains(Second(testLValue)) shouldBe true // PairElem
 
         /* TODO: tests for Call */
         // println(parser.rvalue.parse("call "+testIdent+"("+testAtomIdent+")"))

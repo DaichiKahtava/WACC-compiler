@@ -88,8 +88,8 @@ object parser {
 
     
     
-    protected [wacc] lazy val lvalue: Parsley[LValue] = LIdent(ident) | leftArrayElem | pairElem // TODO: BACKTRACKING // [tm1722] MADE PUBLIC FOR TESTING
-    protected [wacc]lazy val rvalue: Parsley[RValue] = ( // [tm1722] MADE PUBLIC FOR TESTING
+    protected [wacc] lazy val lvalue: Parsley[LValue] = atomic(leftArrayElem) | LIdent(ident) | pairElem // TODO: BACKTRACKING
+    protected [wacc]lazy val rvalue: Parsley[RValue] = (
         expr 
         | arrayLiter 
         | NewPair("newpair" ~> "(" ~> expr, "," ~> expr <~ ")")
