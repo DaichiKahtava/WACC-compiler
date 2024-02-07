@@ -111,7 +111,14 @@ class Semantics(fileName: String) {
         case ErasedPair() => S_PAIR(S_ANY, S_ANY)
     }
 
-    def equalType(e1: Expr, e2: Expr) = getType(e1) == getType(e2)
+    def equalType(got: S_TYPE, expected: S_TYPE, pos: (Int, Int)): Boolean = {
+        if (got != expected) {
+            errorRep.addTypeMismatch(got, expected, pos)
+            return false
+        } else {
+            return true
+        }
+    }
 
     def isSemCorrect(e: Expr): Boolean = {
         return e match {
@@ -123,29 +130,31 @@ class Semantics(fileName: String) {
 
             case Ident(id) => curSymTable.varDefinedGlobal(id)
 
-            case Not(x) => isSemCorrect(x) && getType(x) == S_BOOL
-            case Neg(x) => isSemCorrect(x) && getType(x) == S_INT
+            case Not(x) => isSemCorrect(x) && equalType(getType(x), S_BOOL, x.pos)
+            case Neg(x) => isSemCorrect(x) && equalType(getType(x), S_INT, x.pos)
             case Len(x) => isSemCorrect(x) && getType(x) == S_ARRAY(S_ANY) // TODO: Use canWeakenTo
-            case Ord(x) => isSemCorrect(x) && getType(x) == S_CHAR
-            case Chr(x) => isSemCorrect(x) && getType(x) == S_INT
+            case Ord(x) => isSemCorrect(x) && equalType(getType(x), S_CHAR, x.pos)
+            case Chr(x) => isSemCorrect(x) && equalType(getType(x), S_INT, x.pos)
 
-            case Mul(x1, x2) => (isSemCorrect(x1) && getType(x1) == S_INT) && (isSemCorrect(x2) && getType(x2) == S_INT)
-            case Div(x1, x2) => (isSemCorrect(x1) && getType(x1) == S_INT) && (isSemCorrect(x2) && getType(x2) == S_INT)
-            case Mod(x1, x2) => (isSemCorrect(x1) && getType(x1) == S_INT) && (isSemCorrect(x2) && getType(x2) == S_INT)
-            case Add(x1, x2) => (isSemCorrect(x1) && getType(x1) == S_INT) && (isSemCorrect(x2) && getType(x2) == S_INT)
-            case Minus(x1, x2) => (isSemCorrect(x1) && getType(x1) == S_INT) && (isSemCorrect(x2) && getType(x2) == S_INT)
+            // TODO: Better way to combine these?
+            case Mul(x1, x2) => (isSemCorrect(x1) && equalType(getType(x1), S_INT, x1.pos)) && (isSemCorrect(x2) && equalType(getType(x2), S_INT, x2.pos))
+            case Div(x1, x2) => (isSemCorrect(x1) && equalType(getType(x1), S_INT, x1.pos)) && (isSemCorrect(x2) && equalType(getType(x2), S_INT, x2.pos))
+            case Mod(x1, x2) => (isSemCorrect(x1) && equalType(getType(x1), S_INT, x1.pos)) && (isSemCorrect(x2) && equalType(getType(x2), S_INT, x2.pos))
+            case Add(x1, x2) => (isSemCorrect(x1) && equalType(getType(x1), S_INT, x1.pos)) && (isSemCorrect(x2) && equalType(getType(x2), S_INT, x2.pos))
+            case Minus(x1, x2) => (isSemCorrect(x1) && equalType(getType(x1), S_INT, x1.pos)) && (isSemCorrect(x2) && equalType(getType(x2), S_INT, x2.pos))
             
-            case GrT(x1, x2) => (isSemCorrect(x1) && (getType(x1) == S_INT || getType(x1) == S_CHAR)) && (isSemCorrect(x2) && (getType(x2) == S_INT || getType(x2) == S_CHAR))
-            case GrEqT(x1, x2) => (isSemCorrect(x1) && (getType(x1) == S_INT || getType(x1) == S_CHAR)) && (isSemCorrect(x2) && (getType(x2) == S_INT || getType(x2) == S_CHAR))
-            case LsT(x1, x2) => (isSemCorrect(x1) && (getType(x1) == S_INT || getType(x1) == S_CHAR)) && (isSemCorrect(x2) && (getType(x2) == S_INT || getType(x2) == S_CHAR))
-            case LsEqT(x1, x2) => (isSemCorrect(x1) && (getType(x1) == S_INT || getType(x1) == S_CHAR)) && (isSemCorrect(x2) && (getType(x2) == S_INT || getType(x2) == S_CHAR))
+            // TODO: This allows x1 and x2 to not match up -> needs review
+            case GrT(x1, x2)   => isSemCorrect(x1) && (getType(x1) == S_INT || getType(x1) == S_CHAR) && isSemCorrect(x2) && (getType(x2) == S_INT || getType(x2) == S_CHAR)
+            case GrEqT(x1, x2) => isSemCorrect(x1) && (getType(x1) == S_INT || getType(x1) == S_CHAR) && isSemCorrect(x2) && (getType(x2) == S_INT || getType(x2) == S_CHAR)
+            case LsT(x1, x2)   => isSemCorrect(x1) && (getType(x1) == S_INT || getType(x1) == S_CHAR) && isSemCorrect(x2) && (getType(x2) == S_INT || getType(x2) == S_CHAR)
+            case LsEqT(x1, x2) => isSemCorrect(x1) && (getType(x1) == S_INT || getType(x1) == S_CHAR) && isSemCorrect(x2) && (getType(x2) == S_INT || getType(x2) == S_CHAR)
             
             // TODO: Rewrite using Use canWeakenTo
-            case Eq(x1, x2) => isSemCorrect(x1) && isSemCorrect(x2) && getType(x1) == getType(x2)
-            case NEq(x1, x2) => isSemCorrect(x1) && isSemCorrect(x2) && getType(x1) != getType(x2)
+            case ex@Eq(x1, x2) => isSemCorrect(x1) && isSemCorrect(x2) && equalType(getType(x1), getType(x2), ex.pos)
+            case ex@NEq(x1, x2) => isSemCorrect(x1) && isSemCorrect(x2) && equalType(getType(x1), getType(x2), ex.pos)
             
-            case And(x1, x2) => (isSemCorrect(x1) && getType(x1) == S_BOOL) && (isSemCorrect(x2) && getType(x2) == S_BOOL)
-            case Or(x1, x2) => (isSemCorrect(x1) && getType(x1) == S_BOOL) && (isSemCorrect(x2) && getType(x2) == S_BOOL)
+            case And(x1, x2) => (isSemCorrect(x1) && equalType(getType(x1), S_BOOL, x1.pos)) && (isSemCorrect(x2) && equalType(getType(x2), S_BOOL, x2.pos))
+            case Or(x1, x2) => (isSemCorrect(x1) && equalType(getType(x1), S_BOOL, x1.pos)) && (isSemCorrect(x2) && equalType(getType(x2), S_BOOL, x2.pos))
 
             case ArrElem(_, xs)  => isSemCorrect(xs)
 

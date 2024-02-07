@@ -42,6 +42,21 @@ class SemErrorReporter(fileName: String) {
         printSourceSection(pos)
     }
 
+    def addTypeMismatch(got: S_TYPE, expected: S_TYPE, pos: (Int, Int)) = {
+        addError("Expected " + explainSemType(expected) + ". Got " + explainSemType(got) + "instead.", pos)
+    }
+
+    def explainSemType(tp : S_TYPE): String = tp match {
+        case S_INT => "int"
+        case S_CHAR => "char"
+        case S_BOOL => "bool"
+        case S_ERASED => "erased pair"
+        case S_STRING => "string"
+        case S_ARRAY(tp) => "array of (" + explainSemType(tp) + ")" 
+        case S_PAIR(tp1, tp2) => "pair of (" + explainSemType(tp1) + ") and (" +  explainSemType(tp2) + ")"
+        case S_ANY => "something of arbitrary type" // Should not be actually invoked...
+    }
+
     override def toString(): String = {
         errors.addAll("-----\nFound " + numErrors + " semantic errors.\n")
         return errors.result()
