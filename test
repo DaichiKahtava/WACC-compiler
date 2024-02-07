@@ -6,6 +6,8 @@
 # Checks if the file it to be combiled and 
 # Attempts to compileit and compares the exit code
 # to the expected. Saves the results in temp
+errorFlag=0
+
 test_compile () {
   if [[ $file == \'* ]]
   then
@@ -21,6 +23,7 @@ test_compile () {
     then
       printf "<testcase name=\"$1\" />\n" >> temp
     else
+      errorFlag=1
       printf "<testcase name=\"$1\" >\n" >> temp
       printf "<failure message=\"Expected exit code = $2, got $code\" type=\"FAIL\" />\n" >> temp
       printf "</testcase>\n" >> temp
@@ -73,3 +76,5 @@ done
 count_results "semantic folder" "semanticRes.xml"
 
 rm temp
+
+exit $errorFlag
