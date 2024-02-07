@@ -8,11 +8,12 @@ import parsley.combinator._
 import parsley.character._
 import parsley.expr.{chain, precedence, Ops, InfixL, InfixN, InfixR, Prefix}
 import parsley.position.pos
+import parsley.{Success, Failure}
 
 import lexer.implicits.implicitSymbol
 import lexer.{ident, intLit, charLit, strLit, fully}
 import scala.collection.immutable.IntMap
-import parsley.{Success, Failure}
+
 
 object parser {
     def parse(input: String): Result[String, Program] = {
