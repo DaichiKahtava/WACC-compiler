@@ -121,22 +121,20 @@ class parserTest extends AnyFlatSpec with BeforeAndAfterEach // with PrivateMeth
 
     it should "return the correct AST for the rvalue" in {
         val testIdentExpr = Ident("test")(0,0)
+        val secondTestAtom = 1
+        val secondTestAtomIdent = secondTestAtom.toString
+        val secondTestAtomExpr = IntL(1)(0,0)
+
         parser.rvalue.parse(testIdent).contains(testIdentExpr) shouldBe true // Ident
+        
+        parser.rvalue.parse("newpair("+testAtomIdent+","+secondTestAtomIdent+")").contains(NewPair(testAtomExpr, secondTestAtomExpr)(0,0)) shouldBe true // Pair
+        parser.rvalue.parse("fst "+testIdent).contains(First(testLValue)(0,0)) shouldBe true // PairElem
+        parser.rvalue.parse("snd "+testIdent).contains(Second(testLValue)(0,0)) shouldBe true // PairElem
 
-        /* TODO: tests for ArrElem */
-        // parser.rvalue.parse("test[0]").contains(ArrElem("test", List(IntL(0)))) shouldBe true // ArrElem
-        // parser.rvalue.parse("test[0]").contains(ArrElem("test", List(IntL(0)))) shouldBe true // ArrElem
-        // parser.rvalue.parse("test[0][1]").contains(ArrElem("test", List(IntL(0), IntL(1)))) shouldBe true // ArrElem
-
-        /* TODO: tests for newPair */
-        // parser.rvalue.parse("newpair(0,1)").contains(NewPair(IntL(0), IntL(1))) shouldBe true // NewPair
-        // println(parser.rvalue.parse("fst "+testIdent))
-        // parser.rvalue.parse("fst "+testIdent).contains(First(testLValue)) shouldBe true // PairElem
-        // parser.rvalue.parse("snd "+testIdent).contains(Second(testLValue)) shouldBe true // PairElem
-
-        /* TODO: tests for Call */
-        // println(parser.rvalue.parse("call "+testIdent+"("+testAtomIdent+")"))
-        // parser.rvalue.parse("call "+testIdent+"("+testAtomIdent+")").contains(Call(testIdent, List(testAtomExpr))) shouldBe true // CURRENTLY OUTPUTS: Success(Ident(call))
+        parser.rvalue.parse("[]").contains(ArrL(List.empty)) shouldBe true // (empty) ArrL
+        parser.rvalue.parse("["+testAtomIdent+","+secondTestAtomIdent+"]").contains(ArrL(List(testAtomExpr, secondTestAtomExpr))) shouldBe true // ArrL
+        
+        parser.rvalue.parse("call "+testIdent+"("+testAtomIdent+")").contains(Call(testIdent, List(testAtomExpr))(0,0)) shouldBe true // Call
         
     }
 
