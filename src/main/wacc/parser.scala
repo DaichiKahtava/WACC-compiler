@@ -90,16 +90,18 @@ object parser {
     
     protected [wacc] lazy val lvalue: Parsley[LValue] = atomic(leftArrayElem) | LIdent(ident) | pairElem // TODO: BACKTRACKING
     protected [wacc]lazy val rvalue: Parsley[RValue] = (
-        expr 
-        | arrayLiter 
+        atomic(arrayLiter)
+        | atomic(emptyArrayLiter)
         | NewPair("newpair" ~> "(" ~> expr, "," ~> expr <~ ")")
-        | pairElem 
-        | Call("call" ~> ident, "(" ~> argList <~ ")")
+        | pairElem
+        | atomic(Call("call" ~> ident, "(" ~> argList <~ ")"))
+        | expr
     )
 
     protected [wacc] lazy val argList = sepBy(expr, ",")
     protected [wacc] lazy val pairElem = First("fst" ~> lvalue) | Second("snd" ~> lvalue)
-    protected [wacc] lazy val arrayLiter = ArrL("[" ~> sepBy1(expr, ",") <~ "]") | ("[" <~> "]") #> ArrL(List.empty)
+    protected [wacc] lazy val emptyArrayLiter = ("[" <~> "]") #> ArrL(List.empty)
+    protected [wacc] lazy val arrayLiter = ArrL("[" ~> sepBy1(expr, ",") <~ "]")
 
     // Expressions
 
