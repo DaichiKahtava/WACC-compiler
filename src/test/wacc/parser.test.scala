@@ -269,3 +269,54 @@ class parserTest extends AnyFlatSpec with BeforeAndAfterEach // with PrivateMeth
 //         println(ast.asInstanceOf[Add])
 //     }
 // }
+
+class PositionTest extends AnyFlatSpec {
+  "The parser" should "correctly parse positions for boolean literals" in {
+    val p = parser.expr.parse("true")
+    p.isSuccess shouldBe true
+    val node = p.get
+    node shouldBe BoolL(true)(1,1)
+  }
+
+  it should "correctly parse positions for character literals" in {
+    val p = parser.expr.parse("'a'")
+    p.isSuccess shouldBe true
+    val node = p.get
+    node shouldBe CharL('a')(1,1)
+  }
+
+  it should "correctly parse positions for string literals" in {
+    val p = parser.expr.parse("\"foo\"")
+    p.isSuccess shouldBe true
+    val node = p.get
+    node shouldBe StrL("foo")(1,1)
+  }
+
+  it should "correctly parse positions for identifiers" in {
+    val p = parser.expr.parse("foo")
+    p.isSuccess shouldBe true
+    val node = p.get
+    node shouldBe Ident("foo")(1,1)
+  }
+
+  it should "correctly parse positions for unary nodes" in {
+    val p = parser.expr.parse("-1")
+    p.isSuccess shouldBe true
+    val node = p.get
+    node shouldBe Neg(IntL(1)(1,2))(1,1)
+  }
+
+  // it should "correctly parse positions for array literals" in {
+  //   val p = parser.expr.parse("[1, 2, 3]")
+  //   p.isSuccess shouldBe true
+  //   val node = p.get
+  //   node shouldBe ArrL(List(IntL(1)(1,2), IntL(2)(1,5), IntL(3)(1,8)))(1,1)
+  // }
+
+  // it should "correctly parse positions for pair literals" in {
+  //   val p = parser.expr.parse("pair(1, 2)")
+  //   p.isSuccess shouldBe true
+  //   val node = p.get
+  //   node shouldBe NewPair(IntL(1)(1,9), IntL(2)(1,12))(1,1)
+  // }
+}
