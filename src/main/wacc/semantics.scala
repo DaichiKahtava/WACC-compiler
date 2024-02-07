@@ -225,7 +225,9 @@ class Semantics(fileName: String) {
                 return canWeakenTo(getType(rv), toSemanticType(tp)) && isSemCorrect(rv)
             }
             case Asgn(lv, rv) => isSemCorrect(lv) && isSemCorrect(rv) && canWeakenTo(getType(rv), getType(lv))
-            case Read(lv) => getType(lv) == S_CHAR || getType(lv) == S_INT
+            case Read(lv: LIdent) => curSymTable.findVarGlobal(lv.id).get.tp == S_CHAR || curSymTable.findVarGlobal(lv.id).get.tp == S_INT
+            case Read(lv: LArrElem) => getType(lv) == S_CHAR || getType(lv) == S_INT
+            case Read(lv: PairElem) => getType(lv) == S_CHAR || getType(lv) == S_INT
 
             case Free(ArrElem(_, xs)) => isSemCorrect(xs)
             case Free(x: PairElem) => isSemCorrect(x.asInstanceOf[PairElem])
