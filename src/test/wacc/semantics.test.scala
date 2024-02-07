@@ -8,10 +8,8 @@ class semanticsTests extends AnyFlatSpec with BeforeAndAfterEach {
 
     val sem = new Semantics("foo.txt")
 
-    var symTable: SymTable = new SymTable(None)
-
     override protected def beforeEach(): Unit = {
-        symTable = new SymTable(None)
+        sem.curSymTable = new SymTable(None)
     }
 
     "Pair types" should "maintain that their type parameters are invariant" in {
@@ -66,7 +64,21 @@ class semanticsTests extends AnyFlatSpec with BeforeAndAfterEach {
     }
 
     "Read statements" should "accept arguments of either type int or type char" in {
+        sem.curSymTable.addSymbol("x", VARIABLE(S_INT)) shouldBe true
+        sem.curSymTable.addSymbol("y", VARIABLE(S_CHAR)) shouldBe true
+        sem.curSymTable.addSymbol("z", VARIABLE(S_STRING)) shouldBe true
+        sem.curSymTable.addSymbol("pair", VARIABLE(S_PAIR(S_CHAR, S_INT))) shouldBe true
 
+        sem.isSemCorrect(Read(LIdent("x")(0, 0))(0, 0)) shouldBe true
+        sem.isSemCorrect(Read(LIdent("y")(0, 0))(0, 0)) shouldBe true
+        sem.isSemCorrect(Read(LIdent("z")(0, 0))(0, 0)) shouldBe false
+
+        sem.isSemCorrect(Read(LArrElem("x", List(IntL(5)(0, 0)))(0, 0))(0, 0)) shouldBe true
+        sem.isSemCorrect(Read(LArrElem("y", List(IntL(5)(0, 0)))(0, 0))(0, 0)) shouldBe true // Not sure about this
+        sem.isSemCorrect(Read(LArrElem("z", List(StrL("this is a string")(0, 0)))(0, 0))(0, 0)) shouldBe false
+
+        // Not sure how to do this, will leave for later
+        // sem.isSemCorrect(Read(First(LIdent("pair")(0, 0))(0, 0))(0, 0)) shouldBe true
     }
 
     "Return statements" should "not be in the main body of the program" in {
