@@ -21,6 +21,7 @@ class parserTest extends AnyFlatSpec with BeforeAndAfterEach // with PrivateMeth
     val testAtom = 0
     val testAtomIdent = testAtom.toString
     val testAtomExpr = IntL(0)(0,0)
+    val testAtomRExpr = RExpr(IntL(0)(0,0))(0,0)
     
     val notExitingStmt = Skip // Should have a location!!!
 
@@ -68,8 +69,8 @@ class parserTest extends AnyFlatSpec with BeforeAndAfterEach // with PrivateMeth
         val testType = IntT()(0,0)
 
         parser.funcEnd(Skip) shouldBe false
-        parser.funcEnd(Decl(testType, testIdent, testAtomExpr)(0,0)) shouldBe false
-        parser.funcEnd(Asgn(testLValue, testAtomExpr)(0,0)) shouldBe false
+        parser.funcEnd(Decl(testType, testIdent, testAtomRExpr)(0,0)) shouldBe false
+        parser.funcEnd(Asgn(testLValue, testAtomRExpr)(0,0)) shouldBe false
         parser.funcEnd(Read(testLValue)(0,0)) shouldBe false
         parser.funcEnd(Free(testAtomExpr)(0,0)) shouldBe false
         parser.funcEnd(Print(testAtomExpr)(0,0)) shouldBe false
@@ -120,7 +121,7 @@ class parserTest extends AnyFlatSpec with BeforeAndAfterEach // with PrivateMeth
     }
 
     it should "return the correct AST for the rvalue" in {
-        val testIdentExpr = Ident("test")(0,0)
+        val testIdentExpr = RExpr(Ident("test")(0,0))(0,0)
         val secondTestAtom = 1
         val secondTestAtomIdent = secondTestAtom.toString
         val secondTestAtomExpr = IntL(1)(0,0)
