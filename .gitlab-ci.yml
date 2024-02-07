@@ -27,6 +27,8 @@ test:
   stage: test
   needs:
     - job: unit_tests
+      artifacts: false
+    - job: compile
       artifacts: true
   artifacts:
     when: always
