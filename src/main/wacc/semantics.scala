@@ -41,22 +41,11 @@ class Semantics(fileName: String) {
             case And(_, _) => S_BOOL
             case Or(_, _) => S_BOOL
             
+            // This is where the semantic/type checks for operations will happen
+            // case UnExpr(op, e) => ???
+            // case BinExpr(e1, op, e2) => ???
+
             case ArrElem(_, xs)  => getType(xs)
-            
-            // Case for arrays.
-            case ArrL(elements) => 
-            elements match {
-              case Nil => S_ARRAY(S_ANY) // If the array is empty, return S_ARRAY(S_ANY).
-              case head :: _ => // Otherwise, return the type of the first element.
-                getType(head) match {
-                  case S_CHAR => S_STRING // The string weakening rule.
-                  case elementType => S_ARRAY(elementType)
-                }
-            }
-
-            case NewPair(e1, e2) => S_PAIR(getType(e1), getType(e2)) // Case for pairs.
-
-            case _ => S_ANY // Default case due to compiler warning.
         }
     }
 
@@ -65,14 +54,22 @@ class Semantics(fileName: String) {
         case LIdent(id) => curSymTable.findVarGlobal(id).get match {
             case VARIABLE(tp) => tp
         }
-        case ArrElem(_, xs) => getType(xs)
+        case LArrElem(_, xs) => getType(xs)
         case pe: PairElem => getType(pe)
     }
 
         // RValue type and check
     def getType(rv: RValue): S_TYPE = rv match {
         case RExpr(e) => getType(e)
-        case ArrL(xs) => getType(xs)
+        case ArrL(elements) => 
+            elements match {
+              case Nil => S_ARRAY(S_ANY) // If the array is empty, return S_ARRAY(S_ANY).
+              case head :: _ => // Otherwise, return the type of the first element.
+                getType(head) match {
+                  case S_CHAR => S_STRING // The string weakening rule. TODO: REVIEW!
+                  case elementType => S_ARRAY(elementType)
+                }
+            }
         case NewPair(e1, e2) => S_PAIR(getType(e1), getType(e2))
         case pe: PairElem => getType(pe)
         case Call(id, _) => curSymTable.findFunGlobal(id).get match {
@@ -213,7 +210,7 @@ class Semantics(fileName: String) {
     // TODO: Param using symbol table
         
     def isSemCorrect(stmt: Stmt): Boolean = stmt match {
-            case Skip() => true
+            case Skip => true
             case Decl(tp, id, rv) => {
                 if (!curSymTable.addSymbol(id, VARIABLE(toSemanticType(tp)))) {
                     println("Semantic error: Parameter \""+id+"\" is already a used identifier!")
@@ -246,7 +243,7 @@ class Semantics(fileName: String) {
 
     def isSemCorrect(lv: LValue): Boolean = lv match {
         case LIdent(_) => true
-        case ArrElem(_, xs) => isSemCorrect(xs)
+        case LArrElem(_, xs) => isSemCorrect(xs)
         case pe: PairElem => isSemCorrect(pe)
     }
 
@@ -257,6 +254,7 @@ class Semantics(fileName: String) {
         case NewPair(e1, e2) => isSemCorrect(e1) && isSemCorrect(e2)
         case pe: PairElem => isSemCorrect(pe)
         case Call(_, xs) => isSemCorrect(xs)
+        case e: Expr => isSemCorrect(e)
     }
 
     // PairElem check 

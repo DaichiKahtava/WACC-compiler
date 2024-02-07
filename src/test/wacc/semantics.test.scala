@@ -210,9 +210,9 @@ class semanticsTests extends AnyFlatSpec {
 
   // Lots to check for this... probably unnecessary since these are trivial
   "Operators" should "have the correct return types" in {
-    sem.isSemCorrect(Not(BoolL(true))) shouldBe true
-    sem.isSemCorrect(Not(IntL(1))) shouldBe false
-    sem.isSemCorrect(Not(CharL('a'))) shouldBe false
+    sem.isSemCorrect(Not(BoolL(true)(0,0))(0,0)) shouldBe true
+    sem.isSemCorrect(Not(IntL(1)(0,0))(0,0)) shouldBe false
+    sem.isSemCorrect(Not(CharL('a')(0,0))(0,0)) shouldBe false
   }
 
   "Control flow statements" should "have a condition of type Bool" in {
