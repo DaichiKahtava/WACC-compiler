@@ -125,23 +125,23 @@ class semanticsTests extends AnyFlatSpec {
   }
 
   // Test case for a list with nested S_PAIR.
-  ignore should "return S_PAIR(S_PAIR(S_ANY, S_ANY), S_ANY) for a list with nested S_PAIR" in {
-    // val expressions = List(NewPair(PairL(), IntL(1)), NewPair(PairL(), BoolL(true)))
-    // val ancestor = getLowestCommonAncestor(expressions)
-    // ancestor should be (S_PAIR(S_PAIR(S_ANY, S_ANY), S_ANY))
+  it should "return S_PAIR(S_PAIR(S_ANY, S_ANY), S_ANY) for a list with nested S_PAIR" in {
+    val expressions = List(NewPair(PairL(), IntL(1)), NewPair(PairL(), BoolL(true)))
+    val ancestor = getLowestCommonAncestor(expressions)
+    ancestor should be (S_PAIR(S_PAIR(S_ANY, S_ANY), S_ANY))
   }
 
   // Test case for a list with nested S_PAIR and S_INT.
-  ignore should "return S_ANY for a list with nested S_PAIR and S_INT" in {
-    // val expressions = List(PairL(PairL(), IntL(1)), IntL(2))
-    // val ancestor = getLowestCommonAncestor(expressions)
-    // ancestor should be (S_ANY)
+  it should "return S_ANY for a list with nested S_PAIR and S_INT" in {
+    val expressions = List(NewPair(PairL(), IntL(1)), IntL(2))
+    val ancestor = getLowestCommonAncestor(expressions)
+    ancestor should be (S_ANY)
   }
 
   // Test case for a list with nested S_PAIR and S_BOOL.
-  ignore should "return S_ANY for a list with nested S_PAIR and S_BOOL" in {
-    // val expressions = List(PairL(PairL(), IntL(1)), BoolL(true))
-    // val ancestor = getLowestCommonAncestor(expressions)
-    // ancestor should be (S_ANY)
+  it should "return S_ANY for a list with nested S_PAIR and S_BOOL" in {
+    val expressions = List(NewPair(PairL(), IntL(1)), BoolL(true))
+    val ancestor = getLowestCommonAncestor(expressions)
+    ancestor should be (S_ANY)
   }
 }

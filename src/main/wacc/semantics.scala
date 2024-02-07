@@ -55,10 +55,9 @@ object semantics {
                 }
             }
 
-            // Case for pairs.
-            case NewPair(e1, e2) => S_PAIR(getType(e1), getType(e2))
+            case NewPair(e1, e2) => S_PAIR(getType(e1), getType(e2)) // Case for pairs.
 
-        case _ => S_ANY // Default case due to compiler warning.
+            case _ => S_ANY // Default case due to compiler warning.
         }
     }
 
@@ -284,15 +283,17 @@ object semantics {
     // Finds the lowest common ancestor in a list of expressions.
     def getLowestCommonAncestor(exprs: List[Expr]): S_TYPE = {
       val types = exprs.map(getType) // Gets the semantic type of every item in the list.
+      println(s"Types: $types") // Print the types
     
       // Finds the common ancestor between 2 items. // CA = Common Ancestor.
-      def findCommonAncestor(t1: S_TYPE, t2: S_TYPE): S_TYPE = (t1, t2) match {
-        case (S_ANY, _) | (_, S_ANY) => S_ANY // If either is S_ANY, the CA is S_ANY.
-        // Recursively finds the CA if they are both pairs.
-        // case (S_PAIR(tp11, tp12), S_PAIR(tp21, tp22)) => 
-        //     S_PAIR(findCommonAncestor(tp11, tp21), findCommonAncestor(tp12, tp22))
-        case (S_PAIR(tp11, tp12), S_PAIR(tp21, tp22)) if tp11 == tp21 && tp12 == tp22 => 
-              S_PAIR(tp11, tp12)
+      def findCommonAncestor(t1: S_TYPE, t2: S_TYPE): S_TYPE = {
+        println(s"Finding common ancestor of $t1 and $t2") // Print the types being compared
+        val result = (t1, t2) match {
+        case (S_ANY, _) | (_, S_ANY) => S_ANY // If either is S_ANY, the CA is S_ANY.#
+        // Case for two pairs, where we recursively find their CA.
+        case (S_PAIR(tp11, tp12), S_PAIR(tp21, tp22)) => 
+              S_PAIR(findCommonAncestor(tp11, tp21), findCommonAncestor(tp12, tp22))
+        // Case for when one type is a pair, and the other is not.
         case (S_PAIR(_, _), _) | (_, S_PAIR(_, _)) => S_ANY
         // If either is a string, the CA is a string.
         case (S_STRING, S_ARRAY(S_CHAR)) | (S_ARRAY(S_CHAR), S_STRING) => S_STRING
@@ -301,7 +302,9 @@ object semantics {
         case (_, _) if t1 == t2 => t1 // If they are equal, the type is either.
         case (_, _) => S_ANY // The default case if no match.
       }
-
+    println(s"Common ancestor of $t1 and $t2 is $result") // Print the result
+    result
+      }
       // Option is used in the case the list is empty, where then S_ANY is given.
       types.reduceLeftOption((t1, t2) => findCommonAncestor(t1, t2)).getOrElse(S_ANY)
     }
