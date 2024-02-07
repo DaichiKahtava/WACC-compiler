@@ -40,10 +40,6 @@ class Semantics(fileName: String) {
 
             case And(_, _) => S_BOOL
             case Or(_, _) => S_BOOL
-            
-            // This is where the semantic/type checks for operations will happen
-            // case UnExpr(op, e) => ???
-            // case BinExpr(e1, op, e2) => ???
 
             case ArrElem(_, xs)  => getType(xs)
         }
@@ -254,7 +250,6 @@ class Semantics(fileName: String) {
         case NewPair(e1, e2) => isSemCorrect(e1) && isSemCorrect(e2)
         case pe: PairElem => isSemCorrect(pe)
         case Call(_, xs) => isSemCorrect(xs)
-        case e: Expr => isSemCorrect(e)
     }
 
     // PairElem check 
