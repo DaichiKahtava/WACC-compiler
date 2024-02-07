@@ -86,6 +86,8 @@ object semantics {
     // Type converter for arrays
     def getType(arr: List[Expr]): S_TYPE = getType(arr.head)
 
+    def compatible(t1: S_TYPE, t2: S_TYPE): Boolean = canWeakenTo(t1, t2) || t1 == t2
+
     def getType(pe: PairElem): S_TYPE = pe match {
         case First(lv) => getType(lv)
         case Second(lv) => getType(lv)
@@ -158,8 +160,8 @@ object semantics {
             case LsEqT(x1, x2) => (isSemCorrect(x1) && (getType(x1) == S_INT || getType(x1) == S_CHAR)) && (isSemCorrect(x2) && (getType(x2) == S_INT || getType(x2) == S_CHAR))
             
             // TODO: Rewrite using Use canWeakenTo
-            case Eq(x1, x2) => (isSemCorrect(x1) && getType(x1) == S_ANY) && (isSemCorrect(x2) && getType(x2) == S_ANY)
-            case NEq(x1, x2) => (isSemCorrect(x1) && getType(x1) == S_ANY) && (isSemCorrect(x2) && getType(x2) == S_ANY)
+            case Eq(x1, x2) => isSemCorrect(x1) && isSemCorrect(x2) && getType(x1) == getType(x2)
+            case NEq(x1, x2) => isSemCorrect(x1) && isSemCorrect(x2) && getType(x1) != getType(x2)
             
             case And(x1, x2) => (isSemCorrect(x1) && getType(x1) == S_BOOL) && (isSemCorrect(x2) && getType(x2) == S_BOOL)
             case Or(x1, x2) => (isSemCorrect(x1) && getType(x1) == S_BOOL) && (isSemCorrect(x2) && getType(x2) == S_BOOL)
@@ -233,21 +235,21 @@ object semantics {
                     println("Semantic error: Parameter \""+id+"\" is already a used identifier!")
                     return false 
                 }
-                return toSemanticType(tp) == getType(rv) && isSemCorrect(rv)
+                return compatible(getType(rv), toSemanticType(tp)) && isSemCorrect(rv)
             }
-            case Asgn(lv, rv) => isSemCorrect(lv) && isSemCorrect(rv) && getType(lv) == getType(rv)
+            case Asgn(lv, rv) => isSemCorrect(lv) && isSemCorrect(rv) && compatible(getType(rv), getType(lv))
             case Read(lv) => getType(lv) == S_CHAR || getType(lv) == S_INT
 
             case Free(ArrElem(_, xs)) => isSemCorrect(xs)
             case Free(x: PairElem) => isSemCorrect(x.asInstanceOf[PairElem])
             case Free (_) => false
 
-            case Return(x) => isSemCorrect(x) // Need to check with the given return type of the function?
+            case Return(x) => isSemCorrect(x)
             case Exit(x) => getType(x) == S_INT
             case Print(x) => isSemCorrect(x)
             case Println(x) => isSemCorrect(x)
-            case Cond(x, s1, s2) => isSemCorrect(x) && isSemCorrect(s1) && isSemCorrect(s2)
-            case Loop(x, stmt) => isSemCorrect(x) && isSemCorrect(stmt)
+            case Cond(x, s1, s2) => getType(x) == S_BOOL && isSemCorrect(s1) && isSemCorrect(s2)
+            case Loop(x, stmt) => getType(x) == S_BOOL && isSemCorrect(stmt)
             case Body(stmt) => {
                 curSymTable = curSymTable.unamedScope()
                 val res = isSemCorrect(stmt)
