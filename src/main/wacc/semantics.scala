@@ -14,9 +14,8 @@ class Semantics(fileName: String) {
             case CharL(_) => S_CHAR
             case StrL(_) => S_STRING
             case PairL() => S_PAIR(S_ANY, S_ANY)
-            case Ident(id) => curSymTable.findGlobal(id).get match {
+            case Ident(id) => curSymTable.findVarGlobal(id).get match {
                 case VARIABLE(tp) => tp
-                case FUNCTION(tp, _) => tp
             }
 
             case Not(_) => S_BOOL
@@ -63,9 +62,8 @@ class Semantics(fileName: String) {
 
     // LValue and check
     def getType(lv: LValue): S_TYPE = lv match {
-        case LIdent(id) => curSymTable.findGlobal(id).get match {
+        case LIdent(id) => curSymTable.findVarGlobal(id).get match {
             case VARIABLE(tp) => tp
-            case FUNCTION(tp, _) => tp
         }
         case ArrElem(_, xs) => getType(xs)
         case pe: PairElem => getType(pe)
@@ -77,8 +75,7 @@ class Semantics(fileName: String) {
         case ArrL(xs) => getType(xs)
         case NewPair(e1, e2) => S_PAIR(getType(e1), getType(e2))
         case pe: PairElem => getType(pe)
-        case Call(id, _) => curSymTable.findGlobal(id).get match {
-            case VARIABLE(tp) => tp 
+        case Call(id, _) => curSymTable.findFunGlobal(id).get match {
             case FUNCTION(tp, _) => tp
         }
     }
@@ -131,7 +128,7 @@ class Semantics(fileName: String) {
             case StrL(_) => true
             case PairL() => true
 
-            case Ident(id) => curSymTable.definedGlobal(id)
+            case Ident(id) => curSymTable.varDefinedGlobal(id)
 
             case Not(x) => isSemCorrect(x) && getType(x) == S_BOOL
             case Neg(x) => isSemCorrect(x) && getType(x) == S_INT
@@ -174,36 +171,32 @@ class Semantics(fileName: String) {
     
     /// Statements ///
     def isSemCorrect(program: Program): Boolean = {
-        // Populate symbol table for ALL functions first
-        program.funcs.foreach((f) =>
-            {
-                if (curSymTable.findGlobal(f.id).isDefined) {
-                    println("Semantic error: Function \""+f.id+"\" is defined more than once!")
-                    return false
-                }
-                if (curSymTable.addSymbol(f.id, FUNCTION(toSemanticType(f.tp), new SymTable(Some(curSymTable))))) {
-                    return true   
-                } else {
-                    println("[KEY PROBLEM!] Apparently could not add to symbol table")
-                    return false
-                }
-            }
-        )
-        program.funcs.foreach((f) => {
-            curSymTable = curSymTable.findGlobal(f.id).get.asInstanceOf[FUNCTION].st
-            f.params.foreach((p) => {
-                if (!curSymTable.addSymbol(p.id, VARIABLE(toSemanticType(p.tp)))) {
-                    println("Semantic error: Parameter \""+p.id+"\" is already defined!")
-                    return false 
-                }
-            })
-            isSemCorrect(f.stmt)
-            if (toSemanticType(f.tp) != getReturnType(f.stmt).get) {
-                return false
-            }
-            curSymTable = curSymTable.parent().get
-        })
-        return isSemCorrect(program.stmt)
+        // // Populate symbol table for ALL functions first
+        // program.funcs.foreach((f) =>
+        //     {
+        //         var existingF = curSymTable.findGlobal(f.id)
+        //         if (existingF.isDefined) {
+        //             errorRep.addError("Function \""+f.id+"\" is already defined more than once!", (0,0))
+        //             if (getType(f.tp) != )
+        //             redefineSymbol(f.id, existingF.get.)
+        //         }
+        //     }
+        // )
+        // program.funcs.foreach((f) => {
+        //     curSymTable = curSymTable.findGlobal(f.id).get.asInstanceOf[FUNCTION].st
+        //     f.params.foreach((p) => {
+        //         if (!curSymTable.addSymbol(p.id, VARIABLE(toSemanticType(p.tp)))) {
+        //             errorRep.addError("Semantic error: Parameter \""+p.id+"\" is already defined!", (0,0))
+        //         }
+        //     })
+        //     isSemCorrect(f.stmt)
+        //     if (toSemanticType(f.tp) != getReturnType(f.stmt).get) {
+        //         return false
+        //     }
+        //     curSymTable = curSymTable.parent().get
+        // })
+        // return isSemCorrect(program.stmt)
+        return true
     }
     
 
@@ -242,7 +235,7 @@ class Semantics(fileName: String) {
             case Cond(x, s1, s2) => getType(x) == S_BOOL && isSemCorrect(s1) && isSemCorrect(s2)
             case Loop(x, stmt) => getType(x) == S_BOOL && isSemCorrect(stmt)
             case Body(stmt) => {
-                curSymTable = curSymTable.unamedScope()
+                curSymTable = curSymTable.newUnamedScope()
                 val res = isSemCorrect(stmt)
                 curSymTable = curSymTable.parent().get
                 return res
