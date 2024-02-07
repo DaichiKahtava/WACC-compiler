@@ -1,10 +1,10 @@
 package wacc
 
-object semantics {
+class Semantics(fileName: String) {
 
     /// Global pointer/reference to current SymTable
     var curSymTable = new SymTable(None)
-    var errorFlag = false
+    var errorRep = new SemErrorReporter(fileName)
 
     /// Expressions ///
     def getType(e: Expr): S_TYPE = {
