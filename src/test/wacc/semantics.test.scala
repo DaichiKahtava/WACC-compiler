@@ -173,7 +173,15 @@ class semanticsTests extends AnyFlatSpec {
     ancestor should be (S_ARRAY(S_ARRAY(S_INT)))
   }
 
-  "The semantic checker" should "maintain that the type parameters of pairs are invariant" in {
+
+
+  "The semantic checker" should "unidirectionally allow char[] to be weakened to string" in {
+    val chArr = S_ARRAY(S_CHAR)
+    sem.canWeakenTo(chArr, S_STRING) shouldBe true
+    sem.canWeakenTo(S_STRING, chArr) shouldBe false
+  }
+
+  it should "maintain that the type parameters of pairs are invariant" in {
     val p1 = S_PAIR(S_ARRAY(S_CHAR), S_INT)
     val p2 = S_PAIR(S_STRING, S_INT)
     val pAny = S_PAIR(S_ANY, S_ANY)

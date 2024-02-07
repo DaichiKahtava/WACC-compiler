@@ -95,8 +95,10 @@ class Semantics(fileName: String) {
         case S_ANY  => true
         case S_ERASED => t2.isInstanceOf[S_PAIR]
         case S_PAIR(tp1, tp2) => t2 == S_ERASED
-        case S_STRING => t2 == S_ARRAY(S_CHAR)
-        case S_ARRAY(tp) => tp == t2.asInstanceOf[S_ARRAY].tp
+        case S_ARRAY(tp) => tp match {
+            case S_CHAR => t2 == S_STRING
+            case _ => tp == t2.asInstanceOf[S_ARRAY].tp
+        }
         case _ => t1 == t2
     }
     // TODO: We might need to introduce an S_ERASED() for use in Pair semantic checking!
