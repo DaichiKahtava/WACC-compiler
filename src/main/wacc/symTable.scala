@@ -96,7 +96,7 @@ class SymTable(parentTable: Option[SymTable]) {
  
 
 case class VARIABLE(tp: S_TYPE)
-case class FUNCTION(tp: S_TYPE)(st: SymTable)
+case class FUNCTION(tp: S_TYPE)(val st: SymTable)
 
 // Nested scopes may be implemented with multiple symbol tables
 // Symbol tables 

@@ -163,44 +163,54 @@ class Semantics(fileName: String) {
 
     
     /// Statements ///
-    def isSemCorrect(program: Program): Boolean = {
-        // // Populate symbol table for ALL functions first
-        // program.funcs.foreach((f) =>
-        //     {
-        //         var existingF = curSymTable.findGlobal(f.id)
-        //         if (existingF.isDefined) {
-        //             errorRep.addError("Function \""+f.id+"\" is already defined more than once!", (0,0))
-        //             if (getType(f.tp) != )
-        //             redefineSymbol(f.id, existingF.get.)
-        //         }
-        //     }
-        // )
-        // program.funcs.foreach((f) => {
-        //     curSymTable = curSymTable.findGlobal(f.id).get.asInstanceOf[FUNCTION].st
-        //     f.params.foreach((p) => {
-        //         if (!curSymTable.addSymbol(p.id, VARIABLE(toSemanticType(p.tp)))) {
-        //             errorRep.addError("Semantic error: Parameter \""+p.id+"\" is already defined!", (0,0))
-        //         }
-        //     })
-        //     isSemCorrect(f.stmt)
-        //     if (toSemanticType(f.tp) != getReturnType(f.stmt).get) {
-        //         return false
-        //     }
-        //     curSymTable = curSymTable.parent().get
-        // })
-        // return isSemCorrect(program.stmt)
-        return true
+    protected [wacc] def isSemCorrect(program: Program): Boolean = {
+        // Populate symbol table for ALL functions first
+        program.funcs.foreach((f) =>
+            {
+                var existingF = curSymTable.findFunGlobal(f.id)
+                var fType = toSemanticType(f.tp)
+                if (existingF.isDefined) {
+                    errorRep.addError("Function \""+f.id+"\" is already defined more than once!", f.pos)
+                    if (existingF.get.tp != toSemanticType(f.tp)) {
+                        curSymTable.redefineSymbol(f.id, FUNCTION(S_ANY)(new SymTable(Some(curSymTable))))
+                    }
+
+                } else {
+                    curSymTable.addSymbol(f.id, FUNCTION(fType)(new SymTable(Some(curSymTable))))
+                }
+            }
+        )
+        program.funcs.foreach((f) => {
+            curSymTable = curSymTable.findFunGlobal(f.id).get.st // We are in the local symbolTable
+            f.params.foreach((p) => {
+                if (!curSymTable.addSymbol(p.id, VARIABLE(toSemanticType(p.tp)))) {
+                    errorRep.addError("Parameter \""+p.id+"\" is already defined!", p.pos)
+                }
+            })
+            isSemCorrect(f.s)
+            checkReturnType(f.s, toSemanticType(f.tp))
+            curSymTable = curSymTable.parent().get // We are in the parent/global symbolTable
+        })
+        isSemCorrect(program.s)
+        return (errorRep.numErrors == 0)
     }
     
 
 
-    def getReturnType(stmt: Stmt): Option[S_TYPE] = stmt match {
-        case Return(e) => Some(getType(e))
-        case Cond(_, s1, s2) => getReturnType(s1).orElse(getReturnType(s2))
-        case Loop(_, s) => getReturnType(s)
-        case Body(s) => getReturnType(s)
-        case Delimit(_, s) => getReturnType(s)
-        case _ => None
+    def checkReturnType(stmt: Stmt, tp: S_TYPE): Unit = stmt match {
+        case Return(e) => {
+            if (getType(e) != tp) {
+                errorRep.addError("Return expression type does not match function return type.", e.pos)
+            }
+        }
+        case Cond(_, s1, s2) => {
+            checkReturnType(s1, tp)
+            checkReturnType(s2, tp)}
+        case Loop(_, s) => checkReturnType(s, tp)
+        case Body(s) => checkReturnType(s, tp)
+        case Delimit(_, s) => checkReturnType(s, tp)
+        case _ => errorRep.addError("Statement is not returning", (0,0))
+        // TODO: Centralised mechanism to lift position out of statments
     }
 
     // TODO: Param using symbol table

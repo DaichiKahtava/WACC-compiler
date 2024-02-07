@@ -25,7 +25,9 @@ case class ErasedPair()(val pos: (Int, Int)) extends PairElemType with ParserBri
 
 // Expressions
 
-sealed trait Expr
+sealed trait Expr {
+  val pos: (Int, Int)
+}
 
 sealed trait UnOp extends Expr
 case class Not(x: Expr)(val pos: (Int, Int)) extends UnOp
