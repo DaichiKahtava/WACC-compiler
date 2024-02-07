@@ -307,17 +307,38 @@ class PositionTest extends AnyFlatSpec {
     node shouldBe Neg(IntL(1)(1,2))(1,1)
   }
 
-  // it should "correctly parse positions for array literals" in {
-  //   val p = parser.expr.parse("[1, 2, 3]")
-  //   p.isSuccess shouldBe true
-  //   val node = p.get
-  //   node shouldBe ArrL(List(IntL(1)(1,2), IntL(2)(1,5), IntL(3)(1,8)))(1,1)
-  // }
+  it should "correctly parse positions for unary minus expressions" in {
+    val p = parser.expr.parse("-foo")
+    p.isSuccess shouldBe true
+    val node = p.get
+    node shouldBe Neg(Ident("foo")(1,2))(1,1)
+  }
 
-  // it should "correctly parse positions for pair literals" in {
-  //   val p = parser.expr.parse("pair(1, 2)")
-  //   p.isSuccess shouldBe true
-  //   val node = p.get
-  //   node shouldBe NewPair(IntL(1)(1,9), IntL(2)(1,12))(1,1)
-  // }
+  it should "correctly parse positions for not expressions" in {
+    val p = parser.expr.parse("!foo")
+    p.isSuccess shouldBe true
+    val node = p.get
+    node shouldBe Not(Ident("foo")(1,2))(1,1)
+  }
+
+  it should "correctly parse positions for parentheses expressions" in {
+    val p = parser.expr.parse("(foo)")
+    p.isSuccess shouldBe true
+    val node = p.get
+    node shouldBe Ident("foo")(1,2)
+  }
+
+  it should "correctly parse positions for complex expressions" in {
+    val p = parser.expr.parse("1 + 2 * 3")
+    p.isSuccess shouldBe true
+    val node = p.get
+    node shouldBe Add(IntL(1)(1,1), Mul(IntL(2)(1,5), IntL(3)(1,8))(1,7))(1,3)
+  }
+
+  it should "correctly parse positions for nested expressions" in {
+    val p = parser.expr.parse("(1 + 2) * 3")
+    p.isSuccess shouldBe true
+    val node = p.get
+    node shouldBe Mul(Add(IntL(1)(1,2), IntL(2)(1,5))(1,4), IntL(3)(1,10))(1,8)
+  }
 }
