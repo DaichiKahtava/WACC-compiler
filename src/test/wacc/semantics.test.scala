@@ -172,4 +172,32 @@ class semanticsTests extends AnyFlatSpec {
     val ancestor = sem.getLowestCommonAncestor(types)
     ancestor should be (S_ARRAY(S_ARRAY(S_INT)))
   }
+
+  "The semantic checker" should "maintain that the type parameters of pairs are invariant" in {
+    val p1 = S_PAIR(S_ARRAY(S_CHAR), S_INT)
+    val p2 = S_PAIR(S_STRING, S_INT)
+    val pAny = S_PAIR(S_ANY, S_ANY)
+    sem.canWeakenTo(p1, p2) shouldBe false   
+    sem.canWeakenTo(p1, pAny) shouldBe false 
+  }
+  
+  it should "allow erased pairs to be compatible with any pairs" in {
+    val erasedPair = S_ERASED
+    val p1 = S_PAIR(S_STRING, S_INT)
+    val p2 = S_PAIR(S_ANY, S_ERASED)
+    sem.canWeakenTo(erasedPair, p1) shouldBe true
+    sem.canWeakenTo(erasedPair, p1) shouldBe true
+    sem.canWeakenTo(erasedPair, p2) shouldBe true
+    sem.canWeakenTo(erasedPair, p2) shouldBe true
+  }
+
+  it should "maintain that the type parameters of arrays are invariant" in {
+    val arr1 = S_ARRAY(S_ARRAY(S_CHAR))
+    val arr2 = S_ARRAY(S_STRING)
+    val arr3 = S_ARRAY(S_ANY)
+    sem.canWeakenTo(arr1, arr2) shouldBe false
+    sem.canWeakenTo(arr2, arr3) shouldBe false
+  }
+
+  // TODO test for different namespaces for functoins and variables
 }

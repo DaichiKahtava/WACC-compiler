@@ -91,21 +91,12 @@ class Semantics(fileName: String) {
         case Second(lv) => getType(lv)
     }
     
-    def canWeakenTo(t1: S_TYPE, t2: S_TYPE): Boolean = t2 match {
+    def canWeakenTo(t1: S_TYPE, t2: S_TYPE): Boolean = t1 match {
         case S_ANY  => true
-        case S_PAIR(S_ANY, S_ANY) => t1 match {
-            case S_PAIR(_, _) => true // PAIRS FULLY COERCIBLE
-            case _ => false
-        }
-        case S_PAIR(tp21, tp22) => t1 match {
-            case S_PAIR(tp11, tp12) => canWeakenTo(tp11, tp21) && canWeakenTo(tp12, tp22)
-            case _ => false
-        }
-        case S_STRING => t1 == S_ARRAY(S_CHAR)
-        case S_ARRAY(ta2) => t1 match {
-            case S_ARRAY(ta1) => canWeakenTo(ta1, ta2)
-            case _ => false
-        }
+        case S_ERASED => t2.isInstanceOf[S_PAIR]
+        case S_PAIR(tp1, tp2) => t2 == S_ERASED
+        case S_STRING => t2 == S_ARRAY(S_CHAR)
+        case S_ARRAY(tp) => tp == t2.asInstanceOf[S_ARRAY].tp
         case _ => t1 == t2
     }
     // TODO: We might need to introduce an S_ERASED() for use in Pair semantic checking!

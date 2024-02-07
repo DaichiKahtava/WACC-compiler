@@ -68,5 +68,5 @@ case object S_STRING extends S_TYPE
 case object S_CHAR extends S_TYPE
 case class S_ARRAY(tp: S_TYPE) extends S_TYPE
 case class S_PAIR(tp1: S_TYPE, tp2: S_TYPE) extends S_TYPE
-// Could have S_ERASED() as well!
+case object S_ERASED extends S_TYPE
 case object S_ANY extends S_TYPE
