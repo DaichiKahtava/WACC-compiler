@@ -144,4 +144,30 @@ class semanticsTests extends AnyFlatSpec {
     val ancestor = getLowestCommonAncestor(expressions)
     ancestor should be (S_ANY)
   }
+
+  // Test case for a list with S_ARRAY(S_INT) and S_ARRAY(S_INT).
+  it should "return S_ARRAY(S_INT) for a list with S_ARRAY(S_INT) and S_ARRAY(S_INT)" in {
+    val expressions: List[Expr] = List(ArrL(List(IntL(1), IntL(2))), ArrL(List(IntL(3), IntL(4))))
+    val ancestor = getLowestCommonAncestor(expressions)
+    ancestor should be (S_ARRAY(S_INT))
+  }
+
+  // Test case for a list with S_ARRAY(S_INT), S_ARRAY(S_BOOL), and S_ARRAY(S_CHAR).
+  it should "return S_ANY for a list with S_ARRAY(S_INT), S_ARRAY(S_BOOL), and S_ARRAY(S_CHAR)" in {
+    val expressions: List[Expr] = List(
+      ArrL(List(IntL(1), IntL(2))), 
+      ArrL(List(BoolL(true), BoolL(false))),
+      ArrL(List(CharL('a'), CharL('b')))
+    )
+    val ancestor = getLowestCommonAncestor(expressions)
+    ancestor should be (S_ANY)
+  }
+
+  // Test case for a list with a nested array S_ARRAY(S_ARRAY(S_INT)).
+  it should "return S_ARRAY(S_ARRAY(S_INT)) for a list with a nested array" in {
+    val expressions: List[Expr] = List(
+      ArrL(List(ArrL(List(IntL(1), IntL(2))), ArrL(List(IntL(3), IntL(4))))))
+    val ancestor = getLowestCommonAncestor(expressions)
+    ancestor should be (S_ARRAY(S_ARRAY(S_INT)))
+  }
 }
