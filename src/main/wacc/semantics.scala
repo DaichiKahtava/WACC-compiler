@@ -76,7 +76,7 @@ class Semantics(fileName: String) {
         case NewPair(e1, e2) => S_PAIR(getType(e1), getType(e2))
         case pe: PairElem => getType(pe)
         case Call(id, _) => curSymTable.findFunGlobal(id).get match {
-            case FUNCTION(tp, _) => tp
+            case FUNCTION(tp) => tp
         }
     }
 
