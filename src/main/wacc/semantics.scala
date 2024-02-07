@@ -279,9 +279,8 @@ class Semantics(fileName: String) {
         case Second(lv) => isSemCorrect(lv)
     }
 
-    // Finds the lowest common ancestor in a list of expressions.
-    def getLowestCommonAncestor(exprs: List[Expr]): S_TYPE = {
-      val types = exprs.map(getType) // Gets the semantic type of every item in the list.
+    // Finds the lowest common ancestor in a list of S_TYPEs.
+    def getLowestCommonAncestor(types: List[S_TYPE]): S_TYPE = {
     
       // Finds the common ancestor between 2 items. // CA = Common Ancestor.
       def findCommonAncestor(t1: S_TYPE, t2: S_TYPE): S_TYPE = (t1, t2) match {
