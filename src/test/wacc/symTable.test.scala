@@ -60,6 +60,13 @@ class symTableTest extends AnyFlatSpec with BeforeAndAfterEach {
         symTable2.findVarLocal("gta") shouldBe None
     }
 
+    it should "support redefinition of a symbol" in {
+        symTable.addSymbol("gta", VARIABLE(S_CHAR))
+        symTable.addSymbol("gta", VARIABLE(S_INT)) shouldBe false
+        symTable.redefineSymbol("gta", VARIABLE(S_INT))
+        symTable.findVarLocal("gta") shouldBe Some(VARIABLE(S_INT))
+    }
+
     "The function aspect of the symbol table" should "not have anything inside it at first" in {
         symTable.findFunGlobal("gta") shouldBe None
         symTable.findFunLocal("gta") shouldBe None
@@ -106,6 +113,22 @@ class symTableTest extends AnyFlatSpec with BeforeAndAfterEach {
         symTable.addSymbol("gta", FUNCTION(S_INT)(new SymTable(Some(symTable)))) shouldBe true
         symTable2.varDefinedLocal("gta") shouldBe false
         symTable2.findFunLocal("gta") shouldBe None
+    }
+
+    it should "support redefinition of a symbol" in {
+        symTable.addSymbol("gta", FUNCTION(S_CHAR)(symTable))
+        symTable.addSymbol("gta", FUNCTION(S_INT)(symTable)) shouldBe false
+        symTable.redefineSymbol("gta", FUNCTION(S_INT)(symTable))
+        symTable.findFunLocal("gta") shouldBe Some(FUNCTION(S_INT)(symTable))
+    }
+
+    "The symbol table in general" should "accomodate a seperate namespace for functions" in {
+        symTable.addSymbol("gta", FUNCTION(S_INT)(new SymTable(Some(symTable)))) shouldBe true
+        symTable.addSymbol("gta", VARIABLE(S_INT)) shouldBe true
+        symTable.findFunLocal("gta") shouldBe Some(FUNCTION(S_INT)(symTable))
+        // The symTable in the second set of brackets is not involved in the comparison
+        // So, it is fine to just put a random table hete.
+        symTable.findVarLocal("gta") shouldBe Some(VARIABLE(S_INT))
     }
 
 
