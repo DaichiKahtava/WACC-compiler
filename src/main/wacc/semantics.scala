@@ -77,17 +77,29 @@ class Semantics(fileName: String) {
     def getType(arr: List[Expr]): S_TYPE = getType(arr.head)
 
     def getType(pe: PairElem): S_TYPE = pe match {
-        case First(lv) => getType(lv)
-        case Second(lv) => getType(lv)
+        case First(lv: LIdent) => curSymTable.findVarLocal(lv.id).get.tp match {
+            case S_PAIR(tp, _) => tp
+            case _ => getType(lv)
+        }
+        case First(lv: ArrElem) => ???
+        case First(lv: PairElem) => ???
+
+        case Second(lv: LIdent) => curSymTable.findVarLocal(lv.id).get.tp match {
+            case S_PAIR(_, tp) => tp
+            case _ => getType(lv)
+        }
+        case Second(lv: ArrElem) => ???
+        case Second(lv: PairElem) => ???
+
     }
     
     def canWeakenTo(t1: S_TYPE, t2: S_TYPE): Boolean = t1 match {
         case S_ANY  => true
         case S_ERASED => t2.isInstanceOf[S_PAIR]
-        case S_PAIR(tp1, tp2) => t2 == S_ERASED
+        case S_PAIR(tp1, tp2) => t1 == t2 || t2 == S_ERASED
         case S_ARRAY(tp) => tp match {
             case S_CHAR => t2 == S_STRING
-            case _ => tp == t2.asInstanceOf[S_ARRAY].tp
+            case _ => t2.isInstanceOf[S_ARRAY] && t2.asInstanceOf[S_ARRAY].tp == tp
         }
         case _ => t1 == t2
     }
@@ -233,7 +245,10 @@ class Semantics(fileName: String) {
                 }
                 return canWeakenTo(getType(rv), toSemanticType(tp)) && isSemCorrect(rv)
             }
-            case Asgn(lv, rv) => isSemCorrect(lv) && isSemCorrect(rv) && canWeakenTo(getType(rv), getType(lv))
+            case Asgn(lv: LIdent, rv) => isSemCorrect(lv) && isSemCorrect(rv) && canWeakenTo(getType(rv), curSymTable.findVarLocal(lv.id).get.tp)
+            case Asgn(lv: LArrElem, rv) => isSemCorrect(lv) && isSemCorrect(rv) && canWeakenTo(getType(rv), getType(lv))
+            case Asgn(lv: PairElem, rv) => isSemCorrect(lv) && isSemCorrect(rv) && canWeakenTo(getType(rv), getType(lv))
+
             case Read(lv: LIdent) => curSymTable.findVarGlobal(lv.id).get.tp == S_CHAR || curSymTable.findVarGlobal(lv.id).get.tp == S_INT
             case Read(lv: LArrElem) => getType(lv) == S_CHAR || getType(lv) == S_INT
             case Read(lv: PairElem) => getType(lv) == S_CHAR || getType(lv) == S_INT

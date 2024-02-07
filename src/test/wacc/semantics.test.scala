@@ -51,18 +51,6 @@ class semanticsTests extends AnyFlatSpec with BeforeAndAfterEach {
         sem.isSemCorrect(Not(CharL('a')(0,0))(0,0)) shouldBe false
     }
 
-    "Control flow statements" should "have a condition of type Bool" in {
-        
-    }
-
-    "Free statements" should "accept arguments of pair or array type" in {
-
-    }
-
-    "Exit statements" should "accept arguments of type int" in {
-
-    }
-
     "Read statements" should "accept arguments of either type int or type char" in {
         sem.curSymTable.addSymbol("x", VARIABLE(S_INT)) shouldBe true
         sem.curSymTable.addSymbol("y", VARIABLE(S_CHAR)) shouldBe true
@@ -79,6 +67,40 @@ class semanticsTests extends AnyFlatSpec with BeforeAndAfterEach {
 
         // Not sure how to do this, will leave for later
         // sem.isSemCorrect(Read(First(LIdent("pair")(0, 0))(0, 0))(0, 0)) shouldBe true
+    }
+
+    "Declarations" should "have an rvalue that is compatible with the declaration type" in {
+        sem.isSemCorrect(Decl(IntT()(0, 0), "e1", RExpr(IntL(1)(0, 0))(0, 0))(0, 0)) shouldBe true
+        sem.isSemCorrect(Decl(IntT()(0, 0), "e2", RExpr(CharL('1')(0, 0))(0, 0))(0, 0)) shouldBe false
+        sem.isSemCorrect(Decl(CharT()(0, 0), "e3", RExpr(IntL(1)(0, 0))(0, 0))(0, 0)) shouldBe false
+
+        sem.isSemCorrect(Decl(ArrayT(IntT()(0, 0))(0, 0), "arr1", ArrL(List(IntL(1)(0, 0))))(0, 0)) shouldBe true
+        sem.isSemCorrect(Decl(ArrayT(CharT()(0, 0))(0, 0), "arr2", ArrL(List(IntL(1)(0, 0))))(0, 0)) shouldBe false
+        sem.isSemCorrect(Decl(IntT()(0, 0), "arr3", ArrL(List(IntL(1)(0, 0))))(0, 0)) shouldBe false
+
+        sem.isSemCorrect(Decl(Pair(IntT()(0, 0), CharT()(0, 0))(0, 0), "p1", NewPair(IntL(1)(0, 0), CharL('a')(0, 0))(0, 0))(0, 0)) shouldBe true
+        sem.isSemCorrect(Decl(Pair(IntT()(0, 0), StringT()(0, 0))(0, 0), "p2", NewPair(IntL(1)(0, 0), CharL('a')(0, 0))(0, 0))(0, 0)) shouldBe false
+        sem.isSemCorrect(Decl(IntT()(0, 0), "p3", NewPair(IntL(1)(0, 0), CharL('a')(0, 0))(0, 0))(0, 0)) shouldBe false
+
+        sem.curSymTable.addSymbol("x", VARIABLE(S_PAIR(S_INT, S_CHAR)))
+        sem.isSemCorrect(Decl(IntT()(0, 0), "pe1", First(LIdent("x")(0, 0))(0, 0))(0, 0)) shouldBe true
+        sem.isSemCorrect(Decl(CharT()(0, 0), "pe2", First(LIdent("x")(0, 0))(0, 0))(0, 0)) shouldBe false
+        sem.isSemCorrect(Decl(CharT()(0, 0), "pe3", Second(LIdent("x")(0, 0))(0, 0))(0, 0)) shouldBe true
+        sem.isSemCorrect(Decl(IntT()(0, 0), "pe4", Second(LIdent("x")(0, 0))(0, 0))(0, 0)) shouldBe false // TODO: array-elem and pair-elem checks
+
+        // TODO: function call checks
+    }
+
+    "Assignments" should "have an rvalue that is compatible with its lvalue" in {
+
+    }
+
+    "A function call" should "return a type compatible with the left-hand type of the declaration/assignment" in {
+
+    }
+
+    it should "be provided with all its arguments, and every argument is compatible with the corresponding paramerter" in {
+        
     }
 
     "Return statements" should "not be in the main body of the program" in {
