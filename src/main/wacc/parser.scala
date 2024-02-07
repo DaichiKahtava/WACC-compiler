@@ -12,9 +12,20 @@ import parsley.position.pos
 import lexer.implicits.implicitSymbol
 import lexer.{ident, intLit, charLit, strLit, fully}
 import scala.collection.immutable.IntMap
+import parsley.{Success, Failure}
 
 object parser {
-    def parse(input: String): Result[String, Program] = parser.parse(input)
+    def parse(input: String): Result[String, Program] = {
+        val result = parser.parse(input)
+        result match {
+            case Success(_) => result
+            case Failure(message) => {
+                println(s"Parser error: $message")
+                result
+            }
+        }
+    }
+    // def parse(input: String): Result[String, Program] = parser.parse(input)
     protected [wacc] lazy val parser = fully(program)
 
     /* Types
