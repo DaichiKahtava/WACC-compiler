@@ -84,10 +84,10 @@ class parserTest extends AnyFlatSpec with BeforeAndAfterEach // with PrivateMeth
 
     }
     it should "return the correct AST for the basicType" in {
-        parser.baseType.parse("int").contains(IntT) shouldBe true
-        parser.baseType.parse("bool").contains(BoolT) shouldBe true
-        parser.baseType.parse("char").contains(CharT) shouldBe true
-        parser.baseType.parse("string").contains(StringT) shouldBe true
+        parser.baseType.parse("int").contains(IntT()(0,0)) shouldBe true
+        parser.baseType.parse("bool").contains(BoolT()(0,0)) shouldBe true
+        parser.baseType.parse("char").contains(CharT()(0,0)) shouldBe true
+        parser.baseType.parse("string").contains(StringT()(0,0)) shouldBe true
     }
     it should "return the correct AST for the arrayType" in {
         /* TODO: Fix arrayType */
@@ -143,10 +143,10 @@ class parserTest extends AnyFlatSpec with BeforeAndAfterEach // with PrivateMeth
     "The type system" should "be able to parse a simple single type" in {
         var p = parser.typep.parse("int")
         p.isSuccess shouldBe true
-        p.get shouldBe IntT
+        p.get shouldBe IntT()(0,0)
         p = parser.typep.parse("string")
         p.isSuccess shouldBe true
-        p.get shouldBe StringT
+        p.get shouldBe StringT()(0,0)
     }   
 
     it should "reject custom type names" in {
@@ -180,7 +180,7 @@ class parserTest extends AnyFlatSpec with BeforeAndAfterEach // with PrivateMeth
         // TODO: As of now it stops at the right bracket
         //       Should it fail instead?
         p.isSuccess shouldBe true
-        p.get shouldBe IntT
+        p.get shouldBe IntT()(0,0)
     }
 
     it should "recognise a arbitrary dimention array" in {
@@ -242,7 +242,7 @@ class parserTest extends AnyFlatSpec with BeforeAndAfterEach // with PrivateMeth
     }
 
     it should "give correct position for binary nodes" in {
-        var p = parser.typep.parse("1 + 2")
+        var p = parser.expr.parse("1 + 2")
         p.isSuccess shouldBe true
         p.get shouldBe Add(IntL(1)(0,0), IntL(2)(0,0))(1,1)
     } 
