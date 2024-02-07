@@ -76,7 +76,7 @@ case class Delimit(s1: Stmt, s2: Stmt) extends Stmt
 sealed trait LValue
 case class LIdent(id: String) extends LValue
 
-sealed trait RValue
+sealed trait RValue extends Expr
 case class RExpr(x: Expr) extends RValue
 case class ArrL(xs: List[Expr]) extends RValue
 case class NewPair(x1: Expr, x2: Expr) extends RValue

@@ -43,6 +43,22 @@ object semantics {
             case Or(_, _) => S_BOOL
             
             case ArrElem(_, xs)  => getType(xs)
+            
+            // Case for arrays.
+            case ArrL(elements) => 
+            elements match {
+              case Nil => S_ARRAY(S_ANY) // If the array is empty, return S_ARRAY(S_ANY).
+              case head :: _ => // Otherwise, return the type of the first element.
+                getType(head) match {
+                  case S_CHAR => S_STRING // The string weakening rule.
+                  case elementType => S_ARRAY(elementType)
+                }
+            }
+
+            // Case for pairs.
+            case NewPair(e1, e2) => S_PAIR(getType(e1), getType(e2))
+
+        case _ => S_ANY // Default case due to compiler warning.
         }
     }
 
@@ -76,7 +92,6 @@ object semantics {
         case Second(lv) => getType(lv)
     }
     
-
     def canWeakenTo(t1: S_TYPE, t2: S_TYPE): Boolean = t2 match {
         case S_ANY  => true
         case S_PAIR(S_ANY, S_ANY) => t1 match {
@@ -151,6 +166,8 @@ object semantics {
             case Or(x1, x2) => (isSemCorrect(x1) && getType(x1) == S_BOOL) && (isSemCorrect(x2) && getType(x2) == S_BOOL)
 
             case ArrElem(_, xs)  => isSemCorrect(xs)
+
+            case _ => false // Default case due to compiler warning.
         }
     }
 
@@ -272,8 +289,11 @@ object semantics {
       def findCommonAncestor(t1: S_TYPE, t2: S_TYPE): S_TYPE = (t1, t2) match {
         case (S_ANY, _) | (_, S_ANY) => S_ANY // If either is S_ANY, the CA is S_ANY.
         // Recursively finds the CA if they are both pairs.
-        case (S_PAIR(tp11, tp12), S_PAIR(tp21, tp22)) => 
-            S_PAIR(findCommonAncestor(tp11, tp21), findCommonAncestor(tp12, tp22))
+        // case (S_PAIR(tp11, tp12), S_PAIR(tp21, tp22)) => 
+        //     S_PAIR(findCommonAncestor(tp11, tp21), findCommonAncestor(tp12, tp22))
+        case (S_PAIR(tp11, tp12), S_PAIR(tp21, tp22)) if tp11 == tp21 && tp12 == tp22 => 
+              S_PAIR(tp11, tp12)
+        case (S_PAIR(_, _), _) | (_, S_PAIR(_, _)) => S_ANY
         // If either is a string, the CA is a string.
         case (S_STRING, S_ARRAY(S_CHAR)) | (S_ARRAY(S_CHAR), S_STRING) => S_STRING
         // Recusively finds the CA if they are both arrays.
