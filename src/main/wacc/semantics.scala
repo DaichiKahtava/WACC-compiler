@@ -86,8 +86,6 @@ object semantics {
     // Type converter for arrays
     def getType(arr: List[Expr]): S_TYPE = getType(arr.head)
 
-    def compatible(t1: S_TYPE, t2: S_TYPE): Boolean = canWeakenTo(t1, t2) || t1 == t2
-
     def getType(pe: PairElem): S_TYPE = pe match {
         case First(lv) => getType(lv)
         case Second(lv) => getType(lv)
@@ -235,9 +233,9 @@ object semantics {
                     println("Semantic error: Parameter \""+id+"\" is already a used identifier!")
                     return false 
                 }
-                return compatible(getType(rv), toSemanticType(tp)) && isSemCorrect(rv)
+                return canWeakenTo(getType(rv), toSemanticType(tp)) && isSemCorrect(rv)
             }
-            case Asgn(lv, rv) => isSemCorrect(lv) && isSemCorrect(rv) && compatible(getType(rv), getType(lv))
+            case Asgn(lv, rv) => isSemCorrect(lv) && isSemCorrect(rv) && canWeakenTo(getType(rv), getType(lv))
             case Read(lv) => getType(lv) == S_CHAR || getType(lv) == S_INT
 
             case Free(ArrElem(_, xs)) => isSemCorrect(xs)
@@ -276,7 +274,6 @@ object semantics {
     }
 
     // PairElem check 
-
     def isSemCorrect(pe: PairElem): Boolean = pe match {
         case First(lv) => isSemCorrect(lv)
         case Second(lv) => isSemCorrect(lv)
