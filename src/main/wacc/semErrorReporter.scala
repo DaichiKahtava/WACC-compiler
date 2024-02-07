@@ -8,6 +8,7 @@ import scala.util.Try
 
 class SemErrorReporter(fileName: String) {
     val errors = new StringBuilder
+    var numErrors = 0
     val fileLines: Try[List[String]] = Try {
         Source.fromFile(fileName).getLines().toList
     }
@@ -37,10 +38,12 @@ class SemErrorReporter(fileName: String) {
 
     def addError(desc: String, pos: (Int, Int)) = {
         errors.addAll(desc + "\n")
+        numErrors += 1
         printSourceSection(pos)
     }
 
     override def toString(): String = {
+        errors.addAll("-----\nFound " + numErrors + " semantic errors.\n")
         return errors.result()
     }
 

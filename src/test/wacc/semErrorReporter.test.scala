@@ -9,7 +9,10 @@ class semErrorReporterTest  extends AnyFlatSpec with BeforeAndAfterEach {
     "The semantic report tool" should "be able to handle non existing files" in {
         val er = new SemErrorReporter("foo.txt")
         er.printSourceSection((1, 1))
-        er.toString() shouldBe "*** Could not display the source file: foo.txt ***\n"
+        er.toString() shouldBe """*** Could not display the source file: foo.txt ***
+-----
+Found 0 semantic errors.
+"""
     }
 
     it should "correctly display a sourcefile location" in {
@@ -20,6 +23,8 @@ class semErrorReporterTest  extends AnyFlatSpec with BeforeAndAfterEach {
 | # but do *not* change its name.
      ^
 | 
+-----
+Found 0 semantic errors.
 """
     }
 
@@ -30,6 +35,8 @@ class semErrorReporterTest  extends AnyFlatSpec with BeforeAndAfterEach {
 | #!/bin/bash
   ^
 | # Bash front-end for your compiler.
+-----
+Found 0 semantic errors.
 """
     }
 
@@ -40,6 +47,8 @@ class semErrorReporterTest  extends AnyFlatSpec with BeforeAndAfterEach {
 | 
 | exit $?
   ^
+-----
+Found 0 semantic errors.
 """
     }
 }
