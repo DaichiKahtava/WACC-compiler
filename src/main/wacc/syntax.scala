@@ -24,6 +24,9 @@ case class ErasedPair()(val pos: (Int, Int)) extends PairElemType with ParserBri
 
 
 // Expressions
+
+sealed trait Expr extends RValue
+
 sealed trait UnOp extends Expr
 case class Not(x: Expr)(val pos: (Int, Int)) extends UnOp
 case class Neg(x: Expr)(val pos: (Int, Int)) extends UnOp
@@ -45,10 +48,6 @@ case class Eq(x: Expr, y: Expr)(val pos: (Int, Int)) extends BinOp
 case class NEq(x: Expr, y: Expr)(val pos: (Int, Int)) extends BinOp
 case class And(x: Expr, y: Expr)(val pos: (Int, Int)) extends BinOp
 case class Or(x: Expr, y: Expr)(val pos: (Int, Int)) extends BinOp
-
-sealed trait Expr extends RValue
-case class UnExpr(op: UnOp, x: Expr)(val pos: (Int, Int)) extends Expr
-case class BinExpr(x1: Expr, op: BinOp, x2: Expr)(val pos: (Int, Int)) extends Expr
 
 sealed trait Atom extends Expr
 case class IntL(n: Int)(val pos: (Int, Int)) extends Atom
@@ -141,9 +140,6 @@ object Eq extends ParserBridgePos2[Expr, Expr, BinOp]
 object NEq extends ParserBridgePos2[Expr, Expr, BinOp]
 object And extends ParserBridgePos2[Expr, Expr, BinOp]
 object Or extends ParserBridgePos2[Expr, Expr, BinOp]
-
-object UnExpr extends ParserBridgePos2[UnOp, Expr, Expr]
-object BinExpr extends ParserBridgePos3[Expr, BinOp, Expr, Expr]
 
 object IntL extends ParserBridgePos1[Int, Atom]
 object BoolL extends ParserBridgePos1[Boolean, Atom]
