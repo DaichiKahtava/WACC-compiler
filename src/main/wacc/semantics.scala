@@ -258,31 +258,46 @@ class Semantics(fileName: String) {
         
     def isSemCorrect(stmt: Stmt): Boolean = stmt match {
             case Skip => true
-            case Decl(tp, id, rv) => {
+            case d@Decl(tp, id, rv) => {
                 if (!curSymTable.addSymbol(id, VARIABLE(toSemanticType(tp)))) {
-                    println("Semantic error: Parameter \""+id+"\" is already a used identifier!")
+                    errorRep.addError("Variable \""+id+"\" is already defined previously!\n" +
+                      "(Subsequent checks will assume an arbitrary type for "+id+")", d.pos)
+                    curSymTable.redefineSymbol(id, VARIABLE(S_ANY))
+                    isSemCorrect(rv)
                     return false 
                 }
-                return canWeakenTo(getType(rv), toSemanticType(tp)) && isSemCorrect(rv)
+                // TODO: The following four positions to be changed to use the source thing...
+                return isSemCorrect(rv) && checkCompatible(getType(rv), toSemanticType(tp), d.pos)
             }
-            case Asgn(lv: LIdent, rv) => isSemCorrect(lv) && isSemCorrect(rv) && canWeakenTo(getType(rv), curSymTable.findVarLocal(lv.id).get.tp)
-            case Asgn(lv: LArrElem, rv) => isSemCorrect(lv) && isSemCorrect(rv) && canWeakenTo(getType(rv), getType(lv))
-            case Asgn(lv: PairElem, rv) => isSemCorrect(lv) && isSemCorrect(rv) && canWeakenTo(getType(rv), getType(lv))
+            case Asgn(lv: LIdent, rv) => isSemCorrect(lv) && isSemCorrect(rv) &&
+                checkCompatible(getType(rv), curSymTable.findVarLocal(lv.id).get.tp, lv.pos)
+            case Asgn(lv: LArrElem, rv) => isSemCorrect(lv) && isSemCorrect(rv) && 
+                checkCompatible(getType(rv), getType(lv), lv.pos)
+            case Asgn(lv: PairElem, rv) => isSemCorrect(lv) && isSemCorrect(rv) && 
+                checkCompatible(getType(rv), getType(lv), lv.pos)
 
-            case Read(lv: LIdent) => curSymTable.findVarGlobal(lv.id).get.tp == S_CHAR || curSymTable.findVarGlobal(lv.id).get.tp == S_INT
-            case Read(lv: LArrElem) => getType(lv) == S_CHAR || getType(lv) == S_INT
-            case Read(lv: PairElem) => getType(lv) == S_CHAR || getType(lv) == S_INT
+            case Read(lv: LIdent) => isOneFrom(curSymTable.findVarGlobal(lv.id).get.tp, List(S_CHAR, S_INT), lv.pos)
+            case Read(lv: LArrElem) => isOneFrom(getType(lv), List(S_CHAR, S_INT), lv.pos)
+            case Read(lv: PairElem) => isOneFrom(getType(lv), List(S_CHAR, S_INT), lv.pos)
 
-            case Free(ArrElem(_, xs)) => isSemCorrect(xs)
-            case Free(x: PairElem) => isSemCorrect(x.asInstanceOf[PairElem])
-            case Free (_) => false
+            // case Free(ArrElem(_, xs)) => isSemCorrect(xs)
+            // case Free(x: PairElem) => isSemCorrect(x.asInstanceOf[PairElem])
+            // case Free (_) => false
+
+            case f@Free(x) => getType(x) match {
+                case S_ERASED | S_PAIR(_, _) | S_ARRAY(_) => true
+                case _ => {
+                    errorRep.addError("A free statement can only accept arrays or pairs", f.pos)
+                    return false
+                }
+            }
 
             case Return(x) => isSemCorrect(x)
-            case Exit(x) => getType(x) == S_INT
+            case Exit(x) => equalType(getType(x), S_INT, x.pos)
             case Print(x) => isSemCorrect(x)
             case Println(x) => isSemCorrect(x)
-            case Cond(x, s1, s2) => getType(x) == S_BOOL && isSemCorrect(s1) && isSemCorrect(s2)
-            case Loop(x, stmt) => getType(x) == S_BOOL && isSemCorrect(stmt)
+            case Cond(x, s1, s2) => equalType(getType(x), S_BOOL, x.pos) && isSemCorrect(s1) && isSemCorrect(s2)
+            case Loop(x, stmt) => equalType(getType(x), S_BOOL, x.pos) && isSemCorrect(stmt)
             case Body(stmt) => {
                 curSymTable = curSymTable.newUnamedScope()
                 val res = isSemCorrect(stmt)
