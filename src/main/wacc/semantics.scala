@@ -47,10 +47,18 @@ class Semantics(fileName: String) {
 
     // LValue and check
     def getType(lv: LValue): S_TYPE = lv match {
-        case LIdent(id) => curSymTable.findVarGlobal(id).get match {
+        // This assumes that lv has been semantically checked first.
+        // So the idenftifiers should be in the current symbolTable
+        case LIdent(id) => curSymTable.findVarGlobal(id).get match { // id always a variable
             case VARIABLE(tp) => tp
         }
-        case LArrElem(_, xs) => getType(xs)
+        case l@LArrElem(id, _) => curSymTable.findVarGlobal(id).get match { // id always a variable
+            case VARIABLE(S_ARRAY(tp)) => tp
+            case VARIABLE(tp) => {
+                errorRep.addError("Not an array: \"" + id + "\"", l.pos)
+                return S_ANY
+            }
+        }
         case pe: PairElem => getType(pe)
     }
 
