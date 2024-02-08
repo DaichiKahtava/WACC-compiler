@@ -106,6 +106,18 @@ class Semantics(fileName: String) {
     def canWeakenTo(source: S_TYPE, target: S_TYPE): Boolean = target match {
         case S_ANY  => true
         case S_ERASED => source.isInstanceOf[S_PAIR]
+        case S_PAIR(S_ERASED, ttp2) => source match {
+            case S_PAIR(S_PAIR(_, _), stp2) => stp2 == ttp2 
+            case S_PAIR(stp1, stp2) => stp1 == S_ERASED && stp2 == ttp2 
+            case S_ERASED => true
+            case _ => false
+        }
+        case S_PAIR(ttp1, S_ERASED) => source match {
+            case S_PAIR(stp1, S_PAIR(_, _)) => stp1 == ttp1 
+            case S_PAIR(stp1, stp2) => stp2 == S_ERASED && stp1 == ttp1 
+            case S_ERASED => true
+            case _ => false
+        }
         case S_PAIR(ttp1, ttp2) => source match {
             //pairs invariant in type parameters (no use of canWeakenTo here!)
             case S_PAIR(stp1, stp2) => stp1 == ttp1 && stp2 == ttp2 
@@ -144,7 +156,7 @@ class Semantics(fileName: String) {
         case StringT() => S_STRING
         case CharT() => S_CHAR
         case ArrayT(tp) => S_ARRAY(toSemanticType(tp))
-        case ErasedPair() => S_PAIR(S_ANY, S_ANY)
+        case ErasedPair() => S_ERASED
     }
 
     def equalType(got: S_TYPE, expected: S_TYPE, pos: (Int, Int)): Boolean = {
