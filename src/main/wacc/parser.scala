@@ -107,7 +107,7 @@ object parser {
         | NewPair("newpair" ~> "(" ~> expr, "," ~> expr <~ ")")
         | pairElem
         | atomic(Call("call" ~> ident, "(" ~> argList <~ ")"))
-        | expr.map(e => RExpr(e)(0,0)) 
+        | expr.map(RExpr(_)(0,0)) 
     )
 
     protected [wacc] lazy val argList = sepBy(expr, ",")
