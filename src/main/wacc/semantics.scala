@@ -93,17 +93,31 @@ class Semantics(fileName: String) {
 
     }
     
-    def canWeakenTo(t1: S_TYPE, t2: S_TYPE): Boolean = t1 match {
+    // Target has a more general type
+    def canWeakenTo(source: S_TYPE, target: S_TYPE): Boolean = target match {
         case S_ANY  => true
-        case S_ERASED => t2.isInstanceOf[S_PAIR]
-        case S_PAIR(tp1, tp2) => t1 == t2 || t2 == S_ERASED
-        case S_ARRAY(tp) => tp match {
-            case S_CHAR => t2 == S_STRING
-            case _ => t2.isInstanceOf[S_ARRAY] && t2.asInstanceOf[S_ARRAY].tp == tp
+        case S_ERASED => source.isInstanceOf[S_PAIR]
+        case S_PAIR(ttp1, ttp2) => source match {
+            //pairs invariant in type parameters (no use of canWeakenTo here!)
+            case S_PAIR(stp1, stp2) => stp1 == ttp1 && stp2 == ttp2 
+            case S_ERASED => true
+            case _ => false
         }
-        case _ => t1 == t2
+        case S_ARRAY(tp) => tp match {
+            case _ => source.isInstanceOf[S_ARRAY] && source.asInstanceOf[S_ARRAY].tp == tp
+        }
+        case S_STRING => source == S_STRING || source == S_ARRAY(S_CHAR)
+        case _ => target == source
     }
     // TODO: We might need to introduce an S_ERASED() for use in Pair semantic checking!
+
+    def checkCompatible(source: S_TYPE, target: S_TYPE, pos: (Int, Int)): Boolean = {
+        val res = canWeakenTo(source, target)
+        if (!res) {
+            errorRep.addIncompTypes(source: S_TYPE, target: S_TYPE, pos: (Int, Int))
+        }
+        return res
+    }
 
     def toSemanticType(t: Type): S_TYPE = t match {
         case IntT() => S_INT

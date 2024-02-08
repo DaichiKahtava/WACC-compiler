@@ -53,6 +53,11 @@ class SemErrorReporter(fileName: String) {
             ". Got " + explainSemType(got) + " instead.", pos)
     }
 
+    def addIncompTypes(source: S_TYPE, target: S_TYPE, pos: (Int, Int)) = {
+        addError("Incompatible types! " + explainSemType(source) + 
+        " cannot weaken to " + explainSemType(target) + ".", pos)
+    }
+
     def explainSemType(tp : S_TYPE): String = tp match {
         case S_INT => "int"
         case S_CHAR => "char"
@@ -62,7 +67,8 @@ class SemErrorReporter(fileName: String) {
         case S_ARRAY(tp) => "array of (" + explainSemType(tp) + ")" 
         case S_PAIR(tp1, tp2) => "pair of (" + explainSemType(tp1) + ") and (" +
           explainSemType(tp2) + ")"
-        case S_ANY => "something of arbitrary type" // Should not be actually invoked...
+        // The following should not be actually invoked...
+        case S_ANY => "something of arbitrary type (probably because of a previous ambiguity)" 
     }
 
     override def toString(): String = {
