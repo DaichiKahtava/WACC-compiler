@@ -24,7 +24,7 @@ class parserTest extends AnyFlatSpec with BeforeAndAfterEach // with PrivateMeth
     val testAtomExpr = IntL(0)(0,0)
     val testAtomRExpr = RExpr(IntL(0)(0,0))(0,0)
     
-    val notExitingStmt = Skip // Should have a location!!!
+    val notExitingStmt = Skip()(0, 0) // Should have a location!!!
 
     val testIdent = "test"
     val testLValue = LIdent("test")(0,0)
@@ -69,7 +69,7 @@ class parserTest extends AnyFlatSpec with BeforeAndAfterEach // with PrivateMeth
     it should "return false for other statements" in {
         val testType = IntT()(0,0)
 
-        parser.funcEnd(Skip) shouldBe false
+        parser.funcEnd(Skip()(0, 0)) shouldBe false
         parser.funcEnd(Decl(testType, testIdent, testAtomRExpr)(0,0)) shouldBe false
         parser.funcEnd(Asgn(testLValue, testAtomRExpr)(0,0)) shouldBe false
         parser.funcEnd(Read(testLValue)(0,0)) shouldBe false
