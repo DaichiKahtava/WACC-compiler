@@ -233,6 +233,7 @@ class Semantics(fileName: String) {
             curSymTable = curSymTable.parent().get // We are in the parent/global symbolTable
         })
         isSemCorrect(program.s)
+        printAccumulatedErrors()
         return (errorRep.numErrors == 0)
     }
     
@@ -257,7 +258,7 @@ class Semantics(fileName: String) {
     // TODO: Param using symbol table
         
     def isSemCorrect(stmt: Stmt): Boolean = stmt match {
-            case Skip => true
+            case Skip() => true
             case d@Decl(tp, id, rv) => {
                 if (!curSymTable.addSymbol(id, VARIABLE(toSemanticType(tp)))) {
                     errorRep.addError("Variable \""+id+"\" is already defined previously!\n" +
@@ -350,5 +351,9 @@ class Semantics(fileName: String) {
       
       // Option is used in the case the list is empty, where then S_ANY is given.
       types.reduceLeftOption((t1, t2) => findCommonAncestor(t1, t2)).getOrElse(S_ANY)
+    }
+
+    def printAccumulatedErrors() = {
+        print(errorRep.toString())
     }
 }

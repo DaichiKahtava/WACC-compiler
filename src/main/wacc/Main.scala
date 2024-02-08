@@ -6,7 +6,7 @@ object Main {
     def main(args: Array[String]): Unit = {
         val input = scala.io.Source.fromFile(args(0)).mkString
         val parseResult = parser.parse(input)
-        val sem = new Semantics(input)
+        val sem = new Semantics(args(0))
 
         parseResult match {
             case Failure(_) =>
@@ -19,7 +19,7 @@ object Main {
                 } else {
                     println("Parsed successfully")
                     // TODO BACKEND LATER.
-                }
+                }   
         }
     }
 }
