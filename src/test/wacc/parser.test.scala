@@ -463,4 +463,39 @@ class PositionTest extends AnyFlatSpec {
     val node = p.get
     node shouldBe NewPair(Add(IntL(1)(1,9), IntL(2)(1,11))(1,10), Mul(IntL(3)(1,14), IntL(4)(1,16))(1,15))(1,1)
   }
+
+  it should "correctly parse positions for println statements" in {
+    val p = parser.stmt.parse("println 1")
+    p.isSuccess shouldBe true
+    val node = p.get
+    node shouldBe Println(IntL(1)(1,9))(1,1)
+  }
+
+  it should "correctly parse positions for free statements" in {
+    val p = parser.stmt.parse("free x")
+    p.isSuccess shouldBe true
+    val node = p.get
+    node shouldBe Free(Ident("x")(1,6))(1,1)
+  }
+
+  it should "correctly parse positions for fst expressions" in {
+    val p = parser.rvalue.parse("fst x")
+    p.isSuccess shouldBe true
+    val node = p.get
+    node shouldBe First(LIdent("x")(1,5))(1,1)
+  }
+
+  it should "correctly parse positions for snd expressions" in {
+    val p = parser.rvalue.parse("snd x")
+    p.isSuccess shouldBe true
+    val node = p.get
+    node shouldBe Second(LIdent("x")(1,5))(1,1)
+  }
+
+  it should "correctly parse positions for skip statements" in {
+    val p = parser.stmt.parse("skip")
+    p.isSuccess shouldBe true
+    val node = p.get
+    node shouldBe Skip()(1,1)
+  }
 }
