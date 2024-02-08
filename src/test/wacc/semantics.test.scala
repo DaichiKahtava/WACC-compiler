@@ -56,18 +56,25 @@ class semanticsTests extends AnyFlatSpec with BeforeAndAfterEach {
         sem.curSymTable.addSymbol("x", VARIABLE(S_INT)) shouldBe true
         sem.curSymTable.addSymbol("y", VARIABLE(S_CHAR)) shouldBe true
         sem.curSymTable.addSymbol("z", VARIABLE(S_STRING)) shouldBe true
+        sem.curSymTable.addSymbol("xs", VARIABLE(S_ARRAY(S_INT))) shouldBe true
+        sem.curSymTable.addSymbol("ys", VARIABLE(S_ARRAY(S_CHAR))) shouldBe true
+        sem.curSymTable.addSymbol("zs", VARIABLE(S_ARRAY(S_STRING))) shouldBe true
+
         sem.curSymTable.addSymbol("pair", VARIABLE(S_PAIR(S_CHAR, S_INT))) shouldBe true
 
         sem.isSemCorrect(Read(LIdent("x")(0, 0))(0, 0)) shouldBe true
         sem.isSemCorrect(Read(LIdent("y")(0, 0))(0, 0)) shouldBe true
         sem.isSemCorrect(Read(LIdent("z")(0, 0))(0, 0)) shouldBe false
 
-        sem.isSemCorrect(Read(LArrElem("x", List(IntL(5)(0, 0)))(0, 0))(0, 0)) shouldBe true
-        sem.isSemCorrect(Read(LArrElem("y", List(IntL(5)(0, 0)))(0, 0))(0, 0)) shouldBe true // Not sure about this
+        sem.isSemCorrect(Read(LArrElem("x", List(IntL(5)(0, 0)))(0, 0))(0, 0)) shouldBe false
+        sem.isSemCorrect(Read(LArrElem("y", List(IntL(5)(0, 0)))(0, 0))(0, 0)) shouldBe false // Not sure about this
         sem.isSemCorrect(Read(LArrElem("z", List(StrL("this is a string")(0, 0)))(0, 0))(0, 0)) shouldBe false
 
+        sem.isSemCorrect(Read(LArrElem("xs", List(IntL(5)(0, 0)))(0, 0))(0, 0)) shouldBe true
+        sem.isSemCorrect(Read(LArrElem("ys", List(IntL(5)(0, 0)))(0, 0))(0, 0)) shouldBe true // Not sure about this
+        sem.isSemCorrect(Read(LArrElem("zs", List(StrL("this is a string")(0, 0)))(0, 0))(0, 0)) shouldBe false
         // Not sure how to do this, will leave for later
-        // sem.isSemCorrect(Read(First(LIdent("pair")(0, 0))(0, 0))(0, 0)) shouldBe true
+        sem.isSemCorrect(Read(First(LIdent("pair")(0, 0))(0, 0))(0, 0)) shouldBe true
     }
 
     "Declarations" should "have an rvalue that is compatible with the declaration type" in {
