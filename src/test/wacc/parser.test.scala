@@ -344,7 +344,7 @@ class PositionTest extends AnyFlatSpec {
   }
 
   it should "correctly parse positions for assignment statements" in {
-    val p = parser.stmt.parse("x = 1;")
+    val p = parser.stmt.parse("x = 1")
     p.isSuccess shouldBe true
     val node = p.get
     node shouldBe Asgn(LIdent("x")(1,1).asInstanceOf[LValue], RExpr(IntL(1)(1,5))(1,5))(1,3)
@@ -358,7 +358,7 @@ class PositionTest extends AnyFlatSpec {
   }
 
   it should "correctly parse positions for read statements" in {
-    val p = parser.stmt.parse("read x;")
+    val p = parser.stmt.parse("read x")
     p.isSuccess shouldBe true
     val node = p.get
     node shouldBe Read(LIdent("x")(1,6))(1,1)
