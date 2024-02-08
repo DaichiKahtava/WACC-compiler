@@ -9,6 +9,7 @@ import parsley.character._
 import parsley.expr.{chain, precedence, Ops, InfixL, InfixN, InfixR, Prefix}
 import parsley.position.pos
 import parsley.{Success, Failure}
+import parsley.debug._
 
 import lexer.implicits.implicitSymbol
 import lexer.{ident, intLit, charLit, strLit, fully}
@@ -84,7 +85,8 @@ object parser {
     }
 
     protected [wacc] lazy val stmt: Parsley[Stmt] = (
-        Skip <# "skip"
+        Asgn(lvalue, "=" ~> rvalue <~ ";")
+        | Skip <# "skip"
         | Read("read" ~> lvalue)
         | Free("free" ~> expr)
         | Return("return" ~> expr)
@@ -107,7 +109,7 @@ object parser {
         | NewPair("newpair" ~> "(" ~> expr, "," ~> expr <~ ")")
         | pairElem
         | atomic(Call("call" ~> ident, "(" ~> argList <~ ")"))
-        | RExpr(expr)
+        | expr.map(e => RExpr(e)(0,0)) 
     )
 
     protected [wacc] lazy val argList = sepBy(expr, ",")

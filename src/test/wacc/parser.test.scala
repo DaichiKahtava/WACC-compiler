@@ -8,6 +8,7 @@ import org.scalatest.matchers.should.Matchers._
 import org.scalatest.BeforeAndAfterEach
 import org.scalatest.PrivateMethodTester
 import org.scalatest.Ignore
+import parsley.debug._
 
 class parserTest extends AnyFlatSpec with BeforeAndAfterEach // with PrivateMethodTester
 {
@@ -340,5 +341,92 @@ class PositionTest extends AnyFlatSpec {
     p.isSuccess shouldBe true
     val node = p.get
     node shouldBe Mul(Add(IntL(1)(1,2), IntL(2)(1,5))(1,4), IntL(3)(1,10))(1,8)
+  }
+
+  it should "correctly parse positions for assignment statements" in {
+    val p = parser.stmt.parse("x = 1;")
+    p.isSuccess shouldBe true
+    val node = p.get
+    node shouldBe Asgn(LIdent("x")(1,1).asInstanceOf[LValue], RExpr(IntL(1)(1,5))(1,5))(1,3)
+  }
+
+  it should "correctly parse positions for array indexing" in {
+    val p = parser.lvalue.parse("arr[1]")
+    p.isSuccess shouldBe true
+    val node = p.get
+    node shouldBe LArrElem("arr", List(IntL(1)(1,5)))(1,1)
+  }
+
+  it should "correctly parse positions for read statements" in {
+    val p = parser.stmt.parse("read x;")
+    p.isSuccess shouldBe true
+    val node = p.get
+    node shouldBe Read(LIdent("x")(1,6))(1,1)
+  }
+
+  it should "correctly parse positions for function declarations" in {
+    // val p = parser.func.parse("int func() is begin return 1; end")
+    // p.isSuccess shouldBe true
+    // val node = p.get
+    // node shouldBe Func(IntT()(1,1), "func", List(), Return(IntL(1)(1,28))(1,28))(1,5)
+  }
+
+  it should "correctly parse positions for variable declarations" in {
+    // val p = parser.stmt.parse("int x = 1;")
+    // p.isSuccess shouldBe true
+    // val node = p.get
+    // node shouldBe Decl(IntT()(1,1).asInstanceOf[Type], "x", IntL(1)(1,8).asInstanceOf[RValue])(1,5)
+  }
+
+  it should "correctly parse positions for function calls with nested arguments" in {
+    // val p = parser.stmt.parse("call foo(1 + 2, 3 * 4)")
+    // p.isSuccess shouldBe true
+    // val node = p.get
+    // node shouldBe Call("foo", List(Add(IntL(1)(1,10), IntL(2)(1,13))(1,12), Mul(IntL(3)(1,16), IntL(4)(1,19))(1,18)))(1,1)
+  }
+
+  it should "correctly parse positions for if expressions" in {
+    // val p = parser.stmt.parse("if true then return 1 else return 2")
+    // p.isSuccess shouldBe true
+    // val node = p.get
+    // node shouldBe Cond(BoolL(true)(1,4), Return(IntL(1)(1,14))(1,14), Return(IntL(2)(1,20))(1,20))(1,1)
+  }
+
+
+  it should "correctly parse positions for function calls with multiple arguments" in {
+    // val p = parser.stmt.parse("call (foo(1, 2, 3))")
+    // println("Actual p: " + p)
+    // p.isSuccess shouldBe true
+    // val node = p.get
+    // node shouldBe Call("foo", List(IntL(1)(1,10), IntL(2)(1,13), IntL(3)(1,16)))(1,1)
+  }
+
+  it should "correctly parse positions for array literals" in {
+    val p = parser.arrayLiter.parse("[1, 2, 3]")
+    p.isSuccess shouldBe true
+    val node = p.get
+    node shouldBe ArrL(List(IntL(1)(1,2), IntL(2)(1,5), IntL(3)(1,8)))
+  }
+
+  it should "correctly parse positions for pair literals" in {
+    val p = parser.rvalue.parse("newpair(1,2)")
+    p.isSuccess shouldBe true
+    val node = p.get
+    node shouldBe NewPair(IntL(1)(1,9), IntL(2)(1,12))(1,1)
+  }
+
+  it should "correctly parse positions for while-do-done expressions" in {
+    // val p = parser.stmt.parse("while true do 1 done")
+    // p.isSuccess shouldBe true
+    // val node = p.get
+    // node shouldBe Loop(BoolL(true)(1,7), Return(IntL(1)(1,14))(1,14))(1,1)
+  }
+
+
+  it should "correctly parse positions for begin-end expressions" in {
+    // val p = parser.stmt.parse("begin print 1; end")
+    // p.isSuccess shouldBe true
+    // val node = p.get
+    // node shouldBe Body(Print(IntL(1)(1,12))(1,7))(1,1)
   }
 }
