@@ -16,6 +16,7 @@ object Main {
                     println("Semantic check failed.")
                     System.exit(200)
                 } else {
+                    println("Parsed successfully")
                     // TODO BACKEND LATER.
                 }
         }
