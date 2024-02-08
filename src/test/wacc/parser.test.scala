@@ -372,10 +372,10 @@ class PositionTest extends AnyFlatSpec {
   }
 
   it should "correctly parse positions for variable declarations" in {
-    // val p = parser.stmt.parse("int x = 1;")
-    // p.isSuccess shouldBe true
-    // val node = p.get
-    // node shouldBe Decl(IntT()(1,1).asInstanceOf[Type], "x", IntL(1)(1,8).asInstanceOf[RValue])(1,5)
+    val p = parser.stmt.parse("int x = 1")
+    p.isSuccess shouldBe true
+    val node = p.get
+    node shouldBe Decl(IntT()(1,1).asInstanceOf[Type], "x", RExpr(IntL(1)(1,8))(1,8))(1,5)
   }
 
   it should "correctly parse positions for function calls with nested arguments" in {
@@ -386,10 +386,10 @@ class PositionTest extends AnyFlatSpec {
   }
 
   it should "correctly parse positions for if expressions" in {
-    // val p = parser.stmt.parse("if true then return 1 else return 2")
-    // p.isSuccess shouldBe true
-    // val node = p.get
-    // node shouldBe Cond(BoolL(true)(1,4), Return(IntL(1)(1,14))(1,14), Return(IntL(2)(1,20))(1,20))(1,1)
+    val p = parser.stmt.parse("if true then return 1 else return 2 fi")
+    p.isSuccess shouldBe true
+    val node = p.get
+    node shouldBe Cond(BoolL(true)(1,4), Return(IntL(1)(1,14))(1,14), Return(IntL(2)(1,20))(1,20))(1,1)
   }
 
 
