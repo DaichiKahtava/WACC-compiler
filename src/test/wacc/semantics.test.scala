@@ -6,9 +6,10 @@ import org.scalatest.BeforeAndAfterEach
 
 class semanticsTests extends AnyFlatSpec with BeforeAndAfterEach {
 
-    val sem = new Semantics("foo.txt")
+    var sem: Semantics = new Semantics("foo.txt")
 
     override protected def beforeEach(): Unit = {
+        sem = new Semantics("foo.txt")
         sem.curSymTable = new SymTable(None)
     }
 
@@ -111,7 +112,42 @@ class semanticsTests extends AnyFlatSpec with BeforeAndAfterEach {
 
     }
 
+    "operators" should "respect the required input types" in {
+        // These are just a few of all possible cases.
+        // A much wider range is tested in the integration tests
+        sem.isSemCorrect(Add(IntL(0)(1,1), IntL(0)(1,4))(1,1)) shouldBe true
+        sem.isSemCorrect(Add(IntL(0)(1,1), StrL("foo")(1,4))(1,1)) shouldBe false
+        sem.isSemCorrect(Add(StrL("bar")(1,1), StrL("foo")(1,4))(1,1)) shouldBe false
+        sem.isSemCorrect(GrT(IntL(0)(1,1), IntL(0)(1,4))(1,1)) shouldBe true
+        sem.isSemCorrect(GrT(CharL('0')(1,1), CharL('0')(1,4))(1,1)) shouldBe true
+        sem.isSemCorrect(GrT(StrL("0")(1,1), StrL("0")(1,4))(1,1)) shouldBe false
+        sem.isSemCorrect(GrT(IntL(0)(1,1), StrL("0")(1,4))(1,1)) shouldBe false
+        sem.isSemCorrect(Eq(IntL(0)(1,1),  IntL(0)(1,4))(1, 1)) shouldBe true
+        sem.isSemCorrect(Eq(BoolL(true)(1,1),  BoolL(false)(1,4))(1, 1)) shouldBe true
+        sem.isSemCorrect(Eq(BoolL(true)(1,1),  CharL('f')(1,4))(1, 1)) shouldBe false
+        sem.errorRep.toString() shouldBe """
+Unexpected type! Expected int. Got string instead.
+In file: foo.txt at position (1, 4)
+*** Could not display the source file: foo.txt ***
 
+Unexpected type! Expected int. Got string instead.
+In file: foo.txt at position (1, 1)
+*** Could not display the source file: foo.txt ***
 
-    // TODO test for different namespaces for functoins and variables
+Unexpected type! Expected one of the following: int, char. Got string instead.
+In file: foo.txt at position (1, 1)
+*** Could not display the source file: foo.txt ***
+
+Unexpected type! Expected int. Got string instead.
+In file: foo.txt at position (1, 4)
+*** Could not display the source file: foo.txt ***
+
+Unexpected type! Expected bool. Got char instead.
+In file: foo.txt at position (1, 4)
+*** Could not display the source file: foo.txt ***
+-----
+Found 5 semantic errors.
+"""
+    }
+
 }

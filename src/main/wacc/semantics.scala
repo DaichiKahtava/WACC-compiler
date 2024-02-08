@@ -170,13 +170,13 @@ class Semantics(fileName: String) {
             case LsEqT(x1, x2) => isSemCorrect(x1) && isSemCorrect(x2) && (isOneFrom(getType(x1), List(S_INT, S_CHAR), x1.pos)) && equalType(getType(x2), getType(x1), x2.pos)
             
             // TODO: Rewrite using Use canWeakenTo
-            case ex@Eq(x1, x2) => isSemCorrect(x1) && isSemCorrect(x2) && equalType(getType(x1), getType(x2), ex.pos)
-            case ex@NEq(x1, x2) => isSemCorrect(x1) && isSemCorrect(x2) && equalType(getType(x1), getType(x2), ex.pos)
+            case ex@Eq(x1, x2) => isSemCorrect(x1) && isSemCorrect(x2) && equalType(getType(x2), getType(x1), x2.pos)
+            case ex@NEq(x1, x2) => isSemCorrect(x1) && isSemCorrect(x2) && equalType(getType(x2), getType(x1), x2.pos)
             
             case And(x1, x2) => (isSemCorrect(x1) && equalType(getType(x1), S_BOOL, x1.pos)) && (isSemCorrect(x2) && equalType(getType(x2), S_BOOL, x2.pos))
             case Or(x1, x2) => (isSemCorrect(x1) && equalType(getType(x1), S_BOOL, x1.pos)) && (isSemCorrect(x2) && equalType(getType(x2), S_BOOL, x2.pos))
 
-            case ArrElem(_, xs)  => isSemCorrect(xs)
+            case ArrElem(_, xs)  => isSemCorrect(xs) && (xs.foldLeft(true)((b, x) => b && equalType(getType(x), S_INT, x.pos)))
         }
     }
 

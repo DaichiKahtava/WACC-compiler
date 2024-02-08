@@ -9,7 +9,8 @@ class semErrorReporterTest  extends AnyFlatSpec with BeforeAndAfterEach {
     "The semantic report tool" should "be able to handle non existing files" in {
         val er = new SemErrorReporter("foo.txt")
         er.printSourceSection((1, 1))
-        er.toString() shouldBe """*** Could not display the source file: foo.txt ***
+        er.toString() shouldBe """In file: foo.txt at position (1, 1)
+*** Could not display the source file: foo.txt ***
 -----
 Found 0 semantic errors.
 """

@@ -21,10 +21,10 @@ class SemErrorReporter(fileName: String) {
         // If the last line is the empty line (to comply with POSIX standards)
         // It will not be included in the list.
         // PRE: The position will never point to this line
+        errors.addAll("In file: " + fileName + " at position (" + pos._1 + ", " + pos._2 + ")\n")
         if (fileLines.isFailure) {
             errors.addAll("*** Could not display the source file: " + fileName + " ***\n")
         } else {
-            errors.addAll("In file: " + fileName + " at position (" + pos._1 + ", " + pos._2 + ")\n")
             if (pos._1 != 1) {
                 errors.addAll("| " + fileLines.get(pos._1 - 2) + "\n")
             }
@@ -37,20 +37,20 @@ class SemErrorReporter(fileName: String) {
     }
 
     def addError(desc: String, pos: (Int, Int)) = {
-        errors.addAll(desc + "\n")
+        errors.addAll("\n" + desc + "\n")
         numErrors += 1
         printSourceSection(pos)
     }
 
     def addTypeMismatch(got: S_TYPE, expected: S_TYPE, pos: (Int, Int)) = {
         addError("Unexpected type! Expected " + explainSemType(expected) +
-         ". Got " + explainSemType(got) + "instead.", pos)
+         ". Got " + explainSemType(got) + " instead.", pos)
     }
 
     def addTypeMismatch(got: S_TYPE, expected: List[S_TYPE], pos: (Int, Int)) = {
-        addError("Unexpected type! Expected one of" +
-            expected.map(explainSemType(_)).mkString(" ") +
-            ". Got " + explainSemType(got) + "instead.", pos)
+        addError("Unexpected type! Expected one of the following: " +
+            expected.map(explainSemType(_)).mkString(", ") +
+            ". Got " + explainSemType(got) + " instead.", pos)
     }
 
     def explainSemType(tp : S_TYPE): String = tp match {
