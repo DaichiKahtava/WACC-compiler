@@ -66,7 +66,7 @@ case class Func(tp: Type, id: String, params: List[Param], s: Stmt)(val pos: (In
 case class Param(tp: Type, id: String)(val pos: (Int, Int))
 
 sealed trait Stmt
-case object Skip extends Stmt with ParserBridge0[Stmt]
+case class Skip()(val pos: (Int, Int)) extends Stmt
 case class Decl(tp: Type, id: String, rv: RValue)(val pos: (Int, Int)) extends Stmt
 case class Asgn(lv: LValue, rv: RValue)(val pos: (Int, Int)) extends Stmt
 case class Read(lv: LValue)(val pos: (Int, Int)) extends Stmt
