@@ -68,11 +68,12 @@ class Semantics(fileName: String) {
         case ArrL(elements) => 
             elements match {
               case Nil => S_EMPTYARR // If the array is empty, return S_ARRAY(S_ANY).
-              case head :: _ => // Otherwise, return the type of the first element.
-                getType(head) match {
-                  case S_CHAR => S_STRING // The string weakening rule. TODO: REVIEW!
-                  case elementType => S_ARRAY(elementType)
-                }
+              case es => // Otherwise, return the type of the first element.
+                // getType(head) match {
+                //   case S_CHAR => {S_STRING} // The string weakening rule. TODO: REVIEW!
+                //   case elementType => S_ARRAY(elementType)
+                // }
+                S_ARRAY(getLowestCommonAncestor(elements.map(getType(_))))
             }
         case NewPair(e1, e2) => S_PAIR(getType(e1), getType(e2))
         case pe: PairElem => getType(pe)
