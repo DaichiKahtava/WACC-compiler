@@ -123,7 +123,7 @@ object parser {
     protected [wacc] lazy val boolLit = (
         (pos <~ "true").map(BoolL(true)(_)) 
         | (pos <~ "false").map(BoolL(false)(_))) 
-    protected [wacc] lazy val pairLit = (pos, string("null")).zipped((p, _) => PairL()(p))
+    protected [wacc] lazy val pairLit = (pos <~ "null").map(PairL()(_))
     protected [wacc] lazy val expr: Parsley[Expr] = 
         precedence(
             IntL(intLit),
