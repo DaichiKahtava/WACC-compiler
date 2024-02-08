@@ -246,31 +246,7 @@ class parserTest extends AnyFlatSpec with BeforeAndAfterEach // with PrivateMeth
         p.isSuccess shouldBe true
         p.get shouldBe Add(IntL(1)(0,0), IntL(2)(0,0))(1,1)
     } 
-
-    // "temptest.gta" should "Identify correct location?" in {
-    //     var p = parser.expr.parse("1 + 2")
-    //     val ast = p.get
-    //     ast shouldBe Add(IntL(1)(1, 1), IntL(2)(3, 1))(1, 1)
-    //     ast match {
-    //         case a@Add(x, y) => println(a.pos)
-    //         case _: Atom => println("Achievement: How did we get here")
-    //     }
-    //     println(ast.asInstanceOf[Add])
-    // }
 }
-
-// class parserTest extends AnyFlatSpec with BeforeAndAfterEach {
-//     "temptest.gta" should "parse an int" in {
-//         var p = parser.expr.parse("1 + 2")
-//         val ast = p.get
-//         ast shouldBe Add(IntL(1)(1, 1), IntL(2)(3, 1))(1, 1)
-//         ast match {
-//             case a@Add(x, y) => println(a.pos)
-//             case _: Atom => println("Achievement: How did we get here")
-//         }
-//         println(ast.asInstanceOf[Add])
-//     }
-// }
 
 class PositionTest extends AnyFlatSpec {
   "The parser" should "correctly parse positions for boolean literals" in {
@@ -365,10 +341,10 @@ class PositionTest extends AnyFlatSpec {
   }
 
   it should "correctly parse positions for function declarations" in {
-    // val p = parser.func.parse("int func() is begin return 1; end")
-    // p.isSuccess shouldBe true
-    // val node = p.get
-    // node shouldBe Func(IntT()(1,1), "func", List(), Return(IntL(1)(1,28))(1,28))(1,5)
+    val p = parser.func.parse("int func() is begin return 1 end end")
+    p.isSuccess shouldBe true
+    val node = p.get
+    node shouldBe Func(IntT()(1,1), "func", List(), Body(Return(IntL(1)(1,28))(1,28))(1,28))(1,5)
   }
 
   it should "correctly parse positions for variable declarations" in {
@@ -379,10 +355,10 @@ class PositionTest extends AnyFlatSpec {
   }
 
   it should "correctly parse positions for function calls with nested arguments" in {
-    // val p = parser.stmt.parse("call foo(1 + 2, 3 * 4)")
-    // p.isSuccess shouldBe true
-    // val node = p.get
-    // node shouldBe Call("foo", List(Add(IntL(1)(1,10), IntL(2)(1,13))(1,12), Mul(IntL(3)(1,16), IntL(4)(1,19))(1,18)))(1,1)
+    val p = parser.rvalue.parse("call foo(1 + 2, 3 * 4)")
+    p.isSuccess shouldBe true
+    val node = p.get
+    node shouldBe Call("foo", List(Add(IntL(1)(1,10), IntL(2)(1,13))(1,12), Mul(IntL(3)(1,16), IntL(4)(1,19))(1,18)))(1,1)
   }
 
   it should "correctly parse positions for if expressions" in {
@@ -394,11 +370,10 @@ class PositionTest extends AnyFlatSpec {
 
 
   it should "correctly parse positions for function calls with multiple arguments" in {
-    // val p = parser.stmt.parse("call (foo(1, 2, 3))")
-    // println("Actual p: " + p)
-    // p.isSuccess shouldBe true
-    // val node = p.get
-    // node shouldBe Call("foo", List(IntL(1)(1,10), IntL(2)(1,13), IntL(3)(1,16)))(1,1)
+    val p = parser.rvalue.parse("call foo(1, 2, 3)")
+    p.isSuccess shouldBe true
+    val node = p.get
+    node shouldBe Call("foo", List(IntL(1)(1,10), IntL(2)(1,13), IntL(3)(1,16)))(1,1)
   }
 
   it should "correctly parse positions for array literals" in {
@@ -416,17 +391,17 @@ class PositionTest extends AnyFlatSpec {
   }
 
   it should "correctly parse positions for while-do-done expressions" in {
-    // val p = parser.stmt.parse("while true do 1 done")
-    // p.isSuccess shouldBe true
-    // val node = p.get
-    // node shouldBe Loop(BoolL(true)(1,7), Return(IntL(1)(1,14))(1,14))(1,1)
+    val p = parser.stmt.parse("while true do return 1 done")
+    p.isSuccess shouldBe true
+    val node = p.get
+    node shouldBe Loop(BoolL(true)(1,7), Return(IntL(1)(1,14))(1,14))(1,1)
   }
 
 
   it should "correctly parse positions for begin-end expressions" in {
-    // val p = parser.stmt.parse("begin print 1; end")
-    // p.isSuccess shouldBe true
-    // val node = p.get
-    // node shouldBe Body(Print(IntL(1)(1,12))(1,7))(1,1)
+    val p = parser.stmt.parse("begin print 1 end")
+    p.isSuccess shouldBe true
+    val node = p.get
+    node shouldBe Body(Print(IntL(1)(1,12))(1,7))(1,1)
   }
 }
