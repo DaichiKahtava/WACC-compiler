@@ -67,8 +67,9 @@ class SemErrorReporter(fileName: String) {
         case S_ARRAY(tp) => "array of (" + explainSemType(tp) + ")" 
         case S_PAIR(tp1, tp2) => "pair of (" + explainSemType(tp1) + ") and (" +
           explainSemType(tp2) + ")"
+        case S_EMPTYARR => "empty array"
         // The following should not be actually invoked...
-        case S_ANY => "something of arbitrary type (probably because of a previous ambiguity)" 
+        case S_ANY => "something of arbitrary type" 
     }
 
     override def toString(): String = {

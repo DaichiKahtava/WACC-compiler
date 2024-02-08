@@ -54,12 +54,12 @@ class Semantics(fileName: String) {
         case pe: PairElem => getType(pe)
     }
 
-        // RValue type and check
+    // RValue type and check
     def getType(rv: RValue): S_TYPE = rv match {
         case RExpr(e) => getType(e)
         case ArrL(elements) => 
             elements match {
-              case Nil => S_ARRAY(S_ANY) // If the array is empty, return S_ARRAY(S_ANY).
+              case Nil => S_EMPTYARR // If the array is empty, return S_ARRAY(S_ANY).
               case head :: _ => // Otherwise, return the type of the first element.
                 getType(head) match {
                   case S_CHAR => S_STRING // The string weakening rule. TODO: REVIEW!
@@ -104,7 +104,9 @@ class Semantics(fileName: String) {
             case _ => false
         }
         case S_ARRAY(tp) => tp match {
-            case _ => source.isInstanceOf[S_ARRAY] && source.asInstanceOf[S_ARRAY].tp == tp
+            case _ => (source.isInstanceOf[S_ARRAY] &&
+                canWeakenTo(source.asInstanceOf[S_ARRAY].tp, tp)) ||
+                source == S_EMPTYARR
         }
         case S_STRING => source == S_STRING || source == S_ARRAY(S_CHAR)
         case _ => target == source
