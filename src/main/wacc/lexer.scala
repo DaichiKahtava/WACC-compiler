@@ -22,7 +22,7 @@ object lexer {
             hardKeywords = Set(
                 "begin", "end", "skip", "read", "free", "return", "exit", "print", "println",
                 "if", "then", "else","fi", "while", "do", "done", "fst", "snd", "int", "bool",
-                "char", "string", "pair", "null", "true", "false", "newpair", "call"
+                "char", "string", "pair", "null", "true", "false", "newpair", "call", "=", ";"
             ),
             hardOperators = Set(
                 "!", "-", "len", "ord", "chr", "*", "/", "%", "+", ">", ">=", "<", "<=", "==", "!=", "&&", "||" 

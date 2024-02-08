@@ -85,8 +85,9 @@ object parser {
     }
 
     protected [wacc] lazy val stmt: Parsley[Stmt] = (
-        Asgn(lvalue, "=" ~> rvalue <~ ";")
-        | Skip <# "skip"
+        Skip <# "skip"
+        | Decl(typep, ident, "=" ~> rvalue)
+        | Asgn(lvalue, "=" ~> rvalue)
         | Read("read" ~> lvalue)
         | Free("free" ~> expr)
         | Return("return" ~> expr)
