@@ -43,7 +43,14 @@ class SemErrorReporter(fileName: String) {
     }
 
     def addTypeMismatch(got: S_TYPE, expected: S_TYPE, pos: (Int, Int)) = {
-        addError("Expected " + explainSemType(expected) + ". Got " + explainSemType(got) + "instead.", pos)
+        addError("Unexpected type! Expected " + explainSemType(expected) +
+         ". Got " + explainSemType(got) + "instead.", pos)
+    }
+
+    def addTypeMismatch(got: S_TYPE, expected: List[S_TYPE], pos: (Int, Int)) = {
+        addError("Unexpected type! Expected one of" +
+            expected.map(explainSemType(_)).mkString(" ") +
+            ". Got " + explainSemType(got) + "instead.", pos)
     }
 
     def explainSemType(tp : S_TYPE): String = tp match {
@@ -53,7 +60,8 @@ class SemErrorReporter(fileName: String) {
         case S_ERASED => "erased pair"
         case S_STRING => "string"
         case S_ARRAY(tp) => "array of (" + explainSemType(tp) + ")" 
-        case S_PAIR(tp1, tp2) => "pair of (" + explainSemType(tp1) + ") and (" +  explainSemType(tp2) + ")"
+        case S_PAIR(tp1, tp2) => "pair of (" + explainSemType(tp1) + ") and (" +
+          explainSemType(tp2) + ")"
         case S_ANY => "something of arbitrary type" // Should not be actually invoked...
     }
 

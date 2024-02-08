@@ -81,14 +81,14 @@ class Semantics(fileName: String) {
             case S_PAIR(tp, _) => tp
             case _ => getType(lv)
         }
-        case First(lv: ArrElem) => ???
+        case First(lv: LArrElem) => ???
         case First(lv: PairElem) => ???
 
         case Second(lv: LIdent) => curSymTable.findVarLocal(lv.id).get.tp match {
             case S_PAIR(_, tp) => tp
             case _ => getType(lv)
         }
-        case Second(lv: ArrElem) => ???
+        case Second(lv: LArrElem) => ???
         case Second(lv: PairElem) => ???
 
     }
@@ -132,6 +132,15 @@ class Semantics(fileName: String) {
         }
     }
 
+    def isOneFrom(got: S_TYPE, expected: List[S_TYPE], pos: (Int, Int)): Boolean = {
+        if (!expected.contains(got)) {
+            errorRep.addTypeMismatch(got, expected, pos)
+            return false
+        } else {
+            return true
+        }
+    }
+
     def isSemCorrect(e: Expr): Boolean = {
         return e match {
             case IntL(_) => true
@@ -148,18 +157,17 @@ class Semantics(fileName: String) {
             case Ord(x) => isSemCorrect(x) && equalType(getType(x), S_CHAR, x.pos)
             case Chr(x) => isSemCorrect(x) && equalType(getType(x), S_INT, x.pos)
 
-            // TODO: Better way to combine these?
+            // TODO: Better way to combine these? <- DUPLICATE CODE!
             case Mul(x1, x2) => (isSemCorrect(x1) && equalType(getType(x1), S_INT, x1.pos)) && (isSemCorrect(x2) && equalType(getType(x2), S_INT, x2.pos))
             case Div(x1, x2) => (isSemCorrect(x1) && equalType(getType(x1), S_INT, x1.pos)) && (isSemCorrect(x2) && equalType(getType(x2), S_INT, x2.pos))
             case Mod(x1, x2) => (isSemCorrect(x1) && equalType(getType(x1), S_INT, x1.pos)) && (isSemCorrect(x2) && equalType(getType(x2), S_INT, x2.pos))
             case Add(x1, x2) => (isSemCorrect(x1) && equalType(getType(x1), S_INT, x1.pos)) && (isSemCorrect(x2) && equalType(getType(x2), S_INT, x2.pos))
             case Minus(x1, x2) => (isSemCorrect(x1) && equalType(getType(x1), S_INT, x1.pos)) && (isSemCorrect(x2) && equalType(getType(x2), S_INT, x2.pos))
-            
-            // TODO: This allows x1 and x2 to not match up -> needs review
-            case GrT(x1, x2)   => isSemCorrect(x1) && (getType(x1) == S_INT || getType(x1) == S_CHAR) && isSemCorrect(x2) && (getType(x2) == S_INT || getType(x2) == S_CHAR)
-            case GrEqT(x1, x2) => isSemCorrect(x1) && (getType(x1) == S_INT || getType(x1) == S_CHAR) && isSemCorrect(x2) && (getType(x2) == S_INT || getType(x2) == S_CHAR)
-            case LsT(x1, x2)   => isSemCorrect(x1) && (getType(x1) == S_INT || getType(x1) == S_CHAR) && isSemCorrect(x2) && (getType(x2) == S_INT || getType(x2) == S_CHAR)
-            case LsEqT(x1, x2) => isSemCorrect(x1) && (getType(x1) == S_INT || getType(x1) == S_CHAR) && isSemCorrect(x2) && (getType(x2) == S_INT || getType(x2) == S_CHAR)
+
+            case GrT(x1, x2)   => isSemCorrect(x1) && isSemCorrect(x2) && (isOneFrom(getType(x1), List(S_INT, S_CHAR), x1.pos)) && equalType(getType(x2), getType(x1), x2.pos)
+            case GrEqT(x1, x2) => isSemCorrect(x1) && isSemCorrect(x2) && (isOneFrom(getType(x1), List(S_INT, S_CHAR), x1.pos)) && equalType(getType(x2), getType(x1), x2.pos)
+            case LsT(x1, x2)   => isSemCorrect(x1) && isSemCorrect(x2) && (isOneFrom(getType(x1), List(S_INT, S_CHAR), x1.pos)) && equalType(getType(x2), getType(x1), x2.pos)
+            case LsEqT(x1, x2) => isSemCorrect(x1) && isSemCorrect(x2) && (isOneFrom(getType(x1), List(S_INT, S_CHAR), x1.pos)) && equalType(getType(x2), getType(x1), x2.pos)
             
             // TODO: Rewrite using Use canWeakenTo
             case ex@Eq(x1, x2) => isSemCorrect(x1) && isSemCorrect(x2) && equalType(getType(x1), getType(x2), ex.pos)
@@ -169,8 +177,6 @@ class Semantics(fileName: String) {
             case Or(x1, x2) => (isSemCorrect(x1) && equalType(getType(x1), S_BOOL, x1.pos)) && (isSemCorrect(x2) && equalType(getType(x2), S_BOOL, x2.pos))
 
             case ArrElem(_, xs)  => isSemCorrect(xs)
-
-            case _ => false // Default case due to compiler warning.
         }
     }
 
