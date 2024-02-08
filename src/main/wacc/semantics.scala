@@ -104,8 +104,7 @@ class Semantics(fileName: String) {
             case _ => false
         }
         case S_ARRAY(tp) => tp match {
-            case _ => (source.isInstanceOf[S_ARRAY] &&
-                canWeakenTo(source.asInstanceOf[S_ARRAY].tp, tp)) ||
+            case _ => (source.isInstanceOf[S_ARRAY] && source.asInstanceOf[S_ARRAY].tp == tp) ||
                 source == S_EMPTYARR
         }
         case S_STRING => source == S_STRING || source == S_ARRAY(S_CHAR)
