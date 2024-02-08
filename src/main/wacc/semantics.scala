@@ -13,7 +13,7 @@ class Semantics(fileName: String) {
             case BoolL(_) => S_BOOL
             case CharL(_) => S_CHAR
             case StrL(_) => S_STRING
-            case PairL() => S_PAIR(S_ANY, S_ANY)
+            case PairL() => S_ERASED
             case Ident(id) => curSymTable.findVarGlobal(id).get match {
                 case VARIABLE(tp) => tp
             }
