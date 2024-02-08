@@ -86,14 +86,14 @@ class Semantics(fileName: String) {
     def getType(arr: List[Expr]): S_TYPE = getType(arr.head)
 
     def getType(pe: PairElem): S_TYPE = pe match {
-        case First(lv: LIdent) => curSymTable.findVarLocal(lv.id).get.tp match {
+        case First(lv: LIdent) => curSymTable.findVarGlobal(lv.id).get.tp match {
             case S_PAIR(tp, _) => tp
             case _ => getType(lv)
         }
         case First(lv: LArrElem) => ???
         case First(lv: PairElem) => ???
 
-        case Second(lv: LIdent) => curSymTable.findVarLocal(lv.id).get.tp match {
+        case Second(lv: LIdent) => curSymTable.findVarGlobal(lv.id).get.tp match {
             case S_PAIR(_, tp) => tp
             case _ => getType(lv)
         }
@@ -293,7 +293,7 @@ class Semantics(fileName: String) {
                 return isSemCorrect(rv) && checkCompatible(getType(rv), toSemanticType(tp), d.pos)
             }
             case Asgn(lv: LIdent, rv) => isSemCorrect(lv) && isSemCorrect(rv) &&
-                checkCompatible(getType(rv), curSymTable.findVarLocal(lv.id).get.tp, lv.pos)
+                checkCompatible(getType(rv), curSymTable.findVarGlobal(lv.id).get.tp, lv.pos)
             case Asgn(lv: LArrElem, rv) => isSemCorrect(lv) && isSemCorrect(rv) && 
                 checkCompatible(getType(rv), getType(lv), lv.pos)
             case Asgn(lv: PairElem, rv) => isSemCorrect(lv) && isSemCorrect(rv) && 
