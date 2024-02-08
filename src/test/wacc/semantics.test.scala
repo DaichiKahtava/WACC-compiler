@@ -150,4 +150,16 @@ Found 5 semantic errors.
 """
     }
 
+    it should "react appropriately to nested operations" in {
+        sem.isSemCorrect(Add(Neg(IntL(0)(1,2))(1, 1), IntL(0)(1,4))(1,1)) shouldBe true
+        sem.isSemCorrect(Add(Neg(IntL(0)(1,2))(1, 1), Chr(IntL(0)(1,7))(1, 4))(1,1)) shouldBe false
+        sem.errorRep.toString() shouldBe """
+Unexpected type! Expected int. Got char instead.
+In file: foo.txt at position (1, 4)
+*** Could not display the source file: foo.txt ***
+-----
+Found 1 semantic errors.
+"""
+    }
+
 }
