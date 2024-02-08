@@ -404,4 +404,63 @@ class PositionTest extends AnyFlatSpec {
     val node = p.get
     node shouldBe Body(Print(IntL(1)(1,12))(1,7))(1,1)
   }
+
+  it should "correctly parse positions for function declarations with parameters" in {
+    val p = parser.func.parse("int func(int x, int y) is begin return x + y end end")
+    p.isSuccess shouldBe true
+    val node = p.get
+    node shouldBe Func(IntT()(1,1), "func", List(Param(IntT()(1,10), "x")(1,14), 
+                  Param(IntT()(1,17), "y")(1,21)), Body(Return(Add(Ident("x")(1,38), 
+                  Ident("y")(1,42))(1,41))(1,38))(1,38))(1,5)
+  }
+
+  it should "correctly parse positions for function calls with no arguments" in {
+    val p = parser.rvalue.parse("call foo()")
+    p.isSuccess shouldBe true
+    val node = p.get
+    node shouldBe Call("foo", List())(1,1)
+  }
+
+  it should "correctly parse positions for nested array literals" in {
+    // val p = parser.arrayLiter.parse("[[1, 2], [3, 4]]")
+    // p.isSuccess shouldBe true
+    // val node = p.get
+    // node shouldBe ArrL(List(ArrL(List(IntL(1)(1,3), IntL(2)(1,6))).asInstanceOf[Expr], 
+    //               ArrL(List(IntL(3)(1,10), IntL(4)(1,13))).asInstanceOf[Expr]))
+  }
+
+  it should "correctly parse positions for nested pair literals" in {
+    // val p = parser.rvalue.parse("newpair(newpair(), newpair())")
+    // p.isSuccess shouldBe true
+    // val node = p.get
+    // node shouldBe NewPair(NewPair()(1,9).asInstanceOf[Expr], NewPair()(1,20).asInstanceOf[Expr])(1,1)
+  }
+
+  it should "correctly parse positions for nested while-do-done expressions" in {
+    val p = parser.stmt.parse("while true do while false do return 1 done done")
+    p.isSuccess shouldBe true
+    val node = p.get
+    node shouldBe Loop(BoolL(true)(1,7), Loop(BoolL(false)(1,20), Return(IntL(1)(1,27))(1,27))(1,14))(1,1)
+  }
+
+  it should "correctly parse positions for nested begin-end expressions" in {
+    val p = parser.stmt.parse("begin begin print 1 end end")
+    p.isSuccess shouldBe true
+    val node = p.get
+    node shouldBe Body(Body(Print(IntL(1)(1,14))(1,7))(1,7))(1,1)
+  }
+
+  it should "correctly parse positions for array literals with single element" in {
+    val p = parser.arrayLiter.parse("[1]")
+    p.isSuccess shouldBe true
+    val node = p.get
+    node shouldBe ArrL(List(IntL(1)(1,2)))
+  }
+
+  it should "correctly parse positions for pair literals with expressions" in {
+    val p = parser.rvalue.parse("newpair(1+2, 3*4)")
+    p.isSuccess shouldBe true
+    val node = p.get
+    node shouldBe NewPair(Add(IntL(1)(1,9), IntL(2)(1,11))(1,10), Mul(IntL(3)(1,14), IntL(4)(1,16))(1,15))(1,1)
+  }
 }
