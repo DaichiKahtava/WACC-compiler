@@ -319,8 +319,23 @@ class Semantics(fileName: String) {
             case Exit(x) => equalType(getType(x), S_INT, x.pos)
             case Print(x) => isSemCorrect(x)
             case Println(x) => isSemCorrect(x)
-            case Cond(x, s1, s2) => equalType(getType(x), S_BOOL, x.pos) && isSemCorrect(s1) && isSemCorrect(s2)
-            case Loop(x, stmt) => equalType(getType(x), S_BOOL, x.pos) && isSemCorrect(stmt)
+            case Cond(x, s1, s2) => {
+                var res = equalType(getType(x), S_BOOL, x.pos)
+                curSymTable = curSymTable.newUnamedScope()
+                res = res && isSemCorrect(s1) 
+                curSymTable = curSymTable.parent().get
+                curSymTable = curSymTable.newUnamedScope()
+                res = res && isSemCorrect(s2) 
+                curSymTable = curSymTable.parent().get
+                return res
+            }
+            case Loop(x, stmt) => {
+                var res = equalType(getType(x), S_BOOL, x.pos)
+                curSymTable = curSymTable.newUnamedScope()
+                res = res && isSemCorrect(stmt) 
+                curSymTable = curSymTable.parent().get
+                return res
+            }
             case Body(stmt) => {
                 curSymTable = curSymTable.newUnamedScope()
                 val res = isSemCorrect(stmt)
