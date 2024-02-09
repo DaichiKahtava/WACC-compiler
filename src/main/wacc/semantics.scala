@@ -41,7 +41,7 @@ class Semantics(fileName: String) {
             case And(_, _) => S_BOOL
             case Or(_, _) => S_BOOL
 
-            case ArrElem(_, xs)  => getType(xs)
+            case ArrElem(id, _)  => curSymTable.findVarGlobal(id).get.tp.asInstanceOf[S_ARRAY].tp
         }
     }
 
@@ -240,7 +240,11 @@ class Semantics(fileName: String) {
 
             case Not(x) => isSemCorrect(x) && equalType(getType(x), S_BOOL, x.pos)
             case Neg(x) => isSemCorrect(x) && equalType(getType(x), S_INT, x.pos)
-            case Len(x) => isSemCorrect(x) && getType(x) == S_ARRAY(S_ANY) // TODO: Use canWeakenTo
+            case Len(x) => {
+                val isc = isSemCorrect(x)
+                println(getType(x))
+                isc && getType(x).isInstanceOf[S_ARRAY]
+            } // TODO: Use canWeakenTo
             case Ord(x) => isSemCorrect(x) && equalType(getType(x), S_CHAR, x.pos)
             case Chr(x) => isSemCorrect(x) && equalType(getType(x), S_INT, x.pos)
 
@@ -336,11 +340,11 @@ class Semantics(fileName: String) {
                     return false 
                 }
                 if (isSemCorrect(rv)) {
-                val curType = getType(rv)
-                rv match {
-                        case pe: PairElem => curType == S_ANY
-                    case _ => isSemCorrect(rv) && checkCompatible(curType, toSemanticType(tp), d.pos)
-                    }
+                    val curType = getType(rv)
+                    rv match {
+                            case pe: PairElem if curType == S_ANY => true
+                            case _ => checkCompatible(curType, toSemanticType(tp), d.pos)
+                        }
                 } else {
                     false
                 }
@@ -501,11 +505,14 @@ class Semantics(fileName: String) {
             case Some(VARIABLE(tp)) => tp.isInstanceOf[S_PAIR]
             case _ => false
         }
-        case First(lv: LArrElem) => isSemCorrect(lv) && getType(lv.xs).isInstanceOf[S_PAIR] && 
+        case First(lv: LArrElem) => {
+            isSemCorrect(lv) && 
+            getType(lv).isInstanceOf[S_PAIR] && 
             (curSymTable.findVarGlobal(lv.id) match {
                 case Some(VARIABLE(tp)) => tp.isInstanceOf[S_ARRAY] && tp.asInstanceOf[S_ARRAY].tp.isInstanceOf[S_PAIR]
                 case _ => false
             })
+        }
         case First(lv: PairElem) => isSemCorrect(lv)
 
         case Second(lv: LIdent) => curSymTable.findVarGlobal(lv.id) match {

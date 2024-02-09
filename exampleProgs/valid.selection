@@ -104,7 +104,7 @@ exampleProgs/valid/scope/ifNested1.wacc
 exampleProgs/valid/scope/ifNested2.wacc
 exampleProgs/valid/scope/indentationNotImportant.wacc
 exampleProgs/valid/scope/intsAndKeywords.wacc
-'exampleProgs/valid/scope/printAllTypes.wacc
+exampleProgs/valid/scope/printAllTypes.wacc
 exampleProgs/valid/scope/scopeBasic.wacc
 exampleProgs/valid/scope/scopeIfRedefine.wacc
 exampleProgs/valid/scope/scopeRedefine.wacc
@@ -139,7 +139,7 @@ exampleProgs/valid/variables/_VarNames.wacc
 exampleProgs/valid/variables/zeroIntDeclaration.wacc
 exampleProgs/valid/whack/q0.wacc
 exampleProgs/valid/whack/q10.wacc
-'exampleProgs/valid/whack/q1.wacc
+exampleProgs/valid/whack/q1.wacc
 exampleProgs/valid/whack/q2.wacc
 exampleProgs/valid/whack/q3.wacc
 exampleProgs/valid/whack/q4.wacc
