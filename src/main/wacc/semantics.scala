@@ -406,12 +406,22 @@ class Semantics(fileName: String) {
         case pe: PairElem => isSemCorrect(pe)
         case c@Call(id, xs) => {
             val f = curSymTable.findFunGlobal(id)
-            if (f.isDefined) {
-                isSemCorrect(xs)
+            isSemCorrect(xs)
+            if (f.isEmpty) {
+                errorRep.addError("Function \""+id+"\" is not defined!", c.pos)
+                return false
             }
             else{
-                errorRep.addError("Function \""+id+"\" is not defined!", c.pos)
-                return false                
+                // return false          
+                val fType = f.get.tp
+                val fSymTable = f.get.st
+                val fParams = fSymTable.parDict.values.toList
+                if (xs.length != fParams.length) {
+                    errorRep.addError("Function \""+id+"\" expects "+fParams.length+" parameters, but "+xs.length+" were given!", (0,0))
+                    return false
+                }
+                val res = xs.zip(fParams).foldLeft(true)((b, p) => b && checkCompatible(getType(p._1), p._2.tp, p._1.pos))
+                return res      
             }
             
             
