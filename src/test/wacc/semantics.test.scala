@@ -149,7 +149,7 @@ Unexpected type! Expected int. Got string instead.
 In file: foo.txt at position (1, 4)
 *** Could not display the source file: foo.txt ***
 
-Unexpected type! Expected bool. Got char instead.
+Incomparable types! char cannot be compared to bool.
 In file: foo.txt at position (1, 4)
 *** Could not display the source file: foo.txt ***
 -----

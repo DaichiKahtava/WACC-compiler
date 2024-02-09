@@ -128,7 +128,7 @@ class Semantics(fileName: String) {
                 if(ttp2 == S_ERASED) {sndwk = (stp2 == S_ERASED || stp2.isInstanceOf[S_PAIR])}
                 if(ttp1.isInstanceOf[S_PAIR]) {fstwk = (stp1 == S_ERASED || stp1.isInstanceOf[S_PAIR])} // TODO: Review?
                 if(ttp2.isInstanceOf[S_PAIR]) {sndwk = (stp2 == S_ERASED || stp2.isInstanceOf[S_PAIR])}
-                fstwk == sndwk
+                fstwk && sndwk
             }
             case _ => false
         }
@@ -181,7 +181,7 @@ class Semantics(fileName: String) {
         }
     }
 
-    def comparable(t1: S_TYPE, t2: S_TYPE, pos: (Int, Int)): Boolean = {
+    def isComparable(t1: S_TYPE, t2: S_TYPE): Boolean = {
         // t1 or t2 are not any
         t1 match {
             case S_INT => t2 == S_INT
@@ -191,16 +191,26 @@ class Semantics(fileName: String) {
             case S_ERASED => t2.isInstanceOf[S_PAIR] || t2 == S_ERASED
             case S_EMPTYARR => t2.isInstanceOf[S_ARRAY] || t2 == S_EMPTYARR
             case S_ARRAY(tp) => t2 match {
-                case S_ARRAY(tp1) => comparable(tp, tp1, pos)
+                case S_ARRAY(tp1) => isComparable(tp, tp1)
                 case S_EMPTYARR => true
                 case _ => false
             }
             case S_PAIR(tp1, tp2) => t2 match {
                 case S_ERASED => true
-                case S_PAIR(tp11, tp21) => comparable(tp1, tp11, pos) && comparable(tp2, tp21, pos)
+                case S_PAIR(tp11, tp21) => isComparable(tp1, tp11) && isComparable(tp2, tp21)
                 case _ => false
             }
             case S_ANY => false
+        }
+    }
+
+    def comparable(t1: S_TYPE, t2: S_TYPE, pos: (Int, Int)): Boolean = {
+        // t1 or t2 are not any
+        if (!isComparable(t1, t2)) {
+            errorRep.addUncomparable(t1, t2, pos)
+            return false
+        } else {
+            return true
         }
     }
 
