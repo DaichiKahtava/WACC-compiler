@@ -7,6 +7,7 @@ import parsley.character._
 import lexer.implicits.implicitSymbol
 import parsley.Parsley
 import parsley.syntax._
+import parsley.generic
 
 // Types
 sealed trait Type
@@ -149,33 +150,37 @@ object Ident extends ParserBridgePos1[String, Atom]
 object ArrElem extends ParserBridgePos2[String, List[Expr], Atom]
 
 // Statements
-object Program extends ParserBridgePos2[List[Func], Stmt, Program]
-object Func extends ParserBridgePos4[Type, String, List[Param], Stmt, Func]
+object Program extends ParserBridgePos2[List[Func], Stmt, Program] {
+    override def labels: List[String] = List("program body")
+}
+object Func extends ParserBridgePos4[Type, String, List[Param], Stmt, Func] {
+    override def labels: List[String] = List("function declaration")
+}
 object Param extends ParserBridgePos2[Type, String, Param]
 
 object Decl extends ParserBridgePos3[Type, String, RValue, Stmt] {
-    override def labels: List[String] = List("varaible declaration")
+    // override def labels: List[String] = List("varaible declaration")
 }
 object Asgn extends ParserBridgePos2[LValue, RValue, Stmt] {
-    override def labels: List[String] = List("assignment")
+    // override def labels: List[String] = List("assignment")
 }
 object Read extends ParserBridgePos1[LValue, Stmt] {
-    override def labels: List[String] = List("read statement")
+    // override def labels: List[String] = List("read statement")
 }
 object Free extends ParserBridgePos1[Expr, Stmt] {
-    override def labels: List[String] = List("free statement")
+    // override def labels: List[String] = List("free statement")
 }
 object Return extends ParserBridgePos1[Expr, Stmt] {
-    override def labels: List[String] = List("return statement")
+    // override def labels: List[String] = List("return statement")
 }
 object Exit extends ParserBridgePos1[Expr, Stmt] {
-    override def labels: List[String] = List("exit statement")
+    // override def labels: List[String] = List("exit statement")
 }
 object Print extends ParserBridgePos1[Expr, Stmt] {
-    override def labels: List[String] = List("print statement")
+    // override def labels: List[String] = List("print statement")
 }
 object Println extends ParserBridgePos1[Expr, Stmt] {
-    override def labels: List[String] = List("print statement")
+    // override def labels: List[String] = List("print statement")
 }
 object Cond extends ParserBridgePos3[Expr, Stmt, Stmt, Stmt]
 object Loop extends ParserBridgePos2[Expr, Stmt, Stmt]

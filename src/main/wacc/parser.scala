@@ -10,6 +10,7 @@ import parsley.expr.{chain, precedence, Ops, InfixL, InfixN, InfixR, Prefix}
 import parsley.position.pos
 import parsley.{Success, Failure}
 import parsley.debug._
+import parsley.errors.combinator._
 
 import lexer.implicits.implicitSymbol
 import lexer.{ident, intLit, charLit, strLit, fully}
@@ -70,7 +71,7 @@ object parser {
 
     // Statments
     
-    protected [wacc] lazy val program = Program("begin" ~> many(func), stmt <~ "end")
+    protected [wacc] lazy val program = Program("begin" ~> many(func).debug("func"), stmt.debug("stmt").label("program body") <~ "end")
     protected [wacc] lazy val func = atomic(Func(typep, ident, "(" ~> paramList <~ ")", "is" ~> stmt.filter(funcEnd) <~ "end"))
     protected [wacc] lazy val paramList = sepBy(param, ",")
     protected [wacc] lazy val param = Param(typep, ident) // TODO: RETURN IT TO PRIVATE ONCE TESTING IS DONE
@@ -86,19 +87,19 @@ object parser {
 
     protected [wacc] lazy val stmt: Parsley[Stmt] = 
         chain.left1(
-            (pos <~ "skip").map(Skip()(_))
-            | Decl(typep, ident, "=" ~> rvalue)
-            | Asgn(lvalue, "=" ~> rvalue)
-            | Read("read" ~> lvalue)
-            | Free("free" ~> expr)
-            | Return("return" ~> expr)
-            | Exit("exit" ~> expr)
-            | Print("print" ~> expr)
-            | Println("println" ~> expr)
-            | Cond("if" ~> expr, "then" ~> stmt, "else" ~> stmt <~ "fi")
-            | Loop("while" ~> expr, "do" ~> stmt <~ "done")
-            | Body("begin" ~> stmt <~ "end")
-        )(Delimit <# ";")
+            (pos <~ "skip").map(Skip()(_)).debug("skip")
+            | Decl(typep, ident, "=" ~> rvalue).debug("decl")
+            | Asgn(atomic(lvalue <~ "=").debug("Lvalue"), rvalue).debug("asgn")
+            | Read("read" ~> lvalue).debug("read")
+            | Free("free" ~> expr).debug("free")
+            | Return("return" ~> expr).debug("return")
+            | Exit("exit" ~> expr).debug("exit")
+            | Print("print" ~> expr).debug("print")
+            | Println("println" ~> expr).debug("pritln")
+            | Cond("if" ~> expr, "then" ~> stmt, "else" ~> stmt <~ "fi").debug("cond")
+            | Loop("while" ~> expr, "do" ~> stmt <~ "done").debug("loop")
+            | Body("begin" ~> stmt <~ "end").debug("body")
+        )(Delimit <# ";").debug("chain")
 
     protected [wacc] lazy val lvalue: Parsley[LValue] = atomic(leftArrayElem) | LIdent(ident) | pairElem // TODO: BACKTRACKING
     protected [wacc]lazy val rvalue: Parsley[RValue] = (
@@ -142,6 +143,6 @@ object parser {
             Ops(InfixN)(Eq <# "==", NEq <# "!="),
             Ops(InfixR)(And <# "&&"),
             Ops(InfixR)(Or <# "||")
-         )
+         ).explain("missing operand")
 
 }
