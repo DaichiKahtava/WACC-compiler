@@ -4,6 +4,10 @@ import parsley.{Success, Failure}
 
 object Main {
     def main(args: Array[String]): Unit = {
+        if (args.length != 1) {
+            println("Input is null.")
+            System.exit(300)
+        }        
         val input = scala.io.Source.fromFile(args(0)).mkString
         val parseResult = parser.parse(input)
 
