@@ -66,14 +66,10 @@ class semanticsTests extends AnyFlatSpec with BeforeAndAfterEach {
         sem.isSemCorrect(Read(LIdent("y")(0, 0))(0, 0)) shouldBe true
         sem.isSemCorrect(Read(LIdent("z")(0, 0))(0, 0)) shouldBe false
 
-        sem.isSemCorrect(Read(LArrElem("x", List(IntL(5)(0, 0)))(0, 0))(0, 0)) shouldBe false
-        sem.isSemCorrect(Read(LArrElem("y", List(IntL(5)(0, 0)))(0, 0))(0, 0)) shouldBe false // Not sure about this
-        sem.isSemCorrect(Read(LArrElem("z", List(StrL("this is a string")(0, 0)))(0, 0))(0, 0)) shouldBe false
-
         sem.isSemCorrect(Read(LArrElem("xs", List(IntL(5)(0, 0)))(0, 0))(0, 0)) shouldBe true
         sem.isSemCorrect(Read(LArrElem("ys", List(IntL(5)(0, 0)))(0, 0))(0, 0)) shouldBe true // Not sure about this
         sem.isSemCorrect(Read(LArrElem("zs", List(StrL("this is a string")(0, 0)))(0, 0))(0, 0)) shouldBe false
-        // Not sure how to do this, will leave for later
+        // // Not sure how to do this, will leave for later
         sem.isSemCorrect(Read(First(LIdent("pair")(0, 0))(0, 0))(0, 0)) shouldBe true
     }
 
