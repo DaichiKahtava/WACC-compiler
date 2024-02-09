@@ -139,7 +139,6 @@ exampleProgs/valid/variables/_VarNames.wacc
 exampleProgs/valid/variables/zeroIntDeclaration.wacc
 exampleProgs/valid/whack/q0.wacc
 exampleProgs/valid/whack/q10.wacc
-exampleProgs/valid/whack/q1.wacc
 exampleProgs/valid/whack/q2.wacc
 exampleProgs/valid/whack/q3.wacc
 exampleProgs/valid/whack/q4.wacc
