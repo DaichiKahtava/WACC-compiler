@@ -125,26 +125,34 @@ case class Second(lv: LValue)(val pos: (Int, Int)) extends PairElem
 object ArrayT extends ParserBridgePos1[Type, Type with PairElemType] // TODO: Needs review; not needed?
 object Pair extends ParserBridgePos2[PairElemType, PairElemType, Type]
 
-// Expressions
-object Not extends ParserBridgePos1[Expr, UnOp]
-object Neg extends ParserBridgePos1[Expr, UnOp]
-object Len extends ParserBridgePos1[Expr, UnOp]
-object Ord extends ParserBridgePos1[Expr, UnOp]
-object Chr extends ParserBridgePos1[Expr, UnOp]
+trait UnaryOperator extends ParserBridgePos1[Expr, UnOp] {
+    override def labels: List[String] = List("Unary operator")
+}
 
-object Mul extends ParserBridgePos2[Expr, Expr, BinOp]
-object Div extends ParserBridgePos2[Expr, Expr, BinOp]
-object Mod extends ParserBridgePos2[Expr, Expr, BinOp]
-object Add extends ParserBridgePos2[Expr, Expr, BinOp]
-object Minus extends ParserBridgePos2[Expr, Expr, BinOp]
-object GrT extends ParserBridgePos2[Expr, Expr, BinOp]
-object GrEqT extends ParserBridgePos2[Expr, Expr, BinOp]
-object LsT extends ParserBridgePos2[Expr, Expr, BinOp]
-object LsEqT extends ParserBridgePos2[Expr, Expr, BinOp]
-object Eq extends ParserBridgePos2[Expr, Expr, BinOp]
-object NEq extends ParserBridgePos2[Expr, Expr, BinOp]
-object And extends ParserBridgePos2[Expr, Expr, BinOp]
-object Or extends ParserBridgePos2[Expr, Expr, BinOp]
+trait BinaryOperator extends ParserBridgePos2[Expr, Expr, BinOp] {
+    override def labels: List[String] = List("Binary operator")
+}
+
+// Expressions
+object Not extends UnaryOperator
+object Neg extends UnaryOperator
+object Len extends UnaryOperator
+object Ord extends UnaryOperator
+object Chr extends UnaryOperator
+
+object Mul extends BinaryOperator
+object Div extends BinaryOperator
+object Mod extends BinaryOperator
+object Add extends BinaryOperator
+object Minus extends BinaryOperator
+object GrT extends BinaryOperator
+object GrEqT extends BinaryOperator
+object LsT extends BinaryOperator
+object LsEqT extends BinaryOperator
+object Eq extends BinaryOperator
+object NEq extends BinaryOperator
+object And extends BinaryOperator
+object Or extends BinaryOperator
 
 object IntL extends ParserBridgePos1[Int, Atom]
 object BoolL extends ParserBridgePos1[Boolean, Atom]
@@ -195,9 +203,17 @@ object LIdent extends ParserBridgePos1[String, LValue]
 object LArrElem extends ParserBridgePos2[String, List[Expr], LValue]
 
 object RExpr extends ParserBridgePos1[Expr, RValue]
-object ArrL extends ParserBridge1[List[Expr], RValue] // Not using position (we will use tthe elements instead)
-object NewPair extends ParserBridgePos2[Expr, Expr, RValue]
+object ArrL extends ParserBridge1[List[Expr], RValue] {
+    override def labels: List[String] = List("array literal")
+} // Not using position (we will use tthe elements instead)
+object NewPair extends ParserBridgePos2[Expr, Expr, RValue] {
+    override def labels: List[String] = List("newpair")
+}
 object Call extends ParserBridgePos2[String, List[Expr], RValue]
 
-object First extends ParserBridgePos1[LValue, PairElem]
-object Second extends ParserBridgePos1[LValue, PairElem]
+object First extends ParserBridgePos1[LValue, PairElem] {
+    override def labels: List[String] = List("pair member")
+}
+object Second extends ParserBridgePos1[LValue, PairElem]  {
+    override def labels: List[String] = List("pair member")
+}

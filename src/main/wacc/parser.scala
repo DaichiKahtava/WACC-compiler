@@ -113,7 +113,7 @@ object parser {
 
     protected [wacc] lazy val argList = sepBy(expr, ",")
     protected [wacc] lazy val pairElem = First("fst" ~> lvalue) | Second("snd" ~> lvalue)
-    protected [wacc] lazy val emptyArrayLiter = ("[" <~> "]") #> ArrL(List.empty)
+    protected [wacc] lazy val emptyArrayLiter = (("[" <~> "]") #> ArrL(List.empty)).label("empty array")
     protected [wacc] lazy val arrayLiter = ArrL("[" ~> sepBy1(expr, ",") <~ "]")
 
     // Expressions
@@ -143,6 +143,6 @@ object parser {
             Ops(InfixN)(Eq <# "==", NEq <# "!="),
             Ops(InfixR)(And <# "&&"),
             Ops(InfixR)(Or <# "||")
-         ).explain("missing operand")
+         ).label("full expression").explain("This expression is missing an operand")
 
 }
