@@ -404,7 +404,21 @@ class Semantics(fileName: String) {
         case ArrL(xs) => isSemCorrect(xs)
         case NewPair(e1, e2) => isSemCorrect(e1) && isSemCorrect(e2)
         case pe: PairElem => isSemCorrect(pe)
-        case Call(_, xs) => isSemCorrect(xs) // TODO: Fully saturated!s
+        case c@Call(id, xs) => {
+            val f = curSymTable.findFunGlobal(id)
+            if (f.isDefined) {
+                isSemCorrect(xs)
+            }
+            else{
+                errorRep.addError("Function \""+id+"\" is not defined!", c.pos)
+                return false                
+            }
+            
+            
+            
+            
+            
+        } // TODO: Fully saturated!s
     }
 
     // PairElem check 
