@@ -6,10 +6,10 @@ import org.scalatest.BeforeAndAfterEach
 
 class symTableTest extends AnyFlatSpec with BeforeAndAfterEach {
 
-    var symTable: SymTable = new SymTable(None)
+    var symTable: SymTable = new SymTable(None, None)
 
     override protected def beforeEach(): Unit = {
-        symTable = new SymTable(None)
+        symTable = new SymTable(None, None)
     }                                                                                                
 
     "The variable aspect of the symbol table" should "not have anything inside it at first" in {
@@ -35,14 +35,14 @@ class symTableTest extends AnyFlatSpec with BeforeAndAfterEach {
     }
 
     it should "recognise a variable from an enclosing scope" in {
-        val symTable2 = new SymTable(Some(symTable))
+        val symTable2 = new SymTable(Some(symTable), None)
         symTable.addSymbol("gta", VARIABLE(S_INT))
         symTable2.varDefinedGlobal("gta") shouldBe true
 
     }
 
     it should "shadow a variable from an enclosing scope" in {
-        val symTable2 = new SymTable(Some(symTable))
+        val symTable2 = new SymTable(Some(symTable), None)
         symTable.addSymbol("gta", VARIABLE(S_INT))
         symTable2.findVarLocal("gta") shouldBe None
         symTable2.addSymbol("gta", VARIABLE(S_STRING)) shouldBe true
@@ -54,7 +54,7 @@ class symTableTest extends AnyFlatSpec with BeforeAndAfterEach {
     }
 
     it should "not return variables from enclosing scopes for local methods" in {
-        val symTable2 = new SymTable(Some(symTable))
+        val symTable2 = new SymTable(Some(symTable), None)
         symTable.addSymbol("gta", VARIABLE(S_INT)) shouldBe true
         symTable2.varDefinedLocal("gta") shouldBe false
         symTable2.findVarLocal("gta") shouldBe None
@@ -74,43 +74,43 @@ class symTableTest extends AnyFlatSpec with BeforeAndAfterEach {
 
     it should "be able to store and return a single function" in {
         symTable.varDefinedGlobal("gta") shouldBe false
-        symTable.addSymbol("gta", FUNCTION(S_INT)(new SymTable(Some(symTable)))) shouldBe true
+        symTable.addSymbol("gta", FUNCTION(S_INT)(new SymTable(Some(symTable), None))) shouldBe true
         symTable.funDefinedLocal("gta") shouldBe true
         symTable.funDefinedGlobal("gta") shouldBe true
-        symTable.findFunGlobal("gta") shouldBe Some(FUNCTION(S_INT)(new SymTable(Some(symTable))))
-        symTable.findFunLocal("gta") shouldBe Some(FUNCTION(S_INT)(new SymTable(Some(symTable))))
+        symTable.findFunGlobal("gta") shouldBe Some(FUNCTION(S_INT)(new SymTable(Some(symTable), None)))
+        symTable.findFunLocal("gta") shouldBe Some(FUNCTION(S_INT)(new SymTable(Some(symTable), None)))
     }
 
     it should "allow an identifier to be used only once" in {
         symTable.varDefinedGlobal("gta") shouldBe false
-        symTable.addSymbol("gta", FUNCTION(S_INT)(new SymTable(Some(symTable)))) shouldBe true
-        symTable.addSymbol("gta", FUNCTION(S_STRING)(new SymTable(Some(symTable)))) shouldBe false
-        symTable.findFunGlobal("gta") shouldBe Some(FUNCTION(S_INT)(new SymTable(Some(symTable))))
-        symTable.findFunLocal("gta") shouldBe Some(FUNCTION(S_INT)(new SymTable(Some(symTable))))
+        symTable.addSymbol("gta", FUNCTION(S_INT)(new SymTable(Some(symTable), None))) shouldBe true
+        symTable.addSymbol("gta", FUNCTION(S_STRING)(new SymTable(Some(symTable), None))) shouldBe false
+        symTable.findFunGlobal("gta") shouldBe Some(FUNCTION(S_INT)(new SymTable(Some(symTable), None)))
+        symTable.findFunLocal("gta") shouldBe Some(FUNCTION(S_INT)(new SymTable(Some(symTable), None)))
     }
 
     it should "recognise a function from an enclosing scope" in {
-        val symTable2 = new SymTable(Some(symTable))
-        symTable.addSymbol("gta", FUNCTION(S_INT)(new SymTable(Some(symTable))))
+        val symTable2 = new SymTable(Some(symTable), None)
+        symTable.addSymbol("gta", FUNCTION(S_INT)(new SymTable(Some(symTable), None)))
         symTable2.funDefinedGlobal("gta") shouldBe true
 
     }
 
     it should "shadow a funcion from an enclosing scope" in {
-        val symTable2 = new SymTable(Some(symTable))
-        symTable.addSymbol("gta", FUNCTION(S_INT)(new SymTable(Some(symTable))))
+        val symTable2 = new SymTable(Some(symTable), None)
+        symTable.addSymbol("gta", FUNCTION(S_INT)(new SymTable(Some(symTable), None)))
         symTable2.findFunLocal("gta") shouldBe None
-        symTable2.addSymbol("gta", FUNCTION(S_STRING)(new SymTable(Some(symTable)))) shouldBe true
-        symTable2.findFunGlobal("gta") shouldBe Some(FUNCTION(S_STRING)(new SymTable(Some(symTable))))
-        symTable2.findFunLocal("gta") shouldBe Some(FUNCTION(S_STRING)(new SymTable(Some(symTable))))
-        symTable.findFunGlobal("gta") shouldBe Some(FUNCTION(S_INT)(new SymTable(Some(symTable))))
-        symTable.findFunLocal("gta") shouldBe Some(FUNCTION(S_INT)(new SymTable(Some(symTable))))
+        symTable2.addSymbol("gta", FUNCTION(S_STRING)(new SymTable(Some(symTable), None))) shouldBe true
+        symTable2.findFunGlobal("gta") shouldBe Some(FUNCTION(S_STRING)(new SymTable(Some(symTable), None)))
+        symTable2.findFunLocal("gta") shouldBe Some(FUNCTION(S_STRING)(new SymTable(Some(symTable), None)))
+        symTable.findFunGlobal("gta") shouldBe Some(FUNCTION(S_INT)(new SymTable(Some(symTable), None)))
+        symTable.findFunLocal("gta") shouldBe Some(FUNCTION(S_INT)(new SymTable(Some(symTable), None)))
         //TODO: KEY CONSIDERATION! DOES THAT APPLY TO FUNCTIONS?
     }
 
     it should "not return functions from enclosing scopes for local methods" in {
-        val symTable2 = new SymTable(Some(symTable))
-        symTable.addSymbol("gta", FUNCTION(S_INT)(new SymTable(Some(symTable)))) shouldBe true
+        val symTable2 = new SymTable(Some(symTable), None)
+        symTable.addSymbol("gta", FUNCTION(S_INT)(new SymTable(Some(symTable), None))) shouldBe true
         symTable2.varDefinedLocal("gta") shouldBe false
         symTable2.findFunLocal("gta") shouldBe None
     }
@@ -123,7 +123,7 @@ class symTableTest extends AnyFlatSpec with BeforeAndAfterEach {
     }
 
     "The symbol table in general" should "accomodate a seperate namespace for functions" in {
-        symTable.addSymbol("gta", FUNCTION(S_INT)(new SymTable(Some(symTable)))) shouldBe true
+        symTable.addSymbol("gta", FUNCTION(S_INT)(new SymTable(Some(symTable), None))) shouldBe true
         symTable.addSymbol("gta", VARIABLE(S_INT)) shouldBe true
         symTable.findFunLocal("gta") shouldBe Some(FUNCTION(S_INT)(symTable))
         // The symTable in the second set of brackets is not involved in the comparison

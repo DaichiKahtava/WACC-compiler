@@ -10,7 +10,7 @@ class semanticsTests extends AnyFlatSpec with BeforeAndAfterEach {
 
     override protected def beforeEach(): Unit = {
         sem = new Semantics("foo.txt")
-        sem.curSymTable = new SymTable(None)
+        sem.curSymTable = new SymTable(None, None)
     }
 
     "Pair types" should "maintain that their type parameters are invariant" in {
