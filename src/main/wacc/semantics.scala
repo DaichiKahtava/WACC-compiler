@@ -41,7 +41,14 @@ class Semantics(fileName: String) {
             case And(_, _) => S_BOOL
             case Or(_, _) => S_BOOL
 
-            case ArrElem(id, _)  => curSymTable.findVarGlobal(id).get.tp.asInstanceOf[S_ARRAY].tp
+            case ArrElem(id, _)  => curSymTable.findVarGlobal(id).get.tp match {
+                case S_ARRAY(tp) => tp
+                case _ => {
+                    errorRep.addError("Variable \""+id+"\" is not an array!", e.pos)
+                    S_ANY
+                }
+            }
+            // asInstanceOf[S_ARRAY].tp
         }
     }
 
