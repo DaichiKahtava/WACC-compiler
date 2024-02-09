@@ -25,7 +25,8 @@ object lexer {
                 "char", "string", "pair", "null", "true", "false", "newpair", "call"
             ),
             hardOperators = Set(
-                "!", "-", "len", "ord", "chr", "*", "/", "%", "+", ">", ">=", "<", "<=", "==", "!=", "&&", "||", ";", "="
+                "!", "-", "len", "ord", "chr", "*", "/", "%", "+",">",
+                ">=", "<", "<=", "==", "!=", "&&", "||", ";", "="
             )
         ),
 
@@ -73,8 +74,8 @@ object lexer {
             "!" -> Label("negation operator"),
             "&&" -> Label("binary logical operator"),
             "||" -> Label("binary logical operator")
-
         )
+        override def labelEscapeEnd = LabelAndReason("valid escape character", "provided escape character is invalid")
     }
     private val lexer = new Lexer(desc, errConfig)
 

@@ -10,6 +10,7 @@ import parsley.expr.{chain, precedence, Ops, InfixL, InfixN, InfixR, Prefix}
 import parsley.position.pos
 import parsley.{Success, Failure}
 import parsley.debug._
+import parsley.errors.combinator._
 
 import lexer.implicits.implicitSymbol
 import lexer.{ident, intLit, charLit, strLit, fully}
@@ -70,7 +71,7 @@ object parser {
 
     // Statments
     
-    protected [wacc] lazy val program = Program("begin" ~> many(func), stmt <~ "end")
+    protected [wacc] lazy val program = Program("begin" ~> many(func), stmt.label("program body") <~ "end")
     protected [wacc] lazy val func = atomic(Func(typep, ident, "(" ~> paramList <~ ")", "is" ~> stmt.filter(funcEnd) <~ "end"))
     protected [wacc] lazy val paramList = sepBy(param, ",")
     protected [wacc] lazy val param = Param(typep, ident) // TODO: RETURN IT TO PRIVATE ONCE TESTING IS DONE
@@ -88,7 +89,7 @@ object parser {
         chain.left1(
             (pos <~ "skip").map(Skip()(_))
             | Decl(typep, ident, "=" ~> rvalue)
-            | Asgn(lvalue, "=" ~> rvalue)
+            | Asgn(atomic(lvalue <~ "="), rvalue)
             | Read("read" ~> lvalue)
             | Free("free" ~> expr)
             | Return("return" ~> expr)
@@ -107,7 +108,7 @@ object parser {
         | NewPair("newpair" ~> "(" ~> expr, "," ~> expr <~ ")")
         | pairElem
         | atomic(Call("call" ~> ident, "(" ~> argList <~ ")"))
-        | expr.map(e => RExpr(e)(0,0)) 
+        | RExpr(expr)
     )
 
     protected [wacc] lazy val argList = sepBy(expr, ",")
@@ -142,6 +143,6 @@ object parser {
             Ops(InfixN)(Eq <# "==", NEq <# "!="),
             Ops(InfixR)(And <# "&&"),
             Ops(InfixR)(Or <# "||")
-         )
+         ).explain("missing operand")
 
 }
