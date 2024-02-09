@@ -1,14 +1,22 @@
 package wacc
 
 import parsley.{Success, Failure}
+import java.io.File
 
 object Main {
     def main(args: Array[String]): Unit = {
         if (args.length != 1) {
             println("Input is null.")
             System.exit(300)
-        }        
-        val input = scala.io.Source.fromFile(args(0)).mkString
+        }
+
+        val inputFile = new File(args(0))
+        if (!inputFile.exists() || !inputFile.isFile) {
+            println("Input file does not exist.")
+            System.exit(400)
+        }
+
+        val input = scala.io.Source.fromFile(inputFile).mkString
         val parseResult = parser.parse(input)
 
         parseResult match {
@@ -26,7 +34,7 @@ object Main {
     }
 
     def isSemCorrect(ast: Any): Boolean = {
-      true // TODO.
+        true // TODO.
     }
     
 }
