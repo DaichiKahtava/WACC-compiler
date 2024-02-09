@@ -6,6 +6,7 @@ import scala.collection.mutable.ListBuffer
 // Symbol table class inspired from week 4 Compiler's lectures
 class SymTable(parentTable: Option[SymTable]) {
     val varDict = Map.empty[String, VARIABLE]
+    val parDict = Map.empty[String, VARIABLE]
     val funDict = Map.empty[String, FUNCTION]
     val childScopes = ListBuffer.empty[SymTable]
 
@@ -18,6 +19,16 @@ class SymTable(parentTable: Option[SymTable]) {
         }
         else {
             varDict.addOne(id, te)
+            return true
+        }
+    }
+
+    def addParam(id: String, te: VARIABLE): Boolean = {
+        if (parDefinedLocal(id)) {
+            return false
+        }
+        else {
+            parDict.addOne(id, te)
             return true
         }
     }
@@ -50,7 +61,11 @@ class SymTable(parentTable: Option[SymTable]) {
     def findVarGlobal(id: String): Option[VARIABLE] = {
         return varDict.get(id) match {
             case None => {
-                if (parentTable != None) {parentTable.get.findVarGlobal(id)} else {None}
+                parDict.get(id) match {
+                    case te@Some(_) => te
+                    case None => if (parentTable != None) {parentTable.get.findVarGlobal(id)} else {None}
+                }
+                
             }
             case te@Some(_) => te
         }
@@ -76,6 +91,10 @@ class SymTable(parentTable: Option[SymTable]) {
 
     def varDefinedLocal(id: String): Boolean = {
         return findVarLocal(id) != None
+    }
+
+    def parDefinedLocal(id: String): Boolean = {
+        return parDict.contains(id)
     }
 
     def funDefinedGlobal(id: String): Boolean = {

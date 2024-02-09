@@ -176,7 +176,7 @@ exampleProgs/valid/function/nested_functions/mutualRecursion.wacc
 exampleProgs/valid/function/nested_functions/printInputTriangle.wacc
 exampleProgs/valid/function/nested_functions/printTriangle.wacc
 exampleProgs/valid/function/nested_functions/simpleRecursion.wacc
-'exampleProgs/valid/function/simple_functions/argScopeCanBeShadowed.wacc
+exampleProgs/valid/function/simple_functions/argScopeCanBeShadowed.wacc
 exampleProgs/valid/function/simple_functions/asciiTable.wacc
 exampleProgs/valid/function/simple_functions/functionDeclaration.wacc
 exampleProgs/valid/function/simple_functions/functionDoubleReturn.wacc

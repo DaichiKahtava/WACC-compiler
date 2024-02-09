@@ -246,7 +246,7 @@ class Semantics(fileName: String) {
         program.funcs.foreach((f) => {
             curSymTable = curSymTable.findFunGlobal(f.id).get.st // We are in the local symbolTable
             f.params.foreach((p) => {
-                if (!curSymTable.addSymbol(p.id, VARIABLE(toSemanticType(p.tp)))) {
+                if (!curSymTable.addParam(p.id, VARIABLE(toSemanticType(p.tp)))) {
                     errorRep.addError("Parameter \""+p.id+"\" is already defined!", p.pos)
                 }
             })
@@ -264,6 +264,7 @@ class Semantics(fileName: String) {
     def checkReturnType(stmt: Stmt, tp: S_TYPE): Unit = stmt match {
         case Return(e) => {
             if (getType(e) != tp) {
+                // TODO: Add error message for return type inconsistencies in the reporter
                 errorRep.addError("Return expression type does not match function return type.", e.pos)
             }
         }
@@ -274,7 +275,6 @@ class Semantics(fileName: String) {
         case Body(s) => checkReturnType(s, tp)
         case Delimit(_, s) => checkReturnType(s, tp)
         case _ => errorRep.addError("Statement is not returning", (0,0))
-        // TODO: Centralised mechanism to lift position out of statments
     }
 
     // TODO: Param using symbol table
@@ -358,7 +358,7 @@ class Semantics(fileName: String) {
         case ArrL(xs) => isSemCorrect(xs)
         case NewPair(e1, e2) => isSemCorrect(e1) && isSemCorrect(e2)
         case pe: PairElem => isSemCorrect(pe)
-        case Call(_, xs) => isSemCorrect(xs)
+        case Call(_, xs) => isSemCorrect(xs) // TODO: Fully saturated!s
     }
 
     // PairElem check 

@@ -131,6 +131,13 @@ class symTableTest extends AnyFlatSpec with BeforeAndAfterEach {
         symTable.findVarLocal("gta") shouldBe Some(VARIABLE(S_INT))
     }
 
+    it should "allow shadowing of parameters" in {
+        symTable.addParam("gta", VARIABLE(S_STRING)) shouldBe true
+        symTable.findVarGlobal("gta") shouldBe Some(VARIABLE(S_STRING))
+        symTable.addSymbol("gta", VARIABLE(S_INT)) shouldBe true
+        symTable.findVarGlobal("gta") shouldBe Some(VARIABLE(S_INT))
+    }
+
 
 
 }
