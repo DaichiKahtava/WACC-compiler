@@ -71,7 +71,7 @@ object parser {
 
     // Statments
     
-    protected [wacc] lazy val program = Program("begin" ~> many(func).debug("func"), stmt.debug("stmt").label("program body") <~ "end")
+    protected [wacc] lazy val program = Program("begin" ~> many(func), stmt.label("program body") <~ "end")
     protected [wacc] lazy val func = atomic(Func(typep, ident, "(" ~> paramList <~ ")", "is" ~> stmt.filter(funcEnd) <~ "end"))
     protected [wacc] lazy val paramList = sepBy(param, ",")
     protected [wacc] lazy val param = Param(typep, ident) // TODO: RETURN IT TO PRIVATE ONCE TESTING IS DONE
@@ -87,19 +87,19 @@ object parser {
 
     protected [wacc] lazy val stmt: Parsley[Stmt] = 
         chain.left1(
-            (pos <~ "skip").map(Skip()(_)).debug("skip")
-            | Decl(typep, ident, "=" ~> rvalue).debug("decl")
-            | Asgn(atomic(lvalue <~ "=").debug("Lvalue"), rvalue).debug("asgn")
-            | Read("read" ~> lvalue).debug("read")
-            | Free("free" ~> expr).debug("free")
-            | Return("return" ~> expr).debug("return")
-            | Exit("exit" ~> expr).debug("exit")
-            | Print("print" ~> expr).debug("print")
-            | Println("println" ~> expr).debug("pritln")
-            | Cond("if" ~> expr, "then" ~> stmt, "else" ~> stmt <~ "fi").debug("cond")
-            | Loop("while" ~> expr, "do" ~> stmt <~ "done").debug("loop")
-            | Body("begin" ~> stmt <~ "end").debug("body")
-        )(Delimit <# ";").debug("chain")
+            (pos <~ "skip").map(Skip()(_))
+            | Decl(typep, ident, "=" ~> rvalue)
+            | Asgn(atomic(lvalue <~ "="), rvalue)
+            | Read("read" ~> lvalue)
+            | Free("free" ~> expr)
+            | Return("return" ~> expr)
+            | Exit("exit" ~> expr)
+            | Print("print" ~> expr)
+            | Println("println" ~> expr)
+            | Cond("if" ~> expr, "then" ~> stmt, "else" ~> stmt <~ "fi")
+            | Loop("while" ~> expr, "do" ~> stmt <~ "done")
+            | Body("begin" ~> stmt <~ "end")
+        )(Delimit <# ";")
 
     protected [wacc] lazy val lvalue: Parsley[LValue] = atomic(leftArrayElem) | LIdent(ident) | pairElem // TODO: BACKTRACKING
     protected [wacc]lazy val rvalue: Parsley[RValue] = (
@@ -108,7 +108,7 @@ object parser {
         | NewPair("newpair" ~> "(" ~> expr, "," ~> expr <~ ")")
         | pairElem
         | atomic(Call("call" ~> ident, "(" ~> argList <~ ")"))
-        | expr.map(RExpr(_)(0,0)) 
+        | RExpr(expr)
     )
 
     protected [wacc] lazy val argList = sepBy(expr, ",")

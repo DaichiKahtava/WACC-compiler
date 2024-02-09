@@ -512,7 +512,7 @@ class PositionTest extends AnyFlatSpec {
   }
 
   // not handling whitespaces, if you remove space between = 1 it works
-  ignore should "correctly parse positions for variable declarations" in {
+  it should "correctly parse positions for variable declarations" in {
     val p = parser.stmt.parse("int x = 1")
     p.isSuccess shouldBe true
     val node = p.get
@@ -712,8 +712,7 @@ class PositionTest extends AnyFlatSpec {
     }
   }
 
-  // says type starts at correct pos but param does not, starts at int too
-  ignore should "correctly parse positions for function declarations with parameters" in {
+  it should "correctly parse positions for function declarations with parameters" in {
     val p = parser.func.parse("int func(int x, int y) is begin return x + y end end")
     p.isSuccess shouldBe true
     val node = p.get
@@ -733,7 +732,7 @@ class PositionTest extends AnyFlatSpec {
                 case _ => fail("Unexpected type within function parameter.")
               }
               id shouldBe (if (index == 0) "x" else "y")
-              param.pos shouldBe (1, 14 + index * 7)
+              param.pos shouldBe (1, 10 + index * 7)
             case _ => fail("Unexpected type within function parameter.")
           }
         } 
@@ -753,21 +752,6 @@ class PositionTest extends AnyFlatSpec {
 
       case _ => fail("Parsing didn't produce a Call object") 
     }
-  }
-
-  ignore should "correctly parse positions for nested array literals" in {
-    // val p = parser.arrayLiter.parse("[[1, 2], [3, 4]]")
-    // p.isSuccess shouldBe true
-    // val node = p.get
-    // node shouldBe ArrL(List(ArrL(List(IntL(1)(1,2), IntL(2)(1,5))).asInstanceOf[Expr], 
-    //               ArrL(List(IntL(3)(1,10), IntL(4)(1,13))).asInstanceOf[Expr]))
-  }
-
-  ignore should "correctly parse positions for nested pair literals" in {
-    // val p = parser.rvalue.parse("newpair(newpair(), newpair())")
-    // p.isSuccess shouldBe true
-    // val node = p.get
-    // node shouldBe NewPair(NewPair()(1,9).asInstanceOf[Expr], NewPair()(1,20).asInstanceOf[Expr])(1,1)
   }
 
   it should "correctly parse positions for nested while-do-done expressions" in {
@@ -965,24 +949,16 @@ class PositionTest extends AnyFlatSpec {
     }
   }
 
-  // this returns true but unsure how to do it
-  ignore should "correctly parse positions for a multi-dimensional array with single elements" in {
-    val p = parser.arrayLiter.parse("[1][1]")
+  it should "correctly parse positions for a program" in {
+    val p = parser.program.parse("begin skip end")
     p.isSuccess shouldBe true
-    val node = p.get
-  }
 
-  // neither program below return true
-  ignore should "correctly parse positions for a program" in {
-    val p = parser.program.parse("begin end")
-    p.isSuccess shouldBe true
     val node = p.get
-  }
-
-  ignore should "correctly parse positions for a program spanning several lines" in {
-    val p = parser.program.parse("begin \n end")
-    p.isSuccess shouldBe true
-    val node = p.get
+    node match { 
+      case prog: Program => 
+        prog.pos shouldBe (1, 1)
+      case _ => fail("Parsing failed to produce a Program.")
+    } 
   }
 
   it should "correctly parse positions for if expressions spanning several lines" in {
