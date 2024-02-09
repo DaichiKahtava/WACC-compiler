@@ -340,12 +340,16 @@ class Semantics(fileName: String) {
                     isSemCorrect(rv)
                     return false 
                 }
-                
+                if (isSemCorrect(rv)) {
                 val curType = getType(rv)
                 rv match {
-                    case pe: PairElem if curType == S_ANY => isSemCorrect(rv) 
+                        case pe: PairElem => curType == S_ANY
                     case _ => isSemCorrect(rv) && checkCompatible(curType, toSemanticType(tp), d.pos)
+                    }
+                } else {
+                    false
                 }
+                
             }
 
             case Asgn(lv: LIdent, rv) => isSemCorrect(lv) && isSemCorrect(rv) &&
