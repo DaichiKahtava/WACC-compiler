@@ -4,7 +4,7 @@ import scala.collection.mutable.Map
 import scala.collection.mutable.ListBuffer
 
 // Symbol table class inspired from week 4 Compiler's lectures
-class SymTable(parentTable: Option[SymTable]) {
+class SymTable(parentTable: Option[SymTable], returnType: Option[S_TYPE]) {
     val varDict = Map.empty[String, VARIABLE]
     val parDict = Map.empty[String, VARIABLE]
     val funDict = Map.empty[String, FUNCTION]
@@ -107,9 +107,13 @@ class SymTable(parentTable: Option[SymTable]) {
 
     def newUnamedScope(): SymTable = {
         // TODO: Needs to get tested!
-        val st = new SymTable(Some(this))
+        val st = new SymTable(Some(this), returnType)
         childScopes.append(st)
         return st;
+    }
+
+    def getReturnType(): Option[S_TYPE] = {
+        return returnType
     }
 }
  

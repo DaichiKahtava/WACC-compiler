@@ -3,7 +3,7 @@ package wacc
 class Semantics(fileName: String) {
 
     /// Global pointer/reference to current SymTable
-    var curSymTable = new SymTable(None)
+    var curSymTable = new SymTable(None, None)
     var errorRep = new SemErrorReporter(fileName)
 
     /// Expressions ///
@@ -286,11 +286,11 @@ class Semantics(fileName: String) {
                 if (existingF.isDefined) {
                     errorRep.addError("Function \""+f.id+"\" is already defined more than once!", f.pos)
                     if (existingF.get.tp != toSemanticType(f.tp)) {
-                        curSymTable.redefineSymbol(f.id, FUNCTION(S_ANY)(new SymTable(Some(curSymTable))))
+                        curSymTable.redefineSymbol(f.id, FUNCTION(S_ANY)(new SymTable(Some(curSymTable), Some(S_ANY))))
                     }
 
                 } else {
-                    curSymTable.addSymbol(f.id, FUNCTION(fType)(new SymTable(Some(curSymTable))))
+                    curSymTable.addSymbol(f.id, FUNCTION(fType)(new SymTable(Some(curSymTable), Some(fType))))
                 }
             }
         )
@@ -302,7 +302,7 @@ class Semantics(fileName: String) {
                 }
             })
             isSemCorrect(f.s)
-            checkReturnType(f.s, toSemanticType(f.tp))
+            checkReturnType(f.s, toSemanticType(f.tp)) // Needed to check the existence of a return statement
             curSymTable = curSymTable.parent().get // We are in the parent/global symbolTable
         })
         val res = isSemCorrect(program.s)
@@ -373,7 +373,23 @@ class Semantics(fileName: String) {
                 }
             }
 
-            case Return(x) => isSemCorrect(x)
+            case r@Return(x) => {
+                isSemCorrect(x)
+                curSymTable.getReturnType() match {
+                    case Some(tp) => {            
+                        if (!canWeakenTo(getType(x), tp)) {
+                        // TODO: Add error message for return type inconsistencies in the reporter
+                            errorRep.addError("Return expression type does not match function's return type.", r.pos)
+                            return false
+                        }
+                        return true
+                    }
+                    case None => {
+                        errorRep.addError("Return statement outside of function", r.pos)
+                        return false
+                    }
+                }
+            }
             case Exit(x) => equalType(getType(x), S_INT, x.pos)
             case Print(x) => isSemCorrect(x)
             case Println(x) => isSemCorrect(x)
@@ -400,7 +416,11 @@ class Semantics(fileName: String) {
                 curSymTable = curSymTable.parent().get
                 return res
             }
-            case Delimit(s1, s2) => isSemCorrect(s1) && isSemCorrect(s2)
+            case Delimit(s1, s2) => {
+                val cs1 = isSemCorrect(s1)
+                val cs2 = isSemCorrect(s2)
+                cs1 && cs2
+            }
         }
   
 
