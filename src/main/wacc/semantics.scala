@@ -106,27 +106,40 @@ class Semantics(fileName: String) {
     def canWeakenTo(source: S_TYPE, target: S_TYPE): Boolean = target match {
         case S_ANY  => true
         case S_ERASED => source.isInstanceOf[S_PAIR]
-        case S_PAIR(S_ERASED, ttp2) => source match {
-            case S_PAIR(S_PAIR(_, _), stp2) => stp2 == ttp2 
-            case S_PAIR(stp1, stp2) => stp1 == S_ERASED && stp2 == ttp2 
-            case S_ERASED => true
-            case _ => false
-        }
-        case S_PAIR(ttp1, S_ERASED) => source match {
-            case S_PAIR(stp1, S_PAIR(_, _)) => stp1 == ttp1 
-            case S_PAIR(stp1, stp2) => stp2 == S_ERASED && stp1 == ttp1 
-            case S_ERASED => true
-            case _ => false
-        }
+        // case S_PAIR(S_ERASED, ttp2) => source match {
+        //     case S_PAIR(S_PAIR(_, _), stp2) => stp2 == ttp2 
+        //     case S_PAIR(stp1, stp2) => stp1 == S_ERASED && stp2 == ttp2 
+        //     case S_ERASED => true
+        //     case _ => false
+        // }
+        // case S_PAIR(ttp1, S_ERASED) => source match {
+        //     case S_PAIR(stp1, S_PAIR(_, _)) => stp1 == ttp1 
+        //     case S_PAIR(stp1, stp2) => stp2 == S_ERASED && stp1 == ttp1 
+        //     case S_ERASED => true
+        //     case _ => false
+        // }
         case S_PAIR(ttp1, ttp2) => source match {
             //pairs invariant in type parameters (no use of canWeakenTo here!)
-            case S_PAIR(stp1, stp2) => stp1 == ttp1 && stp2 == ttp2 
             case S_ERASED => true
+            case S_PAIR(stp1, stp2) => {
+                var fstwk = ttp1 == stp1
+                var sndwk = ttp2 == stp2
+                if(ttp1 == S_ERASED) {fstwk = (stp1 == S_ERASED || stp1.isInstanceOf[S_PAIR])}
+                if(ttp2 == S_ERASED) {sndwk = (stp2 == S_ERASED || stp2.isInstanceOf[S_PAIR])}
+                if(ttp1.isInstanceOf[S_PAIR]) {fstwk = (stp1 == S_ERASED || stp1.isInstanceOf[S_PAIR])} // TODO: Review?
+                if(ttp2.isInstanceOf[S_PAIR]) {sndwk = (stp2 == S_ERASED || stp2.isInstanceOf[S_PAIR])}
+                fstwk == sndwk
+            }
             case _ => false
         }
-        case S_ARRAY(tp) => tp match {
-            case _ => (source.isInstanceOf[S_ARRAY] && source.asInstanceOf[S_ARRAY].tp == tp) ||
-                source == S_EMPTYARR
+        case S_ARRAY(ttp) => source match {
+            case S_ARRAY(stp) => {
+                if(ttp == S_ERASED) {stp == S_ERASED || stp.isInstanceOf[S_PAIR]}
+                if(ttp.isInstanceOf[S_PAIR]) {stp == S_ERASED || stp.isInstanceOf[S_PAIR]}
+                else {stp == ttp}
+            }
+            case S_EMPTYARR => true
+            case _ => false
         }
         case S_STRING => source == S_STRING || source == S_ARRAY(S_CHAR)
         case _ => target == source
