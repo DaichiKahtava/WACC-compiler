@@ -313,11 +313,6 @@ class Semantics(fileName: String) {
         )
         program.funcs.foreach((f) => {
             curSymTable = curSymTable.findFunGlobal(f.id).get.st // We are in the local symbolTable
-            f.params.foreach((p) => {
-                if (!curSymTable.addParam(p.id, VARIABLE(toSemanticType(p.tp)))) {
-                    errorRep.addError("Parameter \""+p.id+"\" is already defined!", p.pos)
-                }
-            })
             isSemCorrect(f.s)
             checkReturning(f.s, f.pos) // Needed to check the existence of a return statement
             curSymTable = curSymTable.parent().get // We are in the parent/global symbolTable
