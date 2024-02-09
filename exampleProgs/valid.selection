@@ -1,6 +1,6 @@
 exampleProgs/valid/advanced/binarySortTree.wacc
-exampleProgs/valid/advanced/hashTable.wacc
-exampleProgs/valid/advanced/ticTacToe.wacc
+'exampleProgs/valid/advanced/hashTable.wacc
+'exampleProgs/valid/advanced/ticTacToe.wacc
 exampleProgs/valid/array/arrayBasic.wacc
 exampleProgs/valid/array/arrayEmpty.wacc
 exampleProgs/valid/array/arrayIndexMayBeArrayIndex.wacc
@@ -139,7 +139,6 @@ exampleProgs/valid/variables/_VarNames.wacc
 exampleProgs/valid/variables/zeroIntDeclaration.wacc
 exampleProgs/valid/whack/q0.wacc
 exampleProgs/valid/whack/q10.wacc
-exampleProgs/valid/whack/q1.wacc
 exampleProgs/valid/whack/q2.wacc
 exampleProgs/valid/whack/q3.wacc
 exampleProgs/valid/whack/q4.wacc

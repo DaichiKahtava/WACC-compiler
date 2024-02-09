@@ -26,7 +26,9 @@ case class ErasedPair()(val pos: (Int, Int)) extends PairElemType with ParserBri
 
 // Expressions
 
-sealed trait Expr
+sealed trait Expr {
+  val pos: (Int, Int)
+}
 
 sealed trait UnOp extends Expr
 case class Not(x: Expr)(val pos: (Int, Int)) extends UnOp
@@ -79,7 +81,9 @@ case class Loop(x: Expr, s: Stmt)(val pos: (Int, Int)) extends Stmt
 case class Body(s: Stmt)(val pos: (Int, Int)) extends Stmt
 case class Delimit(s1: Stmt, s2: Stmt)/*(val pos: (Int, Int))*/ extends Stmt
 
-sealed trait LValue
+sealed trait LValue {
+    val pos: (Int, Int)
+}
 case class LIdent(id: String)(val pos: (Int, Int)) extends LValue
 case class LArrElem(id: String, xs: List[Expr])(val pos: (Int, Int)) extends LValue
 

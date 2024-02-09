@@ -18,24 +18,20 @@ object Main {
 
         val input = scala.io.Source.fromFile(inputFile).mkString
         val parseResult = parser.parse(input)
+        val sem = new Semantics(args(0))
 
         parseResult match {
             case Failure(_) =>
                 println("Parsing failed.")
                 System.exit(100)
             case Success(ast) =>
-                if (!isSemCorrect(ast)) {
+                if (!sem.isSemCorrect(ast)) {
                     println("Semantic check failed.")
                     System.exit(200)
                 } else {
                     println("Parsed successfully")
                     // TODO BACKEND LATER.
-                }
+                }   
         }
     }
-
-    def isSemCorrect(ast: Any): Boolean = {
-        true // TODO.
-    }
-    
 }
