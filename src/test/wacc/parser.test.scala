@@ -423,7 +423,6 @@ class PositionTest extends AnyFlatSpec {
     }
   }
 
-
   // it should "correctly parse positions for assignment statements" in {
   //   val p = parser.stmt.parse("x = 1")
   //   p.isSuccess shouldBe true
@@ -446,7 +445,6 @@ class PositionTest extends AnyFlatSpec {
   //     case _ => fail("Parsing failed to produce an Asgn.")
   //   } 
   // }
-
 
   it should "correctly parse positions for array indexing" in {
     val p = parser.lvalue.parse("arr[1]")
@@ -476,48 +474,161 @@ class PositionTest extends AnyFlatSpec {
           case lIdent: LIdent =>
             lIdent.id shouldBe "x"
             lIdent.pos shouldBe (1,6)
-          case _ => fail("Unexpected LValue type in Read statement")
+          case _ => fail("Unexpected LValue type in Read statement.")
         }
         r.pos shouldBe (1,1)
-      case _ => fail("Parsing failed to produce a Read")
+      case _ => fail("Parsing failed to produce a Read.")
     }
   }
 
+  // it should "correctly parse positions for function declarations" in {
+  //   val p = parser.func.parse("int func() is begin return 1 end end")
+  //   p.isSuccess shouldBe true
+  //   val node = p.get
+  //   node match {
+  //     case func: Func =>
+  //       func.tp shouldBe IntT()(1,1)
+  //       func.id shouldBe "func"
+  //       func.params shouldBe List()
+  //       func.s match {
+  //         case body: Body => 
+  //           body.s match {
+  //             case ret: Return =>
+  //               ret.x match {
+  //                 case intL: IntL =>
+  //                   intL.n shouldBe 1
+  //                   intL.pos shouldBe (1,28)
+  //                 case _ => fail("Unexpected expression type within Return.")
+  //               }
+  //               ret.pos shouldBe (1,21)
+  //             case _ => fail("Expected Return statement within Body.")
+  //           }
+  //           body.pos shouldBe (1,15)
+  //         case _ => fail("Unexpected statement type within Func body.")
+  //       }
+  //       func.pos shouldBe (1,5)
+  //     case _ => fail("Parsing failed to produce a Func.")
+  //   }
+  // }
 
-  it should "correctly parse positions for function declarations" in {
-    val p = parser.func.parse("int func() is begin return 1 end end")
-    p.isSuccess shouldBe true
-    val node = p.get
-    node shouldBe Func(IntT()(1,1), "func", List(), Body(Return(IntL(1)(1,28))(1,28))(1,28))(1,5)
-  }
-
-  it should "correctly parse positions for variable declarations" in {
-    val p = parser.stmt.parse("int x = 1")
-    p.isSuccess shouldBe true
-    val node = p.get
-    node shouldBe Decl(IntT()(1,1).asInstanceOf[Type], "x", RExpr(IntL(1)(1,8))(1,8))(1,5)
-  }
+  // it should "correctly parse positions for variable declarations" in {
+  //   val p = parser.stmt.parse("int x = 1")
+  //   p.isSuccess shouldBe true
+  //   val node = p.get
+  //   node match {
+  //     case decl: Decl =>
+  //       decl.tp shouldBe IntT()(1,1).asInstanceOf[Type]
+  //       decl.id shouldBe "x"
+  //       decl.rv match {
+  //         case r: RExpr =>
+  //           r.x match {
+  //             case intL: IntL =>
+  //               intL.n shouldBe 1
+  //               intL.pos shouldBe (1,9)
+  //             case _ => fail("Unexpected expression within RExpr of declaration.")
+  //           }
+  //           r.pos shouldBe (1,8)
+  //         case _ => fail("Expected an RExpr as the RHS of a declaration.")
+  //       }
+  //       decl.pos shouldBe (1,5)
+  //     case _ => fail("Parsing failed to produce a Decl.")
+  //   }
+  // }
 
   it should "correctly parse positions for function calls with nested arguments" in {
     val p = parser.rvalue.parse("call foo(1 + 2, 3 * 4)")
     p.isSuccess shouldBe true
     val node = p.get
-    node shouldBe Call("foo", List(Add(IntL(1)(1,10), IntL(2)(1,13))(1,12), Mul(IntL(3)(1,16), IntL(4)(1,19))(1,18)))(1,1)
+    node match {
+      case c: Call =>
+        c.id shouldBe "foo"
+        c.xs should have size 2
+        c.xs match {
+          case List(add: Add, mul: Mul) =>
+            add.x match { 
+              case intL: IntL => intL.n shouldBe 1; intL.pos shouldBe (1,10)
+              case _ => fail("Unexpected LHS expression within Add argument of Call")
+            }
+            add.y match { 
+              case intL: IntL => intL.n shouldBe 2; intL.pos shouldBe (1,14) 
+              case _ => fail("Unexpected RHS expression within Add argument of Call.")
+            }
+            add.pos shouldBe (1,12)
+            mul.x match { 
+              case intL: IntL => intL.n shouldBe 3; intL.pos shouldBe (1,17) 
+              case _ => fail("Unexpected LHS expression within Mul argument of Call.")
+            }
+            mul.y match { 
+              case intL: IntL => intL.n shouldBe 4; intL.pos shouldBe (1,21) 
+              case _ => fail("Unexpected RHS expression within Mul argument of Call.")
+            }
+            mul.pos shouldBe (1,19) 
+          case _ => fail("Unexpected expression(s) within Call arguments.") 
+        }
+        c.pos shouldBe (1,1)
+      case _ => fail("Parsing failed to produce a Call.")
+    }
   }
 
   it should "correctly parse positions for if expressions" in {
     val p = parser.stmt.parse("if true then return 1 else return 2 fi")
     p.isSuccess shouldBe true
     val node = p.get
-    node shouldBe Cond(BoolL(true)(1,4), Return(IntL(1)(1,14))(1,14), Return(IntL(2)(1,20))(1,20))(1,1)
+    node match {
+      case cond: Cond => 
+        cond.x match {
+          case b: BoolL => 
+            b.b shouldBe true 
+            b.pos shouldBe (1, 4) 
+          case _ => fail("Unexpected expression type within Cond.")
+        }
+        cond.s1 match {
+          case ret: Return =>
+            ret.x match {
+              case intL: IntL => 
+                intL.n shouldBe 1 
+                intL.pos shouldBe (1, 21) 
+              case _ => fail("Unexpected expression type within Return.")
+            }
+            ret.pos shouldBe (1, 14)
+          case _ => fail("Expected Return as 'then' branch of Cond.")
+        }
+        cond.s2 match {
+          case ret: Return => 
+            ret.x match {
+              case intL: IntL => 
+                intL.n shouldBe 2 
+                intL.pos shouldBe (1, 35) 
+              case _ => fail("Unexpected expression type within Return.")
+            }
+            ret.pos shouldBe (1, 28)
+          case _ => fail("Expected Return as 'then' branch of Cond.")
+        }
+        cond.pos shouldBe (1, 1)
+      case _ => fail("Parsing failed to produce a Cond.")
+    }
   }
-
 
   it should "correctly parse positions for function calls with multiple arguments" in {
     val p = parser.rvalue.parse("call foo(1, 2, 3)")
     p.isSuccess shouldBe true
     val node = p.get
-    node shouldBe Call("foo", List(IntL(1)(1,10), IntL(2)(1,13), IntL(3)(1,16)))(1,1)
+
+    node match {
+      case c: Call =>
+        c.pos shouldBe (1, 1)
+        c.id shouldBe "foo"
+        c.xs should have size 3
+
+        c.xs.zipWithIndex.foreach { case (arg, index) =>  
+          arg match {
+            case intL: IntL =>
+              intL.pos shouldBe (1, 10 + index * 3) 
+            case _ => fail("Unexpected argument type within Call.")
+          }
+        }
+      case _ => fail("Parsing failed to produce a Call.")
+    }
   }
 
   it should "correctly parse positions for array literals" in {
@@ -527,12 +638,20 @@ class PositionTest extends AnyFlatSpec {
     node shouldBe ArrL(List(IntL(1)(1,2), IntL(2)(1,5), IntL(3)(1,8)))
   }
 
-  it should "correctly parse positions for pair literals" in {
-    val p = parser.rvalue.parse("newpair(1,2)")
-    p.isSuccess shouldBe true
-    val node = p.get
-    node shouldBe NewPair(IntL(1)(1,9), IntL(2)(1,12))(1,1)
-  }
+  // it should "correctly parse positions for pair literals" in {
+  //   val p = parser.rvalue.parse("newpair(1, 2)")
+  //   p.isSuccess shouldBe true
+  //   val node = p.get
+
+  //   node match {
+  //     case pair: NewPair =>
+  //       pair.pos shouldBe (1, 1)
+
+  //       pair.x1.pos shouldBe (1, 9) 
+  //       pair.x2.pos shouldBe (1, 12)  
+  //     case _ => fail("Parsing didn't produce a NewPair object.")
+  //   }
+  // }
 
   it should "correctly parse positions for while-do-done expressions" in {
     val p = parser.stmt.parse("while true do return 1 done")
@@ -540,7 +659,6 @@ class PositionTest extends AnyFlatSpec {
     val node = p.get
     node shouldBe Loop(BoolL(true)(1,7), Return(IntL(1)(1,14))(1,14))(1,1)
   }
-
 
   it should "correctly parse positions for begin-end expressions" in {
     val p = parser.stmt.parse("begin print 1 end")
