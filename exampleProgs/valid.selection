@@ -195,7 +195,7 @@ exampleProgs/valid/function/simple_functions/punning.wacc
 exampleProgs/valid/function/simple_functions/sameArgName2.wacc
 exampleProgs/valid/function/simple_functions/sameArgName.wacc
 exampleProgs/valid/function/simple_functions/sameNameAsVar.wacc
-'exampleProgs/valid/function/simple_functions/usesArgumentWhilstMakingArgument.wacc
+exampleProgs/valid/function/simple_functions/usesArgumentWhilstMakingArgument.wacc
 exampleProgs/valid/IO/print/hashInProgram.wacc
 exampleProgs/valid/IO/print/multipleStringsAssignment.wacc
 exampleProgs/valid/IO/print/print-backspace.wacc
