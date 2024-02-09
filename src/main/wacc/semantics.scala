@@ -429,7 +429,7 @@ class Semantics(fileName: String) {
                 val fSymTable = f.get.st
                 val fParams = fSymTable.parDict.values.toList
                 if (xs.length != fParams.length) {
-                    errorRep.addError("Function \""+id+"\" expects "+fParams.length+" parameters, but "+xs.length+" were given!", (0,0))
+                    errorRep.addError("Function \""+id+"\" expects "+fParams.length+" parameters, but "+xs.length+" were given!", c.pos)
                     return false
                 }
                 val res = xs.zip(fParams).foldLeft(true)((b, p) => b && checkCompatible(getType(p._1), p._2.tp, p._1.pos))
