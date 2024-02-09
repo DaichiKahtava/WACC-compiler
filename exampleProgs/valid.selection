@@ -87,12 +87,12 @@ exampleProgs/valid/pairs/createPair.wacc
 exampleProgs/valid/pairs/createRefPair.wacc
 exampleProgs/valid/pairs/free.wacc
 exampleProgs/valid/pairs/linkedList.wacc
-'exampleProgs/valid/pairs/nestedPairLeftAssign.wacc
-'exampleProgs/valid/pairs/nestedPairRightExtract.wacc
+exampleProgs/valid/pairs/nestedPairLeftAssign.wacc
+exampleProgs/valid/pairs/nestedPairRightExtract.wacc
 exampleProgs/valid/pairs/nestedPair.wacc
 exampleProgs/valid/pairs/null.wacc
-'exampleProgs/valid/pairs/pairarray.wacc
-'exampleProgs/valid/pairs/pairExchangeArrayOk.wacc
+exampleProgs/valid/pairs/pairarray.wacc
+exampleProgs/valid/pairs/pairExchangeArrayOk.wacc
 exampleProgs/valid/pairs/printNullPair.wacc
 exampleProgs/valid/pairs/printNull.wacc
 exampleProgs/valid/pairs/printPairOfNulls.wacc
@@ -143,7 +143,7 @@ exampleProgs/valid/whack/q10.wacc
 exampleProgs/valid/whack/q2.wacc
 exampleProgs/valid/whack/q3.wacc
 exampleProgs/valid/whack/q4.wacc
-'exampleProgs/valid/whack/q5.wacc
+exampleProgs/valid/whack/q5.wacc
 exampleProgs/valid/whack/q6.wacc
 exampleProgs/valid/whack/q7.wacc
 exampleProgs/valid/whack/q8.wacc
@@ -169,10 +169,10 @@ exampleProgs/valid/basic/skip/commentInLine.wacc
 exampleProgs/valid/basic/skip/comment.wacc
 exampleProgs/valid/basic/skip/skip.wacc
 exampleProgs/valid/function/nested_functions/fibonacciFullRec.wacc
-exampleProgs/valid/function/nested_functions/fibonacciRecursive.wacc
+'exampleProgs/valid/function/nested_functions/fibonacciRecursive.wacc
 exampleProgs/valid/function/nested_functions/fixedPointRealArithmetic.wacc
 exampleProgs/valid/function/nested_functions/functionConditionalReturn.wacc
-exampleProgs/valid/function/nested_functions/mutualRecursion.wacc
+'exampleProgs/valid/function/nested_functions/mutualRecursion.wacc
 exampleProgs/valid/function/nested_functions/printInputTriangle.wacc
 exampleProgs/valid/function/nested_functions/printTriangle.wacc
 exampleProgs/valid/function/nested_functions/simpleRecursion.wacc
@@ -196,7 +196,7 @@ exampleProgs/valid/function/simple_functions/punning.wacc
 exampleProgs/valid/function/simple_functions/sameArgName2.wacc
 exampleProgs/valid/function/simple_functions/sameArgName.wacc
 exampleProgs/valid/function/simple_functions/sameNameAsVar.wacc
-exampleProgs/valid/function/simple_functions/usesArgumentWhilstMakingArgument.wacc
+'exampleProgs/valid/function/simple_functions/usesArgumentWhilstMakingArgument.wacc
 exampleProgs/valid/IO/print/hashInProgram.wacc
 exampleProgs/valid/IO/print/multipleStringsAssignment.wacc
 exampleProgs/valid/IO/print/print-backspace.wacc

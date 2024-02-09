@@ -340,9 +340,14 @@ class Semantics(fileName: String) {
                     isSemCorrect(rv)
                     return false 
                 }
-                // TODO: The following four positions to be changed to use the source thing...
-                return isSemCorrect(rv) && checkCompatible(getType(rv), toSemanticType(tp), d.pos)
+                
+                val curType = getType(rv)
+                rv match {
+                    case pe: PairElem if curType == S_ANY => isSemCorrect(rv) 
+                    case _ => isSemCorrect(rv) && checkCompatible(curType, toSemanticType(tp), d.pos)
+                }
             }
+
             case Asgn(lv: LIdent, rv) => isSemCorrect(lv) && isSemCorrect(rv) &&
                 checkCompatible(getType(rv), curSymTable.findVarGlobal(lv.id).get.tp, lv.pos)
             case Asgn(lv: LArrElem, rv) => isSemCorrect(lv) && isSemCorrect(rv) && 
