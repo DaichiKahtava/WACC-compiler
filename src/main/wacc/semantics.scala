@@ -168,6 +168,29 @@ class Semantics(fileName: String) {
         }
     }
 
+    def comparable(t1: S_TYPE, t2: S_TYPE, pos: (Int, Int)): Boolean = {
+        // t1 or t2 are not any
+        t1 match {
+            case S_INT => t2 == S_INT
+            case S_STRING => t2 == S_STRING
+            case S_CHAR => t2 == S_CHAR
+            case S_BOOL => t2 == S_BOOL
+            case S_ERASED => t2.isInstanceOf[S_PAIR] || t2 == S_ERASED
+            case S_EMPTYARR => t2.isInstanceOf[S_ARRAY] || t2 == S_EMPTYARR
+            case S_ARRAY(tp) => t2 match {
+                case S_ARRAY(tp1) => comparable(tp, tp1, pos)
+                case S_EMPTYARR => true
+                case _ => false
+            }
+            case S_PAIR(tp1, tp2) => t2 match {
+                case S_ERASED => true
+                case S_PAIR(tp11, tp21) => comparable(tp1, tp11, pos) && comparable(tp2, tp21, pos)
+                case _ => false
+            }
+            case S_ANY => false
+        }
+    }
+
     def isOneFrom(got: S_TYPE, expected: List[S_TYPE], pos: (Int, Int)): Boolean = {
         if (!expected.contains(got)) {
             errorRep.addTypeMismatch(got, expected, pos)
@@ -206,8 +229,8 @@ class Semantics(fileName: String) {
             case LsEqT(x1, x2) => isSemCorrect(x1) && isSemCorrect(x2) && (isOneFrom(getType(x1), List(S_INT, S_CHAR), x1.pos)) && equalType(getType(x2), getType(x1), x2.pos)
             
             // TODO: Rewrite using Use canWeakenTo
-            case ex@Eq(x1, x2) => isSemCorrect(x1) && isSemCorrect(x2) && equalType(getType(x2), getType(x1), x2.pos)
-            case ex@NEq(x1, x2) => isSemCorrect(x1) && isSemCorrect(x2) && equalType(getType(x2), getType(x1), x2.pos)
+            case ex@Eq(x1, x2) => isSemCorrect(x1) && isSemCorrect(x2) && comparable(getType(x2), getType(x1), x2.pos)
+            case ex@NEq(x1, x2) => isSemCorrect(x1) && isSemCorrect(x2) && comparable(getType(x2), getType(x1), x2.pos)
             
             case And(x1, x2) => (isSemCorrect(x1) && equalType(getType(x1), S_BOOL, x1.pos)) && (isSemCorrect(x2) && equalType(getType(x2), S_BOOL, x2.pos))
             case Or(x1, x2) => (isSemCorrect(x1) && equalType(getType(x1), S_BOOL, x1.pos)) && (isSemCorrect(x2) && equalType(getType(x2), S_BOOL, x2.pos))
@@ -263,7 +286,7 @@ class Semantics(fileName: String) {
 
     def checkReturnType(stmt: Stmt, tp: S_TYPE): Unit = stmt match {
         case Return(e) => {
-            if (getType(e) != tp) {
+            if (!canWeakenTo(getType(e), tp)) {
                 // TODO: Add error message for return type inconsistencies in the reporter
                 errorRep.addError("Return expression type does not match function return type.", e.pos)
             }

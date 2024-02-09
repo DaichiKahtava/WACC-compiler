@@ -58,6 +58,11 @@ class SemErrorReporter(fileName: String) {
         " cannot weaken to " + explainSemType(target) + ".", pos)
     }
 
+    def addUncomparable(t1: S_TYPE, t2: S_TYPE, pos: (Int, Int)) = {
+        addError("Incomparable types! " + explainSemType(t1) + 
+        " cannot be compared to " + explainSemType(t2) + ".", pos)
+    }
+
     def explainSemType(tp : S_TYPE): String = tp match {
         case S_INT => "int"
         case S_CHAR => "char"
