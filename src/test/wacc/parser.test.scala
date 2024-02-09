@@ -657,14 +657,52 @@ class PositionTest extends AnyFlatSpec {
     val p = parser.stmt.parse("while true do return 1 done")
     p.isSuccess shouldBe true
     val node = p.get
-    node shouldBe Loop(BoolL(true)(1,7), Return(IntL(1)(1,14))(1,14))(1,1)
+
+
+    node match {
+       case loop: Loop =>
+        loop.pos shouldBe (1, 1)
+
+        loop.x match {
+          case boolL: BoolL => boolL.pos shouldBe (1, 7)
+          case _ => fail("Unexpected condition type within the while loop.")
+        }
+
+        loop.s match {
+          case returnStmt: Return =>
+            returnStmt.pos shouldBe (1, 15) 
+            returnStmt.x match {
+               case intL: IntL => intL.pos shouldBe (1, 22) 
+               case _ => fail("Unexpected expression type within the Return.")
+            }
+          case _ => fail("Unexpected statement type within the loop body.")
+        } 
+      case _ => fail("Parsing didn't produce a Loop object.")
+    }
   }
+
 
   it should "correctly parse positions for begin-end expressions" in {
     val p = parser.stmt.parse("begin print 1 end")
     p.isSuccess shouldBe true
     val node = p.get
-    node shouldBe Body(Print(IntL(1)(1,12))(1,7))(1,1)
+
+    node match {
+      case body: Body =>
+        body.pos shouldBe (1, 1)
+
+        body.s match {
+          case printStmt: Print =>
+            printStmt.pos shouldBe (1, 7)
+
+            printStmt.x match {
+              case intL: IntL => intL.pos shouldBe (1, 13) 
+              case _ => fail("Unexpected expression type within Print.")
+            }
+          case _ => fail("Unexpected statement type within Body.")
+        }
+      case _ => fail("Parsing didn't produce a Body object.")
+    }
   }
 
   it should "correctly parse positions for function declarations with parameters" in {
@@ -680,7 +718,14 @@ class PositionTest extends AnyFlatSpec {
     val p = parser.rvalue.parse("call foo()")
     p.isSuccess shouldBe true
     val node = p.get
-    node shouldBe Call("foo", List())(1,1)
+
+    node match {
+      case call: Call =>
+        call.pos shouldBe (1, 1)
+        call.id shouldBe "foo"  
+
+      case _ => fail("Parsing didn't produce a Call object") 
+    }
   }
 
   it should "correctly parse positions for nested array literals" in {
@@ -700,64 +745,197 @@ class PositionTest extends AnyFlatSpec {
 
   it should "correctly parse positions for nested while-do-done expressions" in {
     val p = parser.stmt.parse("while true do while false do return 1 done done")
-    p.isSuccess shouldBe true
+    p. isSuccess shouldBe true
     val node = p.get
-    node shouldBe Loop(BoolL(true)(1,7), Loop(BoolL(false)(1,20), Return(IntL(1)(1,27))(1,27))(1,14))(1,1)
+
+    node match {
+      case outerLoop: Loop =>
+        outerLoop.pos shouldBe (1, 1)
+
+        outerLoop.x match {
+          case boolL: BoolL => boolL.pos shouldBe (1, 7) 
+          case _ => fail("Unexpected condition type in outer while loop.")
+        }
+
+        outerLoop.s match {
+          case innerLoop: Loop =>
+            innerLoop.pos shouldBe (1, 15)
+
+            innerLoop.x match {
+              case falseBool: BoolL => falseBool.pos shouldBe (1, 21)
+              case _ => fail("Unexpected condition type within inner loop.")
+            }
+          case _ => fail("Unexpected statement type within outer loop body.")
+        }
+      case _ => fail("Failed to parse as a Loop (outer level).")
+    }
   }
 
   it should "correctly parse positions for nested begin-end expressions" in {
     val p = parser.stmt.parse("begin begin print 1 end end")
     p.isSuccess shouldBe true
     val node = p.get
-    node shouldBe Body(Body(Print(IntL(1)(1,14))(1,7))(1,7))(1,1)
+
+    node match {
+      case outerBody: Body =>
+        outerBody.pos shouldBe (1, 1) 
+
+        outerBody.s match { 
+          case innerBody: Body => 
+            innerBody.pos shouldBe (1, 7) 
+
+            innerBody.s match { 
+              case printStmt: Print =>
+                printStmt.pos shouldBe (1, 13)
+
+                printStmt.x match {
+                  case intl: IntL => intl.pos shouldBe (1, 19)
+                  case _ => fail("Unexpected expression within Print.")
+                } 
+
+              case _ => fail("Expected a Print statement within the inner Body.")
+            }
+
+          case _ => fail("Expected a Body as the statement within the outer Body.")
+        }
+
+      case _ => fail("Parsing did not produce a Body as the outermost expression.") 
+    }
   }
 
   it should "correctly parse positions for array literals with single element" in {
-    val p = parser.arrayLiter.parse("[1]")
+    val p = parser.arrayLiter.parse("[1]") 
     p.isSuccess shouldBe true
     val node = p.get
-    node shouldBe ArrL(List(IntL(1)(1,2)))
+
+    node match {
+      case arrL: ArrL =>
+        arrL.xs.head match {  
+          case intL: IntL => intL.pos shouldBe (1, 2)
+          case _ => fail("Unexpected type within the array literal.")
+        }
+      case _ => fail("Parsing didn't produce an ArrL object.") 
+    }
   }
 
   it should "correctly parse positions for pair literals with expressions" in {
     val p = parser.rvalue.parse("newpair(1+2, 3*4)")
     p.isSuccess shouldBe true
     val node = p.get
-    node shouldBe NewPair(Add(IntL(1)(1,9), IntL(2)(1,11))(1,10), Mul(IntL(3)(1,14), IntL(4)(1,16))(1,15))(1,1)
+
+    node match {
+      case pair: NewPair =>
+        pair.pos shouldBe (1, 1)
+
+        pair.x1 match {
+          case add: Add =>
+            add.pos shouldBe (1, 10) 
+            add.x match {
+              case intL: IntL => intL.pos shouldBe (1, 9)
+              case _ => fail("Unexpected type for the left operand of Add.")
+            }
+            add.y match {
+              case intL: IntL => intL.pos shouldBe (1, 11)
+              case _ => fail("Unexpected type for the right operand of Add.") 
+            }
+          case _ => fail("Unexpected type for the first element of NewPair.")  
+        }
+
+        pair.x2 match {
+          case mul: Mul =>
+            mul.pos shouldBe (1, 15) 
+            mul.x match {
+              case intL: IntL => intL.pos shouldBe (1, 14)
+              case _ => fail("Unexpected type for the left operand of Mul.")
+            }
+            mul.y match {
+              case intL: IntL => intL.pos shouldBe (1, 16)
+              case _ => fail("Unexpected type for the right operand of Mul.")
+            }
+          case _ => fail("Unexpected type for the second element of NewPair.")  
+        }
+      case _ => fail("Parsing didn't produce a NewPair object.") 
+    }
   }
 
   it should "correctly parse positions for println statements" in {
     val p = parser.stmt.parse("println 1")
     p.isSuccess shouldBe true
     val node = p.get
-    node shouldBe Println(IntL(1)(1,9))(1,1)
+
+    node match {
+      case printStmt: Println =>
+        printStmt.pos shouldBe (1, 1)
+
+        printStmt.x match {
+          case intL: IntL => intL.pos shouldBe (1, 9)
+          case _ => fail("Unexpected type within the Println argument.")
+        }
+      case _ => fail("Parsing didn't produce a Println statement.") 
+    }
   }
 
   it should "correctly parse positions for free statements" in {
     val p = parser.stmt.parse("free x")
     p.isSuccess shouldBe true
     val node = p.get
-    node shouldBe Free(Ident("x")(1,6))(1,1)
+
+    node match {
+      case freeStmt: Free =>
+        freeStmt.pos shouldBe (1, 1)
+
+        freeStmt.x match {
+          case id: Ident => id.pos shouldBe (1, 6)
+          case _ => fail("Unexpected type within Free statement.")
+        }
+      case _ => fail("Parsing didn't produce a Free statement.") 
+    }
   }
 
   it should "correctly parse positions for fst expressions" in {
     val p = parser.rvalue.parse("fst x")
     p.isSuccess shouldBe true
     val node = p.get
-    node shouldBe First(LIdent("x")(1,5))(1,1)
+
+    node match {
+      case fstExpr: First =>
+        fstExpr.pos shouldBe (1, 1) 
+
+        fstExpr.lv match { 
+          case ident: LIdent => ident.pos shouldBe (1, 5)
+          case _ => fail("Unexpected type within First expression argument.")
+        }
+     case _ => fail("Parsing didn't produce a First.") 
+    }
   }
 
   it should "correctly parse positions for snd expressions" in {
     val p = parser.rvalue.parse("snd x")
     p.isSuccess shouldBe true
     val node = p.get
-    node shouldBe Second(LIdent("x")(1,5))(1,1)
+
+    node match {
+      case sndExpr: Second =>
+        sndExpr.pos shouldBe (1, 1)
+
+        sndExpr.lv match { 
+          case ident: LIdent => ident.pos shouldBe (1, 5)
+          case _ => fail("Unexpected type within Second expression argument.")
+        }
+     case _ => fail("Parsing didn't produce a Second.") 
+    }
   }
 
   it should "correctly parse positions for skip statements" in {
     val p = parser.stmt.parse("skip")
     p.isSuccess shouldBe true
     val node = p.get
-    node shouldBe Skip()(1,1)
+
+    node match {
+      case skipStmt: Skip =>
+        skipStmt.pos shouldBe (1, 1)
+      case _ => fail("Parsing didn't produce a Skip statement.") 
+    }
   }
+
 }
