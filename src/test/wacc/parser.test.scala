@@ -647,11 +647,38 @@ class PositionTest extends AnyFlatSpec {
         }
     }
 
-    ignore should "correctly parse positions for array literals" in {
-      val p = parser.arrayLiter.parse("[1, 2, 3]")
-      p.isSuccess shouldBe true
-      val node = p.get
-      node shouldBe ArrL(List(IntL(1)(1,2), IntL(2)(1,5), IntL(3)(1,8)))
+    it should "correctly parse positions for array literals" in { 
+        val p = parser.arrayLiter.parse("[1, 2, 3]")
+        p.isSuccess shouldBe true 
+      
+        val node = p.get
+        node match {
+            case arrL: ArrL => 
+                arrL.xs should have length 3
+          
+                if (arrL.xs.isEmpty) {
+                    fail("Array literal parsed but contained no elements.") 
+                } 
+          
+                arrL.xs.head match {  
+                    case intL: IntL => intL.pos shouldBe (1, 2)
+                    case _ => fail("Unexpected type within the first array literal.")
+                }
+                
+                arrL.xs.headOption match { 
+                    case Some(firstIntL: IntL) => 
+                        arrL.xs.tail.zipWithIndex.foreach { 
+                            case (intL: IntL, index) => 
+                              intL.n shouldBe index + 2 
+                              intL.pos shouldBe (1, 5 + 3 * index)
+                            case _ => fail("Unexpected type within the array.")
+                        }
+                    case Some(_) => fail("Unexpected type within the first array literal.")
+                    case None => fail("Array literal parsed but contained no elements.")
+                }
+            
+            case _ => fail("Parsing failed to produce an ArrL.")
+        }
     }
 
     it should "correctly parse positions for pair literals" in {
