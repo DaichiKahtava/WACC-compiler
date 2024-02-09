@@ -52,13 +52,7 @@ class Semantics(fileName: String) {
         case LIdent(id) => curSymTable.findVarGlobal(id).get match { // id always a variable
             case VARIABLE(tp) => tp
         }
-        case l@LArrElem(id, _) => curSymTable.findVarGlobal(id).get match { // id always a variable
-            case VARIABLE(S_ARRAY(tp)) => tp
-            case VARIABLE(tp) => {
-                errorRep.addError("Not an array: \"" + id + "\"", l.pos)
-                return S_ANY
-            }
-        }
+        case LArrElem(id, _) => curSymTable.findVarGlobal(id).get.tp.asInstanceOf[S_ARRAY].tp
         case pe: PairElem => getType(pe)
     }
 
@@ -393,8 +387,26 @@ class Semantics(fileName: String) {
   
 
     def isSemCorrect(lv: LValue): Boolean = lv match {
-        case LIdent(_) => true
-        case LArrElem(_, xs) => isSemCorrect(xs)
+        case lv@LIdent(id) => {
+            if (curSymTable.findVarGlobal(lv.id).isEmpty) {
+                errorRep.addError("Unrecognised variable: ", lv.pos)
+                false
+            }
+            else {
+                true
+            }        
+        }
+        case l@LArrElem(id, xs) => isSemCorrect(xs) && (curSymTable.findVarGlobal(id) match {
+            case Some(VARIABLE(S_ARRAY(_))) => true 
+            case Some(VARIABLE(_)) => {
+                errorRep.addError("Not an array: \"" + id + "\"", l.pos)
+                false
+            }
+            case None => {
+                errorRep.addError("Array does not exist: \"" + id + "\"", l.pos)
+                false
+            }
+        })
         case pe: PairElem => isSemCorrect(pe)
     }
 

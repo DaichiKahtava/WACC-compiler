@@ -81,7 +81,7 @@ case class Body(s: Stmt)(val pos: (Int, Int)) extends Stmt
 case class Delimit(s1: Stmt, s2: Stmt)/*(val pos: (Int, Int))*/ extends Stmt
 
 sealed trait LValue {
-  val pos: (Int, Int)
+    val pos: (Int, Int)
 }
 case class LIdent(id: String)(val pos: (Int, Int)) extends LValue
 case class LArrElem(id: String, xs: List[Expr])(val pos: (Int, Int)) extends LValue
