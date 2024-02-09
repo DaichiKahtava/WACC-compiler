@@ -1,4 +1,4 @@
-'exampleProgs/valid/advanced/binarySortTree.wacc
+exampleProgs/valid/advanced/binarySortTree.wacc
 'exampleProgs/valid/advanced/hashTable.wacc
 'exampleProgs/valid/advanced/ticTacToe.wacc
 exampleProgs/valid/array/arrayBasic.wacc
@@ -168,10 +168,10 @@ exampleProgs/valid/basic/skip/commentInLine.wacc
 exampleProgs/valid/basic/skip/comment.wacc
 exampleProgs/valid/basic/skip/skip.wacc
 exampleProgs/valid/function/nested_functions/fibonacciFullRec.wacc
-'exampleProgs/valid/function/nested_functions/fibonacciRecursive.wacc
+exampleProgs/valid/function/nested_functions/fibonacciRecursive.wacc
 exampleProgs/valid/function/nested_functions/fixedPointRealArithmetic.wacc
 exampleProgs/valid/function/nested_functions/functionConditionalReturn.wacc
-'exampleProgs/valid/function/nested_functions/mutualRecursion.wacc
+exampleProgs/valid/function/nested_functions/mutualRecursion.wacc
 exampleProgs/valid/function/nested_functions/printInputTriangle.wacc
 exampleProgs/valid/function/nested_functions/printTriangle.wacc
 exampleProgs/valid/function/nested_functions/simpleRecursion.wacc

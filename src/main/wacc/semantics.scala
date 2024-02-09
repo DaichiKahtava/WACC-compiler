@@ -301,7 +301,13 @@ class Semantics(fileName: String) {
                     }
 
                 } else {
-                    curSymTable.addSymbol(f.id, FUNCTION(fType)(new SymTable(Some(curSymTable), Some(fType))))
+                    val fSynT = new SymTable(Some(curSymTable), Some(fType))
+                    f.params.foreach((p) => {
+                        if (!fSynT.addParam(p.id, VARIABLE(toSemanticType(p.tp)))) {
+                            errorRep.addError("Parameter \""+p.id+"\" is already defined!", p.pos)
+                        }
+                    })                
+                    curSymTable.addSymbol(f.id, FUNCTION(fType)(fSynT))
                 }
             }
         )
