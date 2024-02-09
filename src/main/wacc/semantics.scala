@@ -225,7 +225,16 @@ class Semantics(fileName: String) {
             case StrL(_) => true
             case PairL() => true
 
-            case Ident(id) => curSymTable.varDefinedGlobal(id)
+            case Ident(id) => {
+                // println(curSymTable.varDefinedGlobal(id))
+                if (curSymTable.varDefinedGlobal(id)) {
+                    return true
+                } else {
+                    errorRep.addError("Variable \""+id+"\" is not defined!", e.pos)
+                    return false
+                }
+            
+            }
 
             case Not(x) => isSemCorrect(x) && equalType(getType(x), S_BOOL, x.pos)
             case Neg(x) => isSemCorrect(x) && equalType(getType(x), S_INT, x.pos)
@@ -294,9 +303,9 @@ class Semantics(fileName: String) {
             checkReturnType(f.s, toSemanticType(f.tp))
             curSymTable = curSymTable.parent().get // We are in the parent/global symbolTable
         })
-        isSemCorrect(program.s)
+        val res = isSemCorrect(program.s)
         printAccumulatedErrors()
-        return (errorRep.numErrors == 0)
+        return (errorRep.numErrors == 0) && res
     }
     
 
