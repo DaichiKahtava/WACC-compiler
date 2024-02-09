@@ -412,11 +412,15 @@ class Semantics(fileName: String) {
                 return res
             }
             case Loop(x, stmt) => {
-                var res = equalType(getType(x), S_BOOL, x.pos)
-                curSymTable = curSymTable.newUnamedScope()
-                res = res && isSemCorrect(stmt) 
-                curSymTable = curSymTable.parent().get
-                return res
+                if(isSemCorrect(x)){
+                    var res = equalType(getType(x), S_BOOL, x.pos)
+                    curSymTable = curSymTable.newUnamedScope()
+                    res = res && isSemCorrect(stmt) 
+                    curSymTable = curSymTable.parent().get
+                    return res
+                }
+                return false
+                
             }
             case Body(stmt) => {
                 curSymTable = curSymTable.newUnamedScope()
