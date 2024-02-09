@@ -302,7 +302,7 @@ class Semantics(fileName: String) {
                 }
             })
             isSemCorrect(f.s)
-            checkReturnType(f.s, toSemanticType(f.tp)) // Needed to check the existence of a return statement
+            checkReturning(f.s) // Needed to check the existence of a return statement
             curSymTable = curSymTable.parent().get // We are in the parent/global symbolTable
         })
         val res = isSemCorrect(program.s)
@@ -312,19 +312,14 @@ class Semantics(fileName: String) {
     
 
 
-    def checkReturnType(stmt: Stmt, tp: S_TYPE): Unit = stmt match {
-        case Return(e) => {
-            if (!canWeakenTo(getType(e), tp)) {
-                // TODO: Add error message for return type inconsistencies in the reporter
-                errorRep.addError("Return expression type does not match function return type.", e.pos)
-            }
-        }
+    def checkReturning(stmt: Stmt): Unit = stmt match {
+        case Return(e) => {}
         case Cond(_, s1, s2) => {
-            checkReturnType(s1, tp)
-            checkReturnType(s2, tp)}
-        case Loop(_, s) => checkReturnType(s, tp)
-        case Body(s) => checkReturnType(s, tp)
-        case Delimit(_, s) => checkReturnType(s, tp)
+            checkReturning(s1)
+            checkReturning(s2)}
+        case Loop(_, s) => checkReturning(s)
+        case Body(s) => checkReturning(s)
+        case Delimit(_, s) => checkReturning(s)
         case _ => errorRep.addError("Statement is not returning", (0,0))
     }
 
@@ -383,7 +378,7 @@ class Semantics(fileName: String) {
             }
 
             case r@Return(x) => {
-                isSemCorrect(x)
+                if(isSemCorrect(x)){
                 curSymTable.getReturnType() match {
                     case Some(tp) => {            
                         if (!canWeakenTo(getType(x), tp)) {
@@ -398,6 +393,10 @@ class Semantics(fileName: String) {
                         return false
                     }
                 }
+            }
+            else{
+                return false
+            }
             }
             case Exit(x) => equalType(getType(x), S_INT, x.pos)
             case Print(x) => isSemCorrect(x)
