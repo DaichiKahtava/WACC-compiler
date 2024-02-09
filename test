@@ -44,9 +44,9 @@ count_results () {
   printf "</testsuite>\n" >> $2
 }
 
+make
 
 # Test results for valid tests
-
 fileLs=$(cat exampleProgs/valid.selection | tr " " "\n")
 printf "" > temp
 for file in $fileLs
