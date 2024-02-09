@@ -302,7 +302,7 @@ class Semantics(fileName: String) {
                 }
             })
             isSemCorrect(f.s)
-            checkReturning(f.s) // Needed to check the existence of a return statement
+            checkReturning(f.s, f.pos) // Needed to check the existence of a return statement
             curSymTable = curSymTable.parent().get // We are in the parent/global symbolTable
         })
         val res = isSemCorrect(program.s)
@@ -312,15 +312,15 @@ class Semantics(fileName: String) {
     
 
 
-    def checkReturning(stmt: Stmt): Unit = stmt match {
+    def checkReturning(stmt: Stmt, pos:(Int, Int)): Unit = stmt match {
         case Return(e) => {}
-        case Cond(_, s1, s2) => {
-            checkReturning(s1)
-            checkReturning(s2)}
-        case Loop(_, s) => checkReturning(s)
-        case Body(s) => checkReturning(s)
-        case Delimit(_, s) => checkReturning(s)
-        case _ => errorRep.addError("Statement is not returning", (0,0))
+        case c@Cond(_, s1, s2) => {
+            checkReturning(s1, c.pos)
+            checkReturning(s2, c.pos)}
+        case l@Loop(_, s) => checkReturning(s, l.pos)
+        case b@Body(s) => checkReturning(s, b.pos)
+        case Delimit(_, s) => checkReturning(s, pos)
+        case _ => errorRep.addError("Statement is not returning", pos)
     }
 
     // TODO: Param using symbol table
@@ -402,14 +402,17 @@ class Semantics(fileName: String) {
             case Print(x) => isSemCorrect(x)
             case Println(x) => isSemCorrect(x)
             case Cond(x, s1, s2) => {
-                var res = equalType(getType(x), S_BOOL, x.pos)
-                curSymTable = curSymTable.newUnamedScope()
-                res = res && isSemCorrect(s1) 
-                curSymTable = curSymTable.parent().get
-                curSymTable = curSymTable.newUnamedScope()
-                res = res && isSemCorrect(s2) 
-                curSymTable = curSymTable.parent().get
-                return res
+                if(isSemCorrect(x)){
+                    var res = equalType(getType(x), S_BOOL, x.pos)
+                    curSymTable = curSymTable.newUnamedScope()
+                    res = res && isSemCorrect(s1) 
+                    curSymTable = curSymTable.parent().get
+                    curSymTable = curSymTable.newUnamedScope()
+                    res = res && isSemCorrect(s2) 
+                    curSymTable = curSymTable.parent().get
+                    return res
+                }
+                return false
             }
             case Loop(x, stmt) => {
                 if(isSemCorrect(x)){
