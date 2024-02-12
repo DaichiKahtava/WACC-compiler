@@ -14,7 +14,7 @@ case class Store(src: Operand, dst: Operand) extends Instruction
 case class StorePair() extends Instruction
 case class Address(src: Operand, dst: Operand) extends Instruction
 case class Branch(label: String) extends Instruction
-case class BranchCond(label: String, cond: Cond) extends Instruction
+case class BranchCond(label: String, cond: CondI) extends Instruction
 case class BranchLink(label: String, addr: Int) extends Instruction // Calls function and stores address in the link register...
 
 // May want to have the two operands and the destination as separate arguments
@@ -31,18 +31,18 @@ sealed trait Operand
 case class Register(addr: Int) extends Operand
 case class ImmNum(n: Int) extends Operand
 
-sealed trait Cond
-case object Eq extends Cond
-case object Ne extends Cond
-case object Cs extends Cond
-case object CC extends Cond
-case object Mi extends Cond
-case object Pl extends Cond
-case object Vs extends Cond
-case object Vc extends Cond
-case object Hi extends Cond
-case object Ls extends Cond
-case object Ge extends Cond
-case object Lt extends Cond
-case object Gt extends Cond
-case object Le extends Cond
+sealed trait CondI
+case object EqI extends CondI
+case object NeI extends CondI
+case object CsI extends CondI
+case object CCI extends CondI
+case object MiI extends CondI
+case object PlI extends CondI
+case object VsI extends CondI
+case object VcI extends CondI
+case object HiI extends CondI
+case object LsI extends CondI
+case object GeI extends CondI
+case object LtI extends CondI
+case object GtI extends CondI
+case object LeI extends CondI
