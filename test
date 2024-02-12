@@ -2,12 +2,54 @@
 
 # Script which tests the compiler against all test programs in exampleProgs
 
-# test_compile ($1 == file, $2 == expected code, )
+errorFlag=0
+
+compFlag=0
+# test_execute ($1 == file)
+# Checks the file output
+test_execute () {
+  echo ">>> EXECUTING $1"
+  fileLen=$(cat $1 | wc -l)
+  fnameExt=$(basename $1 | head)
+  fname=${fnameExt%.*}
+  fnameAss=$($fname + ".s")
+  echo $fname
+  echo $fileLen
+  # Extracting the expected output
+  expOut=$(grep -PA $fileLen "# Output:" exampleProgs/valid/function/simple_functions/sameArgName.wacc | grep -PB $fileLen "#$" | tr -d '# ')
+  # for out in ${expOut[@]:1}
+  # do
+  #   echo $out
+  # done
+  # Executing the program
+  aarch64-linux-gnu-gcc -o $fname -z noexecstack -march=armv8-a $fnameAss
+  output=$(qemu-aarch64 -L /usr/aarch64-linux-gnu/ $fname | tr " " "\n") # Review
+  output=( "Output:" "${arrayA[@]}" )
+  # Comparing output to expected output
+  for i in $(seq 1 ${#arr[@]})
+  do
+    echo $output[i - 1]
+    echo $expOut[i - 1]
+    if [ $output[i - 1] -ne $expOut[i - 1] ] 
+    then
+      compFlag=1
+    fi
+  done
+
+  if [ $compFlag -eq 1 ]
+  then
+    printf "<testcase name=\"$1\" >\n" >> temp
+    printf "<failure message=\"Unexpected output!\" type=\"FAIL\" />\n" >> temp
+    printf "</testcase>\n" >> temp
+  fi
+  compFlag=0
+
+}
+
+# test_compile ($1 == file, $2 == expected code)
 # Checks if the file it to be combiled and 
 # Attempts to compileit and compares the exit code
 # to the expected. Saves the results in temp
-errorFlag=0
-
 test_compile () {
   if [[ $file == \'* ]]
   then
@@ -22,6 +64,10 @@ test_compile () {
     if [ $code -eq $2 ]
     then
       printf "<testcase name=\"$1\" />\n" >> temp
+      if [ $code -eq 0 ]
+      then
+        test_execute $1
+      fi
     else
       errorFlag=1
       printf "<testcase name=\"$1\" >\n" >> temp
@@ -44,7 +90,7 @@ count_results () {
   printf "</testsuite>\n" >> $2
 }
 
-make
+#make
 
 # Test results for valid tests
 fileLs=$(cat exampleProgs/valid.selection | tr " " "\n")
