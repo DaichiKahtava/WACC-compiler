@@ -18,7 +18,9 @@ object Main {
 
         val input = scala.io.Source.fromFile(inputFile).mkString
         val parseResult = parser.parse(input)
-        val sem = new Semantics(args(0))
+        val sem = new Semantics(args(0)) // [tm1722] Should we change it to Semantics(input) ?
+        val tw = new treeWalker()
+        
 
         parseResult match {
             case Failure(_) =>
@@ -31,6 +33,9 @@ object Main {
                 } else {
                     println("Parsed successfully")
                     // TODO BACKEND LATER.
+                    var assemblyCodeToBeFormatted = tw.generateAssemblyCode(ast)
+                    
+                    
                 }   
         }
     }
