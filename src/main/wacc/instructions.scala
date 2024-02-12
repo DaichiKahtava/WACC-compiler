@@ -4,7 +4,7 @@ sealed trait Instruction
 
 case class Label(label: String) extends Instruction
 case class Jump(label: String) extends Instruction
-case class Return(label: String) extends Instruction
+case class ReturnI(label: String) extends Instruction
 
 // Replace operand with more specific classes if necessary
 case class Move(src: Operand, dst: Operand) extends Instruction
@@ -16,10 +16,10 @@ case class BranchL(label: String, addr: Int) extends Instruction // Calls functi
 
 // May want to have the two operands and the destination as separate arguments
 // case class Add(op1, op2, dst)
-case class Add(src: Operand, dst: Operand) extends Instruction
-case class Sub(src: Operand, dst: Operand) extends Instruction
-case class Mul(src: Operand, dst: Operand) extends Instruction
-case class Div(src: Operand, dst: Operand) extends Instruction
+case class AddI(src: Operand, dst: Operand) extends Instruction
+case class SubI(src: Operand, dst: Operand) extends Instruction
+case class MulI(src: Operand, dst: Operand) extends Instruction
+case class DivI(src: Operand, dst: Operand) extends Instruction
 
 case class Compare(r1: Operand, r2: Operand) extends Instruction
 
