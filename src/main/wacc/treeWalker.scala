@@ -1,18 +1,27 @@
 package wacc
 
-class treeWalker(){
+
+class treeWalker(var curSymTable: SymTable) {
     // GLOBAL POINTER TO THE FINAL (NOT-FORMATTED) ASSEMBLY CODE
-    // var assemblyCode = ???
+    var instructionList = List()
 
-    def generateAssemblyCode(e: Expr) : Instruction = ???
+    def generateInstructionList(e: Expr) : List[Instruction] = ???
 
-    def generateAssemblyCode(list: List[Any]) : Instruction = ???
+    def generateInstructionList(list: List[Any]) : List[Instruction] = ???
 
-    def generateAssemblyCode(program: Program) : Instruction = ???
+    def generateInstructionList(program: Program) : List[Instruction] = {
+        program.funcs.foreach((f) => {
+            curSymTable = curSymTable.findFunGlobal(f.id).get.st // We are in the local symbolTable
+            generateInstructionList(f.s)
+            curSymTable = curSymTable.parent().get // We are in the parent/global symbolTable
+        })
+        instructionList ::: generateInstructionList(program.s) // [tm1722] either ::: or ++ can be used
+        return instructionList
+    }
 
-    def generateAssemblyCode(stmt: Stmt) : Instruction = ???
-    def generateAssemblyCode(lv: LValue) : Instruction = ???
-    def generateAssemblyCode(rv: RValue) : Instruction = ???
-    def generateAssemblyCode(pe: PairElem) : Instruction = ???
+    def generateInstructionList(stmt: Stmt) : List[Instruction] = ???
+    def generateInstructionList(lv: LValue) : List[Instruction] = ???
+    def generateInstructionList(rv: RValue) : List[Instruction] = ???
+    def generateInstructionList(pe: PairElem) : List[Instruction] = ???
     
 }
