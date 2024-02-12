@@ -22,22 +22,22 @@ class treeWalker(var curSymTable: SymTable) {
         case Mod(x, y) => List()
 
         // Pattern match for Add.
-        case Add(left, right) => 
-            val output = generateInstructionList(left) ++ // Evaluate the left-hand side first.
-            generateInstructionList(right) ++ 
-            List(AddI(Register(nextTempReg), Register(0))) // ADD, put result in R0.
+        case Add(x, y) => 
+            val output = generateInstructionList(x) ++ // Evaluate the left-hand side first.
+            generateInstructionList(y) ++ 
+            List(AddI(Register(nextTempReg), Register(nextTempReg - 1))) // ADD, put result in R0.
             val newTempReg = nextTempReg + 1
-            nextTempReg = newTempReg // Update your register reference.
-            return output
+            nextTempReg = newTempReg // Update register reference.
+            output
         
         // Similar to Add, replace AddI with SubI.
-        case Minus(left, right) =>
-            val output = generateInstructionList(left) ++ 
-            generateInstructionList(right) ++ 
-            List(SubI(Register(nextTempReg), Register(0)))
+        case Minus(x, y) =>
+            val output = generateInstructionList(x) ++ 
+            generateInstructionList(y) ++ 
+            List(SubI(Register(nextTempReg), Register(nextTempReg - 1)))
             val newTempReg = nextTempReg + 1
             nextTempReg = newTempReg
-            return output
+            output
 
         case GrT(x, y) => List()
         case GrEqT(x, y) => List()
@@ -52,7 +52,7 @@ class treeWalker(var curSymTable: SymTable) {
 
         // Load the integer directly.
         case IntL(n) => List(Load(ImmNum(n), Register(0)))
-        
+
         case BoolL(b) => List()
         case CharL(c) => List()
         case StrL(s) => List()
@@ -73,21 +73,38 @@ class treeWalker(var curSymTable: SymTable) {
         case _ => throw new RuntimeException("Undefined expression.")
     }
 
-    def generateInstructionList(list: List[Any]) : List[Instruction] = ???
+    def generateInstructionList(list: List[Any]) : List[Instruction] = list match {
+        // Defaulting case.
+        case _ => throw new RuntimeException("Undefined list.")
+    }
 
     def generateInstructionList(program: Program) : List[Instruction] = {
         program.funcs.foreach((f) => {
-            curSymTable = curSymTable.findFunGlobal(f.id).get.st // We are in the local symbolTable
+            curSymTable = curSymTable.findFunGlobal(f.id).get.st // We are in the local symbolTable.
             generateInstructionList(f.s)
-            curSymTable = curSymTable.parent().get // We are in the parent/global symbolTable
+            curSymTable = curSymTable.parent().get // We are in the parent/global symbolTable.
         })
-        instructionList ::: generateInstructionList(program.s) // [tm1722] either ::: or ++ can be used
+        instructionList ::: generateInstructionList(program.s) // [tm1722] either ::: or ++ can be used.
         return instructionList
     }
 
-    def generateInstructionList(stmt: Stmt) : List[Instruction] = ???
-    def generateInstructionList(lv: LValue) : List[Instruction] = ???
-    def generateInstructionList(rv: RValue) : List[Instruction] = ???
-    def generateInstructionList(pe: PairElem) : List[Instruction] = ???
-    
+    def generateInstructionList(stmt: Stmt) : List[Instruction] = stmt match {
+        // Defaulting case.
+        case _ => throw new RuntimeException("Undefined statement.")
+    }
+
+    def generateInstructionList(lv: LValue) : List[Instruction] = lv match {
+        // Defaulting case.
+        case _ => throw new RuntimeException("Undefined left value.")
+    }
+
+    def generateInstructionList(rv: RValue) : List[Instruction] = rv match {
+        // Defaulting case.
+        case _ => throw new RuntimeException("Undefined right value.")
+    }
+
+    def generateInstructionList(pe: PairElem) : List[Instruction] = pe match {
+        // Defaulting case.
+        case _ => throw new RuntimeException("Undefined pair.")
+    }
 }
