@@ -38,6 +38,8 @@ test_execute () {
       printf "<testcase name=\"$1\" >\n" >> temp
       printf "<failure message=\"Unexpected output!\" type=\"FAIL\" />\n" >> temp
       printf "</testcase>\n" >> temp
+    else
+      printf "<testcase name=\"$1\" />\n" >> temp
     fi
   else 
       echo "!!! NO EXECUTABLE!"
@@ -65,7 +67,10 @@ test_compile () {
     code=$?
     if [ $code -eq $2 ]
     then
-      printf "<testcase name=\"$1\" />\n" >> temp
+      if [ $code -eq 0 ]
+      then
+        test_execute $1
+      fi
     else
       errorFlag=1
       printf "<testcase name=\"$1\" >\n" >> temp
@@ -96,7 +101,6 @@ printf "" > temp
 for file in $fileLs
 do
   test_compile $file 0
-  test_execute $file
 done
 count_results "valid folder" "validRes.xml"
 
