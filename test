@@ -12,38 +12,40 @@ test_execute () {
   fileLen=$(cat $1 | wc -l)
   fnameExt=$(basename $1 | head)
   fname=${fnameExt%.*}
-  fnameAss=$($fname + ".s")
-  echo $fname
-  echo $fileLen
+  fnameAss="${fname}.s"
+  echo $fnameAss
   # Extracting the expected output
-  expOut=$(grep -PA $fileLen "# Output:" exampleProgs/valid/function/simple_functions/sameArgName.wacc | grep -PB $fileLen "#$" | tr -d '# ')
-  # for out in ${expOut[@]:1}
-  # do
-  #   echo $out
-  # done
-  # Executing the program
-  aarch64-linux-gnu-gcc -o $fname -z noexecstack -march=armv8-a $fnameAss
-  output=$(qemu-aarch64 -L /usr/aarch64-linux-gnu/ $fname | tr " " "\n") # Review
-  output=( "Output:" "${arrayA[@]}" )
-  # Comparing output to expected output
-  for i in $(seq 1 ${#arr[@]})
-  do
-    echo $output[i - 1]
-    echo $expOut[i - 1]
-    if [ $output[i - 1] -ne $expOut[i - 1] ] 
-    then
-      compFlag=1
-    fi
-  done
-
-  if [ $compFlag -eq 1 ]
+  if [ -f $fnameAss ]
   then
-    printf "<testcase name=\"$1\" >\n" >> temp
-    printf "<failure message=\"Unexpected output!\" type=\"FAIL\" />\n" >> temp
-    printf "</testcase>\n" >> temp
+    expOut=$(grep -PA $fileLen "# Output:" exampleProgs/valid/function/simple_functions/sameArgName.wacc | grep -PB $fileLen "#$" | tr -d '# ')
+    # Executing the program
+    aarch64-linux-gnu-gcc -o $fname -z noexecstack -march=armv8-a $fnameAss
+    output=$(qemu-aarch64 -L /usr/aarch64-linux-gnu/ $fname | tr " " "\n") # Review
+    output=( "Output:" "${arrayA[@]}" )
+    # Comparing output to expected output
+    for i in $(seq 1 ${#arr[@]})
+    do
+      echo $output[i - 1]
+      echo $expOut[i - 1]
+      if [ $output[i - 1] -ne $expOut[i - 1] ] 
+      then
+        compFlag=1
+      fi
+    done
+
+    if [ $compFlag -eq 1 ]
+    then
+      printf "<testcase name=\"$1\" >\n" >> temp
+      printf "<failure message=\"Unexpected output!\" type=\"FAIL\" />\n" >> temp
+      printf "</testcase>\n" >> temp
+    fi
+  else 
+      echo "!!! NO EXECUTABLE!"
+      printf "<testcase name=\"$1\" >\n" >> temp
+      printf "<failure message=\"No Executable!\" type=\"FAIL\" />\n" >> temp
+      printf "</testcase>\n" >> temp
   fi
   compFlag=0
-
 }
 
 # test_compile ($1 == file, $2 == expected code)
@@ -64,10 +66,6 @@ test_compile () {
     if [ $code -eq $2 ]
     then
       printf "<testcase name=\"$1\" />\n" >> temp
-      if [ $code -eq 0 ]
-      then
-        test_execute $1
-      fi
     else
       errorFlag=1
       printf "<testcase name=\"$1\" >\n" >> temp
@@ -98,6 +96,7 @@ printf "" > temp
 for file in $fileLs
 do
   test_compile $file 0
+  test_execute $file
 done
 count_results "valid folder" "validRes.xml"
 
