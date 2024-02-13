@@ -5,6 +5,7 @@ class TreeWalker(var curSymTable: SymTable) {
     // GLOBAL POINTER TO THE FINAL (NOT-FORMATTED) ASSEMBLY CODE
     var instructionList = List()
     var nextTempReg = 1 // Start with R1 for temporary values?
+    val outputRegister = Register(0)
 
     def generateInstructionList(e: Expr) : List[Instruction] = e match {
         // UnOp expressions.
@@ -17,8 +18,6 @@ class TreeWalker(var curSymTable: SymTable) {
 
         // BinOp expressions.
 
-        case Mul(x, y) => List()
-        case Div(x, y) => List()
         case Mod(x, y) => List()
 
         // Pattern match for Add.
@@ -39,6 +38,23 @@ class TreeWalker(var curSymTable: SymTable) {
             nextTempReg = newTempReg
             output
 
+        // [tm1722] Similarly as for Add and Sub, do the same fo Mul and Div.
+        case Mul(x, y) => 
+            val output = generateInstructionList(x) ++ // Evaluate the left-hand side first.
+            generateInstructionList(y) ++ 
+            List(MulI(Register(nextTempReg), Register(nextTempReg - 1)))
+            val newTempReg = nextTempReg + 1
+            nextTempReg = newTempReg // Update register reference.
+            output
+
+        case Div(x, y) => 
+            val output = generateInstructionList(x) ++ // Evaluate the left-hand side first.
+            generateInstructionList(y) ++ 
+            List(DivI(Register(nextTempReg), Register(nextTempReg - 1)))
+            val newTempReg = nextTempReg + 1
+            nextTempReg = newTempReg // Update register reference.
+            output
+
         case GrT(x, y) => List()
         case GrEqT(x, y) => List()
         case LsT(x, y) => List()
@@ -51,7 +67,7 @@ class TreeWalker(var curSymTable: SymTable) {
         // Atom expressions.
 
         // Load the integer directly.
-        case IntL(n) => List(Load(ImmNum(n), Register(0)))
+        case IntL(n) => List(Load(ImmNum(n), outputRegister))
 
         case BoolL(b) => List()
         case CharL(c) => List()
@@ -89,6 +105,7 @@ class TreeWalker(var curSymTable: SymTable) {
     }
 
     def generateInstructionList(stmt: Stmt) : List[Instruction] = stmt match {
+
         // Defaulting case.
         case _ => throw new RuntimeException("Undefined statement.")
     }
