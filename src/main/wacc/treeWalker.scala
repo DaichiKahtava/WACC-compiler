@@ -1,7 +1,7 @@
 package wacc
 
 
-class treeWalker(var curSymTable: SymTable) {
+class TreeWalker(var curSymTable: SymTable) {
     // GLOBAL POINTER TO THE FINAL (NOT-FORMATTED) ASSEMBLY CODE
     var instructionList = List()
     var nextTempReg = 1 // Start with R1 for temporary values?
