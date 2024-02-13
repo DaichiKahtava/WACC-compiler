@@ -19,7 +19,7 @@ object Main {
         val input = scala.io.Source.fromFile(inputFile).mkString
         val parseResult = parser.parse(input)
         val sem = new Semantics(args(0)) // [tm1722] Should we change it to Semantics(input) ?
-        val tw = new treeWalker(sem.curSymTable) // Passes the global symbol table to the treeWalker
+        val tw = new TreeWalker(sem.curSymTable) // Passes the global symbol table to the treeWalker
         
 
         parseResult match {
