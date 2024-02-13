@@ -13,11 +13,33 @@ test_execute () {
   fname=${fnameExt%.*}
   fnameAss="${fname}.s"
   # Extracting the expected output
+
+  outCheck=1
+  extCheck=1
+
   if [ -f $fnameAss ]
   then
     expOut=$(grep -PA $fileLen "# Output:" $1 | grep -PB $fileLen "#$")
     expOut="${expOut//# /}"
-    # Executing the program
+    IFS=$'\n' expectA=($expOut)
+
+    expectL=$((${#expectA[@]}-1))
+
+    IFS=$'\n' expExt=($(grep -PA 2 "# Exit:" $1))
+    expExt=${expExt[1]}
+    expExt="${expExt//# /}"
+    
+    if [ ${#expExt[@]} -le 1 ]
+    then
+      extCheck=0
+    fi
+
+    if [ $expectL -le 1 ]
+    then
+      outCheck=0
+    fi
+
+    # Assembling the program
     aarch64-linux-gnu-gcc -o $fname -z noexecstack -march=armv8-a $fnameAss
     if [ $? -ne 0 ] 
     then
@@ -26,39 +48,59 @@ test_execute () {
         printf "<failure message=\"Assembler failed - check logs!\" type=\"FAIL\" />\n" >> temp
         printf "</testcase>\n" >> temp
     else
-      output=$(qemu-aarch64 -L /usr/aarch64-linux-gnu/ $fname) # Review
-      # Comparing output to expected output
-      IFS=$'\n' outputA=($output)
-      IFS=$'\n' expectA=($expOut)
-      
-      outputL=${#outputA[@]}
-      expectL=$((${#expectA[@]}-1))
 
-      # TODO: Expected number of lines + exit status check
-      if [ $outputL -ne $expectL ]
+      # Executing the program
+      output="$(qemu-aarch64 -L /usr/aarch64-linux-gnu/ $fname)" # Review
+      exitCode=$?
+
+
+      # Checking the failour
+      if [ $extCheck -eq 1 ]
       then
-          printf "Output does not have the expected number of lines\n"
-          compFlag=1
-      else
-        for i in $(seq 1 ${#outputA[@]})
-        do
-          echo "$i"
-          gLine=${outputA[i - 1]}
-          echo "$eLine"
-          eLine=${expectA[i]}
-          echo "$gLine"
-          if [ "$eLine" != "$gLine" ] 
-          then
-            printf "Unexpected output at line ${i}:\n   Exp: $eLine\n   Got: $gLine\n"
-            compFlag=1
-          fi
-        done
+        if [ $expExt -ne $exitCode ]
+        then
+          printf "Exit code mismatch! Exp: $expExt. Got $exitCode\n"
+        else
+          printf "Exit code verification succeeded."
+        fi
       fi
+
+
+      # Comparing output to expected output
+      if [ $outCheck -eq 1 ]
+      then
+        IFS=$'\n' outputA=($output)
+        outputL=${#outputA[@]}
+
+        # TODO: Expected number of lines + exit status check + note that the output might not exist!
+        if [ $outputL -ne $expectL ]
+        then
+            printf "Output does not have the expected number of lines ($outputL, $expectL)\n"
+            compFlag=1
+        else
+          for i in $(seq 1 ${#outputA[@]})
+          do
+            echo "$i"
+            gLine=${outputA[i - 1]}
+            echo "$eLine"
+            eLine=${expectA[i]}
+            echo "$gLine"
+            if [ "$eLine" != "$gLine" ] 
+            then
+              printf "Unexpected output at line ${i}:\n   Exp: $eLine\n   Got: $gLine\n"
+              compFlag=1
+            fi
+          done
+        fi
+      fi
+
+
+
       if [ $compFlag -eq 1 ]
       then
         errorFlag=1
         printf "<testcase name=\"$1\" >\n" >> temp
-        printf "<failure message=\"Unexpected output - check logs!\" type=\"FAIL\" />\n" >> temp
+        printf "<failure message=\"Unexpected result - check logs!\" type=\"FAIL\" />\n" >> temp
         printf "</testcase>\n" >> temp
       else
         printf "<testcase name=\"$1\" />\n" >> temp
