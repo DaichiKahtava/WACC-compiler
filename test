@@ -30,20 +30,30 @@ test_execute () {
       # Comparing output to expected output
       IFS=$'\n' outputA=($output)
       IFS=$'\n' expectA=($expOut)
-      for i in $(seq 1 ${#outputA[@]})
-      do
-        echo "$i"
-        gLine=${outputA[i - 1]}
-        echo "$eLine"
-        eLine=${expectA[i]}
-        echo "$gLine"
-        if [ "$eLine" != "$gLine" ] 
-        then
-          printf "Unexpected output at line ${i}:\n   Exp: $eLine\n   Got: $gLine\n"
+      
+      outputL=${#outputA[@]}
+      expectL=$((${#expectA[@]}-1))
+
+      # TODO: Expected number of lines + exit status check
+      if [ $outputL -ne $expectL ]
+      then
+          printf "Output does not have the expected number of lines\n"
           compFlag=1
-        fi
-      done
-      IFS=$IF
+      else
+        for i in $(seq 1 ${#outputA[@]})
+        do
+          echo "$i"
+          gLine=${outputA[i - 1]}
+          echo "$eLine"
+          eLine=${expectA[i]}
+          echo "$gLine"
+          if [ "$eLine" != "$gLine" ] 
+          then
+            printf "Unexpected output at line ${i}:\n   Exp: $eLine\n   Got: $gLine\n"
+            compFlag=1
+          fi
+        done
+      fi
       if [ $compFlag -eq 1 ]
       then
         errorFlag=1
