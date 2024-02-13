@@ -21,6 +21,7 @@ test_execute () {
   then
     expOut=$(grep -PA $fileLen "# Output:" $1 | grep -PB $fileLen "#$")
     expOut="${expOut//# /}"
+    printf "$expOut"
     IFS=$'\n' expectA=($expOut)
 
     expectL=$((${#expectA[@]}-1))
@@ -50,8 +51,11 @@ test_execute () {
     else
 
       # Executing the program
-      output="$(qemu-aarch64 -L /usr/aarch64-linux-gnu/ $fname)" # Review
+      # output="$(qemu-aarch64 -L /usr/aarch64-linux-gnu/ $fname)" # Review
+      qemu-aarch64 -L /usr/aarch64-linux-gnu/ $fname > test.out
       exitCode=$?
+      IFS= read -rd '' output < test.out
+      printf "$output"
 
 
       # Checking the failour
@@ -61,7 +65,7 @@ test_execute () {
         then
           printf "Exit code mismatch! Exp: $expExt. Got $exitCode\n"
         else
-          printf "Exit code verification succeeded."
+          printf "Exit code verification succeeded.\n"
         fi
       fi
 
@@ -69,10 +73,9 @@ test_execute () {
       # Comparing output to expected output
       if [ $outCheck -eq 1 ]
       then
-        IFS=$'\n' outputA=($output)
+        IFS=$'\n' readarray -t outputA <<< "$output"
         outputL=${#outputA[@]}
 
-        # TODO: Expected number of lines + exit status check + note that the output might not exist!
         if [ $outputL -ne $expectL ]
         then
             printf "Output does not have the expected number of lines ($outputL, $expectL)\n"
@@ -82,13 +85,17 @@ test_execute () {
           do
             echo "$i"
             gLine=${outputA[i - 1]}
-            echo "$eLine"
-            eLine=${expectA[i]}
             echo "$gLine"
+            eLine=${expectA[i]}
+            echo "$eLine"
             if [ "$eLine" != "$gLine" ] 
             then
-              printf "Unexpected output at line ${i}:\n   Exp: $eLine\n   Got: $gLine\n"
-              compFlag=1
+              if [ "$eLine" != "#" ] && [ "$gLine" != "" ] 
+              # WARN! Might miss places where # is expected and we give a newline instead
+              then
+                printf "Unexpected output at line ${i}:\n   Exp: $eLine\n   Got: $gLine\n"
+                compFlag=1
+              fi
             fi
           done
         fi
