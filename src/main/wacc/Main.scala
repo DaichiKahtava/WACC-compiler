@@ -33,7 +33,7 @@ object Main {
                 } else {
                     println("Parsed successfully")
                     // TODO BACKEND LATER.
-                    var assemblyCodeToBeFormatted = tw.generateInstructionList(ast)
+                    // var assemblyCodeToBeFormatted = tw.generateInstructionList(ast)
                     
                     
                 }   
