@@ -3,7 +3,6 @@
 # Script which tests the compiler against all test programs in exampleProgs
 
 errorFlag=0
-
 compFlag=0
 # test_execute ($1 == file)
 # Checks the file output
@@ -13,38 +12,54 @@ test_execute () {
   fnameExt=$(basename $1 | head)
   fname=${fnameExt%.*}
   fnameAss="${fname}.s"
-  echo $fnameAss
   # Extracting the expected output
   if [ -f $fnameAss ]
   then
-    expOut=$(grep -PA $fileLen "# Output:" exampleProgs/valid/function/simple_functions/sameArgName.wacc | grep -PB $fileLen "#$" | tr -d '# ')
+    expOut=$(grep -PA $fileLen "# Output:" $1 | grep -PB $fileLen "#$")
+    expOut="${expOut//# /}"
     # Executing the program
     aarch64-linux-gnu-gcc -o $fname -z noexecstack -march=armv8-a $fnameAss
-    output=$(qemu-aarch64 -L /usr/aarch64-linux-gnu/ $fname | tr " " "\n") # Review
-    output=( "Output:" "${arrayA[@]}" )
-    # Comparing output to expected output
-    for i in $(seq 1 ${#arr[@]})
-    do
-      echo $output[i - 1]
-      echo $expOut[i - 1]
-      if [ $output[i - 1] -ne $expOut[i - 1] ] 
-      then
-        compFlag=1
-      fi
-    done
-
-    if [ $compFlag -eq 1 ]
+    if [ $? -ne 0 ] 
     then
-      printf "<testcase name=\"$1\" >\n" >> temp
-      printf "<failure message=\"Unexpected output!\" type=\"FAIL\" />\n" >> temp
-      printf "</testcase>\n" >> temp
+        errorFlag=1
+        printf "<testcase name=\"$1\" >\n" >> temp
+        printf "<failure message=\"Assembler failed - check logs!\" type=\"FAIL\" />\n" >> temp
+        printf "</testcase>\n" >> temp
     else
-      printf "<testcase name=\"$1\" />\n" >> temp
+      output=$(qemu-aarch64 -L /usr/aarch64-linux-gnu/ $fname) # Review
+      # Comparing output to expected output
+      IFS=$'\n' outputA=($output)
+      IFS=$'\n' expectA=($expOut)
+      for i in $(seq 1 ${#outputA[@]})
+      do
+        echo "$i"
+        gLine=${outputA[i - 1]}
+        echo "$eLine"
+        eLine=${expectA[i]}
+        echo "$gLine"
+        if [ "$eLine" != "$gLine" ] 
+        then
+          printf "Unexpected output at line ${i}:\n   Exp: $eLine\n   Got: $gLine\n"
+          compFlag=1
+        fi
+      done
+      IFS=$IF
+      if [ $compFlag -eq 1 ]
+      then
+        errorFlag=1
+        printf "<testcase name=\"$1\" >\n" >> temp
+        printf "<failure message=\"Unexpected output - check logs!\" type=\"FAIL\" />\n" >> temp
+        printf "</testcase>\n" >> temp
+      else
+        printf "<testcase name=\"$1\" />\n" >> temp
+        echo "^^^ SUCCESS"
+      fi
     fi
   else 
-      echo "!!! NO EXECUTABLE!"
+      errorFlag=1
+      echo "!!! NO ASSEMBLY!"
       printf "<testcase name=\"$1\" >\n" >> temp
-      printf "<failure message=\"No Executable!\" type=\"FAIL\" />\n" >> temp
+      printf "<failure message=\"No assembly!\" type=\"FAIL\" />\n" >> temp
       printf "</testcase>\n" >> temp
   fi
   compFlag=0
@@ -57,7 +72,7 @@ test_execute () {
 test_compile () {
   if [[ $file == \'* ]]
   then
-    echo "*** SKIPING TEST ${1:1}"
+    #echo "*** SKIPING TEST ${1:1}"
     printf "<testcase name=\"${1:1}\" >\n" >> temp
     printf "<skipped message=\"The program ${1:1} has been skipped\"/>\n" >> temp
     printf "</testcase>\n" >> temp
