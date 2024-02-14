@@ -48,6 +48,7 @@ test_execute () {
         printf "<testcase name=\"$1\" >\n" >> temp
         printf "<failure message=\"Assembler failed - check logs!\" type=\"FAIL\" />\n" >> temp
         printf "</testcase>\n" >> temp
+        rm $fnameAss
     else
 
       # Executing the program
@@ -113,6 +114,8 @@ test_execute () {
         printf "<testcase name=\"$1\" />\n" >> temp
         echo "^^^ SUCCESS"
       fi
+      rm $fnameAss
+      rm $fname
     fi
   else 
       errorFlag=1
