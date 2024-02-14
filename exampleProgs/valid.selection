@@ -19,7 +19,7 @@
 'exampleProgs/valid/array/emptyArrayScope.wacc
 'exampleProgs/valid/array/free.wacc
 'exampleProgs/valid/array/lenArrayIndex.wacc
-exampleProgs/valid/array/modifyString.wacc
+'exampleProgs/valid/array/modifyString.wacc
 'exampleProgs/valid/array/printRef.wacc
 'exampleProgs/valid/array/stringFromArray.wacc
 'exampleProgs/valid/expressions/andExpr.wacc
@@ -159,7 +159,7 @@ exampleProgs/valid/array/modifyString.wacc
 'exampleProgs/valid/while/whileBoolFlip.wacc
 'exampleProgs/valid/while/whileCount.wacc
 'exampleProgs/valid/while/whileFalse.wacc
-exampleProgs/valid/basic/exit/exit-1.wacc
+'exampleProgs/valid/basic/exit/exit-1.wacc
 'exampleProgs/valid/basic/exit/exitBasic2.wacc
 'exampleProgs/valid/basic/exit/exitBasic.wacc
 'exampleProgs/valid/basic/exit/exitWrap.wacc
