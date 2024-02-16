@@ -31,7 +31,7 @@ sealed trait Operand
 case class Register(addr: Int) extends Operand
 case class ImmNum(n: Int) extends Operand
 
-sealed trait CondI extends Instruction
+sealed trait CondI
 case object EqI extends CondI
 case object NeI extends CondI
 case object CsI extends CondI
