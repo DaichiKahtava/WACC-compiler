@@ -166,7 +166,7 @@ count_results () {
   printf "</testsuite>\n" >> $2
 }
 
-#make
+make
 
 # Test results for valid tests
 fileLs=$(cat exampleProgs/valid.selection | tr " " "\n")
