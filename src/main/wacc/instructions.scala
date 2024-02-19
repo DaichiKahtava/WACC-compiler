@@ -9,9 +9,9 @@ case class ReturnI(label: String) extends Instruction
 // Replace operand with more specific classes if necessary
 case class Move(src: Operand, dst: Register) extends Instruction
 case class Load(src: Operand, dst: Register) extends Instruction
-case class LoadPair(src: Register, dst1: Register, dst2: Register) extends Instruction
+case class Push(src: Register, dst1: Register, dst2: Register) extends Instruction
 case class Store(src: Register, dst: Register) extends Instruction
-case class StorePair(src1: Register, src2: Register, dst: Register) extends Instruction
+case class Pop(src1: Register, src2: Register, dst: Register) extends Instruction
 case class Address(label: String, dst: Operand) extends Instruction
 case class Branch(label: String) extends Instruction
 case class BranchCond(label: String, cond: CondI) extends Instruction

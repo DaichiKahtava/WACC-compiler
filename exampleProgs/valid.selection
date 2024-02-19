@@ -1,6 +1,6 @@
 'exampleProgs/valid/advanced/binarySortTree.wacc
-''exampleProgs/valid/advanced/hashTable.wacc
-''exampleProgs/valid/advanced/ticTacToe.wacc
+'exampleProgs/valid/advanced/hashTable.wacc
+'exampleProgs/valid/advanced/ticTacToe.wacc
 'exampleProgs/valid/array/arrayBasic.wacc
 'exampleProgs/valid/array/arrayEmpty.wacc
 'exampleProgs/valid/array/arrayIndexMayBeArrayIndex.wacc
@@ -225,10 +225,10 @@
 'exampleProgs/valid/runtimeErr/divideByZero/modByZero.wacc
 'exampleProgs/valid/runtimeErr/integerOverflow/intJustOverflow.wacc
 'exampleProgs/valid/runtimeErr/integerOverflow/intmultOverflow.wacc
-''exampleProgs/valid/runtimeErr/integerOverflow/intnegateOverflow2.wacc
+'exampleProgs/valid/runtimeErr/integerOverflow/intnegateOverflow2.wacc
 'exampleProgs/valid/runtimeErr/integerOverflow/intnegateOverflow3.wacc
 'exampleProgs/valid/runtimeErr/integerOverflow/intnegateOverflow4.wacc
-''exampleProgs/valid/runtimeErr/integerOverflow/intnegateOverflow.wacc
+'exampleProgs/valid/runtimeErr/integerOverflow/intnegateOverflow.wacc
 'exampleProgs/valid/runtimeErr/integerOverflow/intUnderflow.wacc
 'exampleProgs/valid/runtimeErr/integerOverflow/intWayOverflow.wacc
 'exampleProgs/valid/runtimeErr/nullDereference/freeNull.wacc
