@@ -56,7 +56,7 @@ _errDivZero:
             "sdiv\t" + generateRegister(dst) + ", " + generateRegister(dst) + ", " + generateOperand(src) + "\n"
         }
 
-        case Address(label, dst) => "adr\t" + generateRegister(dst) + ", " + label + "\n"
+        case Address(label, dst) => "adr\t" + generateOperand(dst) + ", " + label + "\n"
         
         case Compare(r1, r2) => "cmp\t" + generateOperand(r1) + generateOperand(r2) + "\n" +
         ""
