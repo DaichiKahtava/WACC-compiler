@@ -2,7 +2,7 @@ exampleProgs/invalid/semanticErr/array/arrayIndexComplexNotInt.wacc
 exampleProgs/invalid/semanticErr/array/arrayIndexNotInt.wacc
 'exampleProgs/invalid/semanticErr/array/arrayMultipleIndexError.wacc
 'exampleProgs/invalid/semanticErr/array/badIndex.wacc
-'exampleProgs/invalid/semanticErr/array/indexUndefIdent.wacc
+exampleProgs/invalid/semanticErr/array/indexUndefIdent.wacc
 exampleProgs/invalid/semanticErr/array/mixingTypesInArrays.wacc
 exampleProgs/invalid/semanticErr/array/noArrayCovariance.wacc
 exampleProgs/invalid/semanticErr/array/nonMatchingArrays.wacc

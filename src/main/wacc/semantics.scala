@@ -41,8 +41,9 @@ class Semantics(fileName: String) {
             case And(_, _) => S_BOOL
             case Or(_, _) => S_BOOL
 
-            case ArrElem(id, _)  => curSymTable.findVarGlobal(id).get.tp match {
-                case S_ARRAY(tp) => tp
+            // This works for now but breaks the assumption that the variable must exist when getType is invoked
+            case ArrElem(id, _)  => curSymTable.findVarGlobal(id) match {
+                case Some(VARIABLE(S_ARRAY(tp))) => tp
                 case _ => {
                     errorRep.addError("Variable \""+id+"\" is not an array!", e.pos)
                     S_ANY
