@@ -3,8 +3,28 @@ package wacc
 import java.util.stream.Collectors
 
 object aarch64_formatter {
+
+    var errorDivZero = false
+
     def generateAssembly(instructions: List[Instruction]): String = {
-        instructions.map(generateAssembly(_)).foldRight("")((s1,s2)=> s1++s2) // TODO: Perf. consid
+        val full_assembly = new StringBuilder
+        instructions.map(generateAssembly(_)).foreach(full_assembly.addAll(_))
+        if (errorDivZero) {
+            full_assembly.addAll("""
+	// Division by zero error handler as seen in the ref. compiler
+	// length of .L._errDivZero_str0
+	.word 40
+.L._errDivZero_str0:
+	.asciz "fatal error: division or modulo by zero\n"
+.align 4
+_errDivZero:
+	adr x0, .L._errDivZero_str0
+	bl _prints
+	mov w0, #-1
+	bl exit
+""")
+        }
+        return full_assembly.result()
     }
 
     def generateAssembly(instr: Instruction): String = instr match {
@@ -14,24 +34,26 @@ object aarch64_formatter {
         case Move(src, dst) => "mov\t" + generateRegister(dst) + ", " + generateOperand(src) + "\n"
         
         case Load(src, dst) => "mov\t" + generateRegister(dst) + ", " + generateOperand(src) + "\n"
-        case LoadPair(src, dst1, dst2) => "ldp\t" + generateRegister(dst1) + ", " +
+        case Pop(src, dst1, dst2) => "ldp\t" + generateRegister(dst1) + ", " +
             generateRegister(dst2) + ", [" + generateRegister(src) + "]\n"
             // TODO: provision for src to be an operand (+- do we need pairs?)
 
         case Store(src, dst) => "str\t" + generateRegister(src) + ", [" + generateRegister(dst) + "]\n" 
-        case StorePair(src, dst1, dst2) => "stp\t" + generateRegister(dst1) + ", " +
+        case Push(src, dst1, dst2) => "stp\t" + generateRegister(dst1) + ", " +
             generateRegister(dst2) + ", [" + generateRegister(src) + "]\n"
 
         case Branch(label) => "b\t" + label
         case BranchCond(label, cond) => "b." + generateCondition(cond) + "\t" + label + "\n"
         case BranchLink(label, addr) => "bl\t" + String.valueOf(addr) + " " + label + "\n"
 
-        case AddI(src, dst) => ??? // Need to decide on whether we convert arity of operations 
-        case SubI(src, dst) => ??? //   from two to three elements here or at a previous stage  
-        case MulI(src, dst) => ???
-        case DivI(src, dst) => ???
+        case AddI(src, dst) => "add\t" + generateRegister(dst) + ", " + generateRegister(dst) + ", " + generateOperand(src) + "\n"
+        case SubI(src, dst) => "sub\t" + generateRegister(dst) + ", " + generateRegister(dst) + ", " + generateOperand(src) + "\n"
+        case MulI(src, dst) => "mul\t" + generateRegister(dst) + ", " + generateRegister(dst) + ", " + generateOperand(src) + "\n"
+        case DivI(src, dst) => "cbz\t" + generateOperand(src) + ", _errDivZero"
+        "sdiv\t" + generateRegister(dst) + ", " + generateRegister(dst) + ", " + generateOperand(src) + "\n"
         
-        case Compare(r1, r2) => "cmp\t" + generateOperand(r1) + generateOperand(r2) + "\n"
+        case Compare(r1, r2) => "cmp\t" + generateOperand(r1) + generateOperand(r2) + "\n" +
+        ""
     }
 
     def generateOperand(op: Operand): String = op match {
