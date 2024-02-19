@@ -144,6 +144,6 @@ object parser {
             Ops(InfixR)(And <# "&&"),
             Ops(InfixR)(Or <# "||")
          )
-         | Neg("-" ~> Ident(ident))
+        | Neg("-" ~> Ident(ident))
     ).label("full expression").explain("This expression is missing an operand")
 }
