@@ -125,7 +125,7 @@ object parser {
         (pos <~ "true").map(BoolL(true)(_)) 
         | (pos <~ "false").map(BoolL(false)(_))) 
     protected [wacc] lazy val pairLit = (pos <~ "null").map(PairL()(_))
-    protected [wacc] lazy val expr: Parsley[Expr] = 
+    protected [wacc] lazy val expr: Parsley[Expr] = (
         precedence(
             IntL(intLit),
             boolLit,
@@ -136,6 +136,18 @@ object parser {
             Ident(ident),
             "(" ~> expr <~ ")"
         )(
+            Ops(Prefix)(Not <# "!", Len <# "len", Ord <# "ord", Chr <# "chr"),
+            Ops(InfixL)(Mul <# "*", Mod <# "%", Div <# "/"),
+            Ops(InfixL)(Add <# "+", Minus <# "-"),
+            Ops(InfixN)(GrT <# ">", GrEqT <# ">=", LsT <# "<", LsEqT <# "<="),
+            Ops(InfixN)(Eq <# "==", NEq <# "!="),
+            Ops(InfixR)(And <# "&&"),
+            Ops(InfixR)(Or <# "||")
+         )
+         | precedence(
+            Ident(ident),
+            "(" ~> expr <~ ")"
+         )(
             Ops(Prefix)(Not <# "!", Neg <# "-", Len <# "len", Ord <# "ord", Chr <# "chr"),
             Ops(InfixL)(Mul <# "*", Mod <# "%", Div <# "/"),
             Ops(InfixL)(Add <# "+", Minus <# "-"),
@@ -143,6 +155,6 @@ object parser {
             Ops(InfixN)(Eq <# "==", NEq <# "!="),
             Ops(InfixR)(And <# "&&"),
             Ops(InfixR)(Or <# "||")
-         ).label("full expression").explain("This expression is missing an operand")
-
+         )
+    ).label("full expression").explain("This expression is missing an operand")
 }
