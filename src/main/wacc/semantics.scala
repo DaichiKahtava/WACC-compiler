@@ -339,117 +339,117 @@ class Semantics(fileName: String) {
     // TODO: Param using symbol table
         
     def isSemCorrect(stmt: Stmt): Boolean = stmt match {
-            case Skip() => true
-            case d@Decl(tp, id, rv) => {
-                if (!curSymTable.addSymbol(id, VARIABLE(toSemanticType(tp)))) {
-                    errorRep.addError("Variable \""+id+"\" is already defined previously!\n" +
-                      "(Subsequent checks will assume an arbitrary type for "+id+")", d.pos)
-                    curSymTable.redefineSymbol(id, VARIABLE(S_ANY))
-                    isSemCorrect(rv)
-                    return false 
-                }
-                if (isSemCorrect(rv)) {
-                    val curType = getType(rv)
-                    rv match {
-                            case pe: PairElem if curType == S_ANY => true
-                            case _ => checkCompatible(curType, toSemanticType(tp), d.pos)
-                        }
-                } else {
-                    false
-                }
-                
+        case Skip() => true
+        case d@Decl(tp, id, rv) => {
+            if (!curSymTable.addSymbol(id, VARIABLE(toSemanticType(tp)))) {
+                errorRep.addError("Variable \""+id+"\" is already defined previously!\n" +
+                    "(Subsequent checks will assume an arbitrary type for "+id+")", d.pos)
+                curSymTable.redefineSymbol(id, VARIABLE(S_ANY))
+                isSemCorrect(rv)
+                return false 
             }
-
-            case Asgn(lv: LIdent, rv) => isSemCorrect(lv) && isSemCorrect(rv) &&
-                checkCompatible(getType(rv), curSymTable.findVarGlobal(lv.id).get.tp, lv.pos)
-            case Asgn(lv: LArrElem, rv) => isSemCorrect(lv) && isSemCorrect(rv) && 
-                checkCompatible(getType(rv), getType(lv), lv.pos)
-            case Asgn(lv: PairElem, rv) => {
-                println(curSymTable.varDict)
-                var res = isSemCorrect(lv) && isSemCorrect(rv)
-                if (res) {
-                    checkCompatible(getType(rv), getType(lv), lv.pos)
-                } else {
-                    false
+            if (isSemCorrect(rv)) {
+                val curType = getType(rv)
+                rv match {
+                    case RExpr(ArrElem(id, xs)) => checkCompatible(curType, toSemanticType(tp), d.pos)
+                    case pe: PairElem if curType == S_ANY => true
+                    case _ => checkCompatible(curType, toSemanticType(tp), d.pos)
                 }
+            } else {
+                false
             }
+            
+        }
 
-            case Read(lv: LIdent) => isOneFrom(curSymTable.findVarGlobal(lv.id).get.tp, List(S_CHAR, S_INT), lv.pos)
-            case Read(lv: LArrElem) => isOneFrom(getType(lv), List(S_CHAR, S_INT), lv.pos)
-            case Read(lv: PairElem) => isOneFrom(getType(lv), List(S_CHAR, S_INT), lv.pos)
+        case Asgn(lv: LIdent, rv) => isSemCorrect(lv) && isSemCorrect(rv) &&
+            checkCompatible(getType(rv), curSymTable.findVarGlobal(lv.id).get.tp, lv.pos)
+        case Asgn(lv: LArrElem, rv) => isSemCorrect(lv) && isSemCorrect(rv) && 
+            checkCompatible(getType(rv), getType(lv), lv.pos)
+        case Asgn(lv: PairElem, rv) => {
+            if (getType(lv) == S_ANY && getType(rv) == S_ANY) {
+                errorRep.addError("Both sides of an assignment cannot be of unknown type.", lv.pos)
+                false
+            } else {
+                isSemCorrect(lv) && isSemCorrect(rv) && checkCompatible(getType(rv), getType(lv), lv.pos)
+            }
+        }
 
-            // case Free(ArrElem(_, xs)) => isSemCorrect(xs)
-            // case Free(x: PairElem) => isSemCorrect(x.asInstanceOf[PairElem])
-            // case Free (_) => false
+        case Read(lv: LIdent) => isOneFrom(curSymTable.findVarGlobal(lv.id).get.tp, List(S_CHAR, S_INT), lv.pos)
+        case Read(lv: LArrElem) => isOneFrom(getType(lv), List(S_CHAR, S_INT), lv.pos)
+        case Read(lv: PairElem) => isOneFrom(getType(lv), List(S_CHAR, S_INT), lv.pos)
 
-            case f@Free(x) => getType(x) match {
-                case S_ERASED | S_PAIR(_, _) | S_ARRAY(_) => true
-                case _ => {
-                    errorRep.addError("A free statement can only accept arrays or pairs", f.pos)
+        // case Free(ArrElem(_, xs)) => isSemCorrect(xs)
+        // case Free(x: PairElem) => isSemCorrect(x.asInstanceOf[PairElem])
+        // case Free (_) => false
+
+        case f@Free(x) => getType(x) match {
+            case S_ERASED | S_PAIR(_, _) | S_ARRAY(_) => true
+            case _ => {
+                errorRep.addError("A free statement can only accept arrays or pairs", f.pos)
+                return false
+            }
+        }
+
+        case r@Return(x) => {
+            if(isSemCorrect(x)){
+            curSymTable.getReturnType() match {
+                case Some(tp) => {            
+                    if (!canWeakenTo(getType(x), tp)) {
+                    // TODO: Add error message for return type inconsistencies in the reporter
+                        errorRep.addError("Return expression type does not match function's return type.", r.pos)
+                        return false
+                    }
+                    return true
+                }
+                case None => {
+                    errorRep.addError("Return statement outside of function", r.pos)
                     return false
                 }
             }
-
-            case r@Return(x) => {
-                if(isSemCorrect(x)){
-                curSymTable.getReturnType() match {
-                    case Some(tp) => {            
-                        if (!canWeakenTo(getType(x), tp)) {
-                        // TODO: Add error message for return type inconsistencies in the reporter
-                            errorRep.addError("Return expression type does not match function's return type.", r.pos)
-                            return false
-                        }
-                        return true
-                    }
-                    case None => {
-                        errorRep.addError("Return statement outside of function", r.pos)
-                        return false
-                    }
-                }
-            }
-            else{
-                return false
-            }
-            }
-            case Exit(x) => equalType(getType(x), S_INT, x.pos)
-            case Print(x) => isSemCorrect(x)
-            case Println(x) => isSemCorrect(x)
-            case Cond(x, s1, s2) => {
-                if(isSemCorrect(x)){
-                    var res = equalType(getType(x), S_BOOL, x.pos)
-                    curSymTable = curSymTable.newUnamedScope()
-                    res = res && isSemCorrect(s1) 
-                    curSymTable = curSymTable.parent().get
-                    curSymTable = curSymTable.newUnamedScope()
-                    res = res && isSemCorrect(s2) 
-                    curSymTable = curSymTable.parent().get
-                    return res
-                }
-                return false
-            }
-            case Loop(x, stmt) => {
-                if(isSemCorrect(x)){
-                    var res = equalType(getType(x), S_BOOL, x.pos)
-                    curSymTable = curSymTable.newUnamedScope()
-                    res = res && isSemCorrect(stmt) 
-                    curSymTable = curSymTable.parent().get
-                    return res
-                }
-                return false
-                
-            }
-            case Body(stmt) => {
+        }
+        else{
+            return false
+        }
+        }
+        case Exit(x) => equalType(getType(x), S_INT, x.pos)
+        case Print(x) => isSemCorrect(x)
+        case Println(x) => isSemCorrect(x)
+        case Cond(x, s1, s2) => {
+            if(isSemCorrect(x)){
+                var res = equalType(getType(x), S_BOOL, x.pos)
                 curSymTable = curSymTable.newUnamedScope()
-                val res = isSemCorrect(stmt)
+                res = res && isSemCorrect(s1) 
+                curSymTable = curSymTable.parent().get
+                curSymTable = curSymTable.newUnamedScope()
+                res = res && isSemCorrect(s2) 
                 curSymTable = curSymTable.parent().get
                 return res
             }
-            case Delimit(s1, s2) => {
-                val cs1 = isSemCorrect(s1)
-                val cs2 = isSemCorrect(s2)
-                cs1 && cs2
-            }
+            return false
         }
+        case Loop(x, stmt) => {
+            if(isSemCorrect(x)){
+                var res = equalType(getType(x), S_BOOL, x.pos)
+                curSymTable = curSymTable.newUnamedScope()
+                res = res && isSemCorrect(stmt) 
+                curSymTable = curSymTable.parent().get
+                return res
+            }
+            return false
+            
+        }
+        case Body(stmt) => {
+            curSymTable = curSymTable.newUnamedScope()
+            val res = isSemCorrect(stmt)
+            curSymTable = curSymTable.parent().get
+            return res
+        }
+        case Delimit(s1, s2) => {
+            val cs1 = isSemCorrect(s1)
+            val cs2 = isSemCorrect(s2)
+            cs1 && cs2
+        }
+    }
   
 
     def isSemCorrect(lv: LValue): Boolean = lv match {
