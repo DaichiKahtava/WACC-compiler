@@ -49,8 +49,14 @@ _errDivZero:
         case AddI(src, dst) => "add\t" + generateRegister(dst) + ", " + generateRegister(dst) + ", " + generateOperand(src) + "\n"
         case SubI(src, dst) => "sub\t" + generateRegister(dst) + ", " + generateRegister(dst) + ", " + generateOperand(src) + "\n"
         case MulI(src, dst) => "mul\t" + generateRegister(dst) + ", " + generateRegister(dst) + ", " + generateOperand(src) + "\n"
-        case DivI(src, dst) => "cbz\t" + generateOperand(src) + ", _errDivZero"
-        "sdiv\t" + generateRegister(dst) + ", " + generateRegister(dst) + ", " + generateOperand(src) + "\n"
+        case DivI(src, dst) => {
+            errorDivZero = true
+            return "cmp\tXZR, " + generateOperand(src) + "\n" + 
+            "b.eq\t_errDivZero\n"+
+            "sdiv\t" + generateRegister(dst) + ", " + generateRegister(dst) + ", " + generateOperand(src) + "\n"
+        }
+
+        case Address(label, dst) => "adr\t" + generateRegister(dst) + ", " + label + "\n"
         
         case Compare(r1, r2) => "cmp\t" + generateOperand(r1) + generateOperand(r2) + "\n" +
         ""
