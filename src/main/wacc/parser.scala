@@ -144,17 +144,6 @@ object parser {
             Ops(InfixR)(And <# "&&"),
             Ops(InfixR)(Or <# "||")
          )
-         | precedence(
-            Ident(ident),
-            "(" ~> expr <~ ")"
-         )(
-            Ops(Prefix)(Not <# "!", Neg <# "-", Len <# "len", Ord <# "ord", Chr <# "chr"),
-            Ops(InfixL)(Mul <# "*", Mod <# "%", Div <# "/"),
-            Ops(InfixL)(Add <# "+", Minus <# "-"),
-            Ops(InfixN)(GrT <# ">", GrEqT <# ">=", LsT <# "<", LsEqT <# "<="),
-            Ops(InfixN)(Eq <# "==", NEq <# "!="),
-            Ops(InfixR)(And <# "&&"),
-            Ops(InfixR)(Or <# "||")
-         )
+         | Neg("-" ~> Ident(ident))
     ).label("full expression").explain("This expression is missing an operand")
 }
