@@ -9,13 +9,14 @@ case class ReturnI(label: String) extends Instruction
 // Replace operand with more specific classes if necessary
 case class Move(src: Operand, dst: Register) extends Instruction
 case class Load(src: Operand, dst: Register) extends Instruction
-case class Pop(src1: Register, src2: Register, dst: Register) extends Instruction
 case class Store(src: Register, dst: Register) extends Instruction
-case class Push(src: Register, dst1: Register, dst2: Register) extends Instruction
 case class Address(label: String, dst: Operand) extends Instruction
 case class Branch(label: String) extends Instruction
 case class BranchCond(label: String, cond: CondI) extends Instruction
 case class BranchLink(label: String, addr: Int) extends Instruction // Calls function and stores address in the link register...
+
+case class Push(src1: Register, src2: Register, dst: Register) extends Instruction
+case class Pop(src: Register, dst1: Register, dst2: Register) extends Instruction
 
 // May want to have the two operands and the destination as separate arguments
 // case class Add(op1, op2, dst)
