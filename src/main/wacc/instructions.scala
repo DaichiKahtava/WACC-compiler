@@ -20,6 +20,8 @@ case class Pop(src: Register, dst1: Register, dst2: Register) extends Instructio
 
 // May want to have the two operands and the destination as separate arguments
 // case class Add(op1, op2, dst)
+
+// Arity 2 operations: dst := dst <op> src
 case class AddI(src: Operand, dst: Register) extends Instruction
 case class SubI(src: Operand, dst: Register) extends Instruction
 case class MulI(src: Operand, dst: Register) extends Instruction
