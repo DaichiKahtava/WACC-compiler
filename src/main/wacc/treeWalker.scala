@@ -3,9 +3,9 @@ package wacc
 
 class TreeWalker(var curSymTable: SymTable) {
     // GLOBAL POINTER TO THE FINAL (NOT-FORMATTED) ASSEMBLY CODE
-    var instructionList = List()
+    var instructionList = List[Instruction]()
     var nextTempReg = 1 // Start with R1 for temporary values?
-    val outputRegister = Register(0)
+    val outputRegister = Register(0) // Results stored in R0.
 
     def generateInstructionList(e: Expr) : List[Instruction] = e match {
         // UnOp expressions.
@@ -69,10 +69,16 @@ class TreeWalker(var curSymTable: SymTable) {
         // Load the integer directly.
         case IntL(n) => List(Load(ImmNum(n), outputRegister))
 
-        case BoolL(b) => List()
-        case CharL(c) => List()
+        // Load the boolean value using integers.
+        case BoolL(b) => List(Load(ImmNum(if (b) 1 else 0), outputRegister))
+
+        // Obtain the integer value of a character.
+        case CharL(c) => List(Load(ImmNum(c.toInt), outputRegister))
+        
         case StrL(s) => List()
-        case PairL() => List()
+
+        case PairL() => 
+            List(Load(ImmNum(0), outputRegister)) // Treat as null pointer?
 
         // Pattern match for the identifier.
         case Ident(id) =>
