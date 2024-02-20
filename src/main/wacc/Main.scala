@@ -3,6 +3,7 @@ package wacc
 import parsley.{Success, Failure}
 import java.io.File
 import java.io.FileWriter
+import org.apache.commons.io.FilenameUtils
 
 object Main {
     def main(args: Array[String]): Unit = {
@@ -35,7 +36,7 @@ object Main {
                     println("Parsed successfully")
                     // TODO BACKEND LATER.
                     val treeWalker = new TreeWalker(sem.curSymTable)
-                    val writer = new FileWriter(inputFile.getName() + ".s")
+                    val writer = new FileWriter(FilenameUtils.getBaseName(inputFile.getName()) + ".s")
                     val str = aarch64_formatter.generateAssembly(treeWalker.translate(ast))
                     printf(str)
                     writer.append(str)
