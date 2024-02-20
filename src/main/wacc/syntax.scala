@@ -37,7 +37,7 @@ case class Len(x: Expr)(val pos: (Int, Int)) extends UnOp
 case class Ord(x: Expr)(val pos: (Int, Int)) extends UnOp
 case class Chr(x: Expr)(val pos: (Int, Int)) extends UnOp
 
-sealed trait  BinOp extends Expr
+sealed trait BinOp extends Expr
 case class Mul(x: Expr, y: Expr)(val pos: (Int, Int)) extends BinOp
 case class Div(x: Expr, y: Expr)(val pos: (Int, Int)) extends BinOp
 case class Mod(x: Expr, y: Expr)(val pos: (Int, Int)) extends BinOp
