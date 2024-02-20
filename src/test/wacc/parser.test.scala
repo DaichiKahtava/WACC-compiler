@@ -305,25 +305,27 @@ class PositionTest extends AnyFlatSpec {
         } 
     }
 
-    it should "correctly parse positions for unary nodes" in {
-        val p = parser.expr.parse("-1")
-        p.isSuccess shouldBe true
-        val node = p.get
+    // Commented. Immediate int literals do not become a Neg
+    //
+    // it should "correctly parse positions for unary nodes" in {
+    //     val p = parser.expr.parse("-1")
+    //     p.isSuccess shouldBe true
+    //     val node = p.get
 
-        node match {
-            case n: Neg =>
-                n.x match {
-                    case intL: IntL => 
-                        intL.n shouldBe 1 
-                        intL.pos shouldBe (1, 2)
-                    case _ =>
-                        fail("Inner expression is not an IntL.")
-                } 
-                n.pos shouldBe (1, 1)
-            case _ => 
-                fail("Parsing failed to produce a Neg.")
-        } 
-    }
+    //     node match {
+    //         case n: Neg =>
+    //             n.x match {
+    //                 case intL: IntL => 
+    //                     intL.n shouldBe 1 
+    //                     intL.pos shouldBe (1, 2)
+    //                 case _ =>
+    //                     fail("Inner expression is not an IntL.")
+    //             } 
+    //             n.pos shouldBe (1, 1)
+    //         case _ => 
+    //             fail("Parsing failed to produce a Neg.")
+    //     } 
+    // }
 
     it should "correctly parse positions for unary minus expressions" in {
         val p = parser.expr.parse("-foo")

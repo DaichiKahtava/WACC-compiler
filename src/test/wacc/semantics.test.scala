@@ -130,23 +130,23 @@ class semanticsTests extends AnyFlatSpec with BeforeAndAfterEach {
         sem.isSemCorrect(Eq(BoolL(true)(1,1),  CharL('f')(1,4))(1, 1)) shouldBe false
         sem.errorRep.toString() shouldBe """
 Unexpected type! Expected int. Got string instead.
-In file: foo.txt at position (1, 4)
+Semantic error in file: foo.txt at position (line: 1, column: 4)
 *** Could not display the source file: foo.txt ***
 
 Unexpected type! Expected int. Got string instead.
-In file: foo.txt at position (1, 1)
+Semantic error in file: foo.txt at position (line: 1, column: 1)
 *** Could not display the source file: foo.txt ***
 
 Unexpected type! Expected one of the following: int, char. Got string instead.
-In file: foo.txt at position (1, 1)
+Semantic error in file: foo.txt at position (line: 1, column: 1)
 *** Could not display the source file: foo.txt ***
 
 Unexpected type! Expected int. Got string instead.
-In file: foo.txt at position (1, 4)
+Semantic error in file: foo.txt at position (line: 1, column: 4)
 *** Could not display the source file: foo.txt ***
 
 Incomparable types! char cannot be compared to bool.
-In file: foo.txt at position (1, 4)
+Semantic error in file: foo.txt at position (line: 1, column: 4)
 *** Could not display the source file: foo.txt ***
 -----
 Found 5 semantic errors.
@@ -158,7 +158,7 @@ Found 5 semantic errors.
         sem.isSemCorrect(Add(Neg(IntL(0)(1,2))(1, 1), Chr(IntL(0)(1,7))(1, 4))(1,1)) shouldBe false
         sem.errorRep.toString() shouldBe """
 Unexpected type! Expected int. Got char instead.
-In file: foo.txt at position (1, 4)
+Semantic error in file: foo.txt at position (line: 1, column: 4)
 *** Could not display the source file: foo.txt ***
 -----
 Found 1 semantic errors.

@@ -2,7 +2,7 @@ exampleProgs/invalid/semanticErr/array/arrayIndexComplexNotInt.wacc
 exampleProgs/invalid/semanticErr/array/arrayIndexNotInt.wacc
 'exampleProgs/invalid/semanticErr/array/arrayMultipleIndexError.wacc
 'exampleProgs/invalid/semanticErr/array/badIndex.wacc
-'exampleProgs/invalid/semanticErr/array/indexUndefIdent.wacc
+exampleProgs/invalid/semanticErr/array/indexUndefIdent.wacc
 exampleProgs/invalid/semanticErr/array/mixingTypesInArrays.wacc
 exampleProgs/invalid/semanticErr/array/noArrayCovariance.wacc
 exampleProgs/invalid/semanticErr/array/nonMatchingArrays.wacc
@@ -43,7 +43,7 @@ exampleProgs/invalid/semanticErr/multiple/multiCaseSensitivity.wacc
 exampleProgs/invalid/semanticErr/multiple/multiTypeErrs.wacc
 exampleProgs/invalid/semanticErr/multiple/obfuscatingReturnsWithWhile.wacc
 exampleProgs/invalid/semanticErr/pairs/badPairAssign.wacc
-'exampleProgs/invalid/semanticErr/pairs/badPairExchange.wacc
+exampleProgs/invalid/semanticErr/pairs/badPairExchange.wacc
 exampleProgs/invalid/semanticErr/pairs/freeNonPair.wacc
 exampleProgs/invalid/semanticErr/pairs/mismatchedPair.wacc
 exampleProgs/invalid/semanticErr/pairs/nonMatchingPairs.wacc

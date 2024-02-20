@@ -21,7 +21,7 @@ class SemErrorReporter(fileName: String) {
         // If the last line is the empty line (to comply with POSIX standards)
         // It will not be included in the list.
         // PRE: The position will never point to this line
-        errors.addAll("In file: " + fileName + " at position (" + pos._1 + ", " + pos._2 + ")\n")
+        errors.addAll("Semantic error in file: " + fileName + " at position (line: " + pos._1 + ", column: " + pos._2 + ")\n")
         if (fileLines.isFailure) {
             errors.addAll("*** Could not display the source file: " + fileName + " ***\n")
         } else {
