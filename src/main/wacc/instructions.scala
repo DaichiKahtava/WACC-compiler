@@ -4,7 +4,7 @@ sealed trait Instruction
 
 case class Label(label: String) extends Instruction
 case class Jump(label: String) extends Instruction
-case class ReturnI(label: String) extends Instruction
+case object ReturnI extends Instruction
 
 // Replace operand with more specific classes if necessary
 case class Move(src: Operand, dst: Register) extends Instruction

@@ -63,7 +63,7 @@ _errDivZero:
     def generateAssembly(instr: Instruction): String = instr match {
         case Label(label) => label + ":\n"
         case Jump(label) => "b\t" + label + "\n"
-        case ReturnI(_) => "ret\n"
+        case ReturnI => "ret\n"
         case Move(src, dst) => "mov\t" + generateRegister(dst) + ", " + generateOperand(src) + "\n"
         
         case Load(src, dst) => "mov\t" + generateRegister(dst) + ", " + generateOperand(src) + "\n"

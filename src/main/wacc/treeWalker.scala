@@ -101,18 +101,23 @@ class TreeWalker(var curSymTable: SymTable) {
     }
 
     def translate(program: Program): List[Instruction] = {
+        var instructionList = List.empty[Instruction]
         program.funcs.foreach((f) => {
             curSymTable = curSymTable.findFunGlobal(f.id).get.st // We are in the local symbolTable.
-            translate(f)
+            instructionList ++= translate(f)
             curSymTable = curSymTable.parent().get // We are in the parent/global symbolTable.
         })
-        instructionList ++ translate(program.s, gpRegs.toList)
-        return instructionList // A bit redundant here? Can just return the generated List
+        // TODO: Use blocks of sorts...
+        instructionList ++= List(Label("main"))
+        instructionList ++= translate(program.s, gpRegs.toList)
+        return instructionList ++ List(ReturnI)
+        // return instructionList // A bit redundant here? Can just return the generated List
     }
 
     def translate(func: Func): List[Instruction] = 
         // Callee saves and callee restore must go here.
-        Label(func.id) :: translate(func.s, gpRegs.toList) ++ List(ReturnI(func.id))
+        // Labels must be ensured unique
+        Label(func.id) :: translate(func.s, gpRegs.toList) ++ List(ReturnI)
 
     def translate(stmt: Stmt, regs: List[Register]): List[Instruction] = stmt match {
         case Skip() => Nil
@@ -122,7 +127,7 @@ class TreeWalker(var curSymTable: SymTable) {
         case Free(x) => ???
         case Return(x) => ???
         case Exit(x) => 
-            translate(x, regs)
+            translate(x, regs) ++
             List(Move(regs(0), xr),
             Move(availRegs(0), xr),
             // Caller saves must go here
