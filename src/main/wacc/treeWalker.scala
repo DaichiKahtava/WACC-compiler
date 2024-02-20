@@ -17,12 +17,14 @@ class TreeWalker(var curSymTable: SymTable) {
     val lr = Register(30) // Link register
     val sp = Register(31) // Stack pointer
     val xr = Register(8)  // Indirect result register
+    val dst = 0
+    val nxt = 1
+
 
     // Conventions for translate: 
     //  regs contains a list of all available general purpose registers
     //  and the first register is used as the `return` register for the
     //  specific instruction
-
 
     def translate(e: Expr, regs: List[Register]): List[Instruction] = e match {
 
@@ -51,43 +53,60 @@ class TreeWalker(var curSymTable: SymTable) {
             translate(x, regs) ++ translate(y, regs.tail) ++ List(MulI(nxt, dst))
 
         case Div(x, y) =>
-            val dst = regs.head
-            val nxt = regs.tail.head
-            translate(x, regs) ++ translate(y, regs.tail) ++ List(DivI(nxt, dst))
+        case GrT(x, y) => 
+            translate(x, regs) ++ 
+            translate(y, regs.tail) ++ 
+            List(Compare(regs(dst), regs(nxt)), SetCond(xr, GtI))
 
-        case GrT(x, y) => List()
-        case GrEqT(x, y) => List()
-        case LsT(x, y) => List()
-        case LsEqT(x, y) => List()
-        case Eq(x, y) => List()
-        case NEq(x, y) => List()
-        case And(x, y) => List()
-        case Or(x, y) => List()
+        case GrEqT(x, y) =>
+            translate(x, regs) ++ 
+            translate(y, regs.tail) ++ 
+            List(Compare(regs(dst), regs(nxt)), SetCond(xr, GeI))
+
+        case LsT(x, y) =>
+            translate(x, regs) ++ 
+            translate(y, regs.tail) ++ 
+            List(Compare(regs(dst), regs(nxt)), SetCond(xr, LtI))
+
+        case LsEqT(x, y) =>
+            translate(x, regs) ++ 
+            translate(y, regs.tail) ++ 
+            List(Compare(regs(dst), regs(nxt)), SetCond(xr, LeI))
+
+        case Eq(x, y) =>
+            translate(x, regs) ++ 
+            translate(y, regs.tail) ++ 
+            List(Compare(regs(dst), regs(nxt)), SetCond(xr, EqI))
+
+        case NEq(x, y) =>
+            translate(x, regs) ++ 
+            translate(y, regs.tail) ++ 
+            List(Compare(regs(dst), regs(nxt)), SetCond(xr, NeI))
 
         // Atom expressions.
 
         // Load the integer directly.
-        case IntL(n) => List(Load(ImmNum(n), regs(0)))
+        case IntL(n) => List(Load(ImmNum(n), regs(dst)))
 
         // Load the boolean value using integers.
-        case BoolL(b) => List(Load(ImmNum(if (b) 1 else 0), regs(0)))
+        case BoolL(b) => List(Load(ImmNum(if (b) 1 else 0), regs(dst)))
 
         // Obtain the integer value of a character.
-        case CharL(c) => List(Load(ImmNum(c.toInt), regs(0)))
+        case CharL(c) => List(Load(ImmNum(c.toInt), regs(dst)))
         
         case StrL(s) => {
             val label = aarch64_formatter.includeString(s)
-            return List(Address(label, availRegs(0)))
+            return List(Address(label, availRegs(dst)))
         }
 
         case PairL() => 
-            List(Load(ImmNum(0), regs(0))) // Treat as null pointer?
+            List(Load(ImmNum(0), regs(dst))) // Treat as null pointer?
 
         // Pattern match for the identifier.
         case Ident(id) =>
             curSymTable.findVarGlobal(id) match {
                 // Variable was found in the symbol table.
-                case Some(varInfo) => List(Load(varInfo.asInstanceOf[Operand], regs(0)))
+                case Some(varInfo) => List(Load(varInfo.asInstanceOf[Operand], regs(dst)))
                 // Variable was not found in the symbol table.
                 case None => throw new RuntimeException(s"Undefined variable: $id")
         }
@@ -128,32 +147,36 @@ class TreeWalker(var curSymTable: SymTable) {
         case Return(x) => ???
         case Exit(x) => 
             translate(x, regs) ++
-            List(Move(regs(0), xr),
-            Move(availRegs(0), xr),
+            List(Move(regs(dst), xr),
+            Move(availRegs(dst), xr),
             // Caller saves must go here
             BranchLink("exit"),
             // Caller resotre must go here
-            Move(ImmNum(0), availRegs(0))) 
+            Move(ImmNum(0), availRegs(dst))) 
         case Print(x) => ???
         case Println(x) => ???
         case Cond(x, s1, s2) => ???
         case Loop(x, s) => ???
         case Body(s) => ???
-        case Delimit(s1, s2) => ???
+        case Delimit(s1, s2) => translate(s1, regs) ++ translate(s2, regs.tail)
     }
 
     def translate(lv: LValue, regs: List[Register]): List[Instruction] = lv match {
-        // Defaulting case.
-        case _ => throw new RuntimeException("Undefined left value.")
+        case LArrElem(id, xs) => ??? 
+        case LIdent(id) => ???
+        case pe: PairElem => translate(pe, regs.tail)
     }
 
     def translate(rv: RValue, regs: List[Register]): List[Instruction] = rv match {
-        // Defaulting case.
-        case _ => throw new RuntimeException("Undefined right value.")
+        case ArrL(xs) => ???
+        case Call(id, xs) => ???
+        case RExpr(e) => ???
+        case NewPair(e1, e2) => ???
+        case pe: PairElem => translate(pe, regs.tail)
     }
 
     def translate(pe: PairElem, regs: List[Register]): List[Instruction] = pe match {
-        // Defaulting case.
-        case _ => throw new RuntimeException("Undefined pair.")
+        case First(lv) => ??? 
+        case Second(lv) => ???
     }
 }
