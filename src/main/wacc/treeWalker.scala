@@ -121,7 +121,14 @@ class TreeWalker(var curSymTable: SymTable) {
         case Read(lv) => ???
         case Free(x) => ???
         case Return(x) => ???
-        case Exit(x) => ???
+        case Exit(x) => 
+            translate(x, regs)
+            List(Move(regs(0), xr),
+            Move(availRegs(0), xr),
+            // Caller saves must go here
+            BranchLink("exit"),
+            // Caller resotre must go here
+            Move(ImmNum(0), availRegs(0))) 
         case Print(x) => ???
         case Println(x) => ???
         case Cond(x, s1, s2) => ???
