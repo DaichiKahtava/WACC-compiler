@@ -77,7 +77,7 @@ _errDivZero:
 
         case Branch(label) => "b\t" + label
         case BranchCond(label, cond) => "b." + generateCondition(cond) + "\t" + label + "\n"
-        case BranchLink(label, addr) => "bl\t" + String.valueOf(addr) + " " + label + "\n"
+        case BranchLink(label) => "bl\t" + label + "\n"
 
         case AddI(src, dst) => "add\t" + generateRegister(dst) + ", " + generateRegister(dst) + ", " + generateOperand(src) + "\n"
         case SubI(src, dst) => "sub\t" + generateRegister(dst) + ", " + generateRegister(dst) + ", " + generateOperand(src) + "\n"
