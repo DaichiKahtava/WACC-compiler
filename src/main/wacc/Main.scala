@@ -2,6 +2,7 @@ package wacc
 
 import parsley.{Success, Failure}
 import java.io.File
+import java.io.FileWriter
 
 object Main {
     def main(args: Array[String]): Unit = {
@@ -33,9 +34,12 @@ object Main {
                 } else {
                     println("Parsed successfully")
                     // TODO BACKEND LATER.
-                    // var assemblyCodeToBeFormatted = tw.generateInstructionList(ast)
-                    
-                    
+                    val treeWalker = new TreeWalker(sem.curSymTable)
+                    val writer = new FileWriter(inputFile.getName() + ".s")
+                    val str = aarch64_formatter.generateAssembly(treeWalker.translate(ast))
+                    printf(str)
+                    writer.append(str)
+                    writer.flush()
                 }   
         }
     }
