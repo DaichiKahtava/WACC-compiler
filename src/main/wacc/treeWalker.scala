@@ -1,15 +1,24 @@
 package wacc
 
+import scala.collection.mutable.ListBuffer
 
 class TreeWalker(var curSymTable: SymTable) {
     // GLOBAL POINTER TO THE FINAL (NOT-FORMATTED) ASSEMBLY CODE
-    var instructionList = List()
-    var nextTempReg = 1 // Start with R1 for temporary values?
+    var instructionList = List[Instruction]()
+    var gpRegs = ListBuffer.empty[Register]
+    for (n <- 0 to 15) gpRegs.addOne(Register(n))
+    for (n <- 19 to 28) gpRegs.addOne(Register(n))
+
+    var availRegs = ListBuffer.empty[Register]
+    availRegs.addAll(gpRegs)
+    
     val outputRegister = Register(0)
+    val fp = Register(29)
+    val lr = Register(30)
+    val sp = Register(31)
 
-    def generateInstructionList(e: Expr) : List[Instruction] = e match {
+    def translate(e: Expr, regs: List[Register]): List[Instruction] = e match {
         // UnOp expressions.
-
         case Not(x) => List()
         case Neg(x) => List()
         case Len(x) => List()
@@ -17,43 +26,26 @@ class TreeWalker(var curSymTable: SymTable) {
         case Chr(x) => List()
 
         // BinOp expressions.
-
         case Mod(x, y) => List()
-
-        // Pattern match for Add.
         case Add(x, y) => 
-            val output = generateInstructionList(x) ++ // Evaluate the left-hand side first.
-            generateInstructionList(y) ++ 
-            List(AddI(Register(nextTempReg), Register(nextTempReg - 1))) // ADD, put result in R0.
-            val newTempReg = nextTempReg + 1
-            nextTempReg = newTempReg // Update register reference.
-            output
+            val dst = regs.head
+            val nxt = regs.tail.head
+            translate(x, regs) ++ translate(y, regs.tail) ++ List(AddI(nxt, dst))
         
-        // Similar to Add, replace AddI with SubI.
-        case Minus(x, y) =>
-            val output = generateInstructionList(x) ++ 
-            generateInstructionList(y) ++ 
-            List(SubI(Register(nextTempReg), Register(nextTempReg - 1)))
-            val newTempReg = nextTempReg + 1
-            nextTempReg = newTempReg
-            output
+        case Minus(x, y) => 
+            val dst = regs.head
+            val nxt = regs.tail.head
+            translate(x, regs) ++ translate(y, regs.tail) ++ List(SubI(nxt, dst))
 
-        // [tm1722] Similarly as for Add and Sub, do the same fo Mul and Div.
-        case Mul(x, y) => 
-            val output = generateInstructionList(x) ++ // Evaluate the left-hand side first.
-            generateInstructionList(y) ++ 
-            List(MulI(Register(nextTempReg), Register(nextTempReg - 1)))
-            val newTempReg = nextTempReg + 1
-            nextTempReg = newTempReg // Update register reference.
-            output
+        case Mul(x, y) =>
+            val dst = regs.head
+            val nxt = regs.tail.head
+            translate(x, regs) ++ translate(y, regs.tail) ++ List(MulI(nxt, dst))
 
-        case Div(x, y) => 
-            val output = generateInstructionList(x) ++ // Evaluate the left-hand side first.
-            generateInstructionList(y) ++ 
-            List(DivI(Register(nextTempReg), Register(nextTempReg - 1)))
-            val newTempReg = nextTempReg + 1
-            nextTempReg = newTempReg // Update register reference.
-            output
+        case Div(x, y) =>
+            val dst = regs.head
+            val nxt = regs.tail.head
+            translate(x, regs) ++ translate(y, regs.tail) ++ List(DivI(nxt, dst))
 
         case GrT(x, y) => List()
         case GrEqT(x, y) => List()
@@ -69,16 +61,22 @@ class TreeWalker(var curSymTable: SymTable) {
         // Load the integer directly.
         case IntL(n) => List(Load(ImmNum(n), outputRegister))
 
-        case BoolL(b) => List()
-        case CharL(c) => List()
+        // Load the boolean value using integers.
+        case BoolL(b) => List(Load(ImmNum(if (b) 1 else 0), outputRegister))
+
+        // Obtain the integer value of a character.
+        case CharL(c) => List(Load(ImmNum(c.toInt), outputRegister))
+        
         case StrL(s) => List()
-        case PairL() => List()
+
+        case PairL() => 
+            List(Load(ImmNum(0), outputRegister)) // Treat as null pointer?
 
         // Pattern match for the identifier.
         case Ident(id) =>
             curSymTable.findVarGlobal(id) match {
                 // Variable was found in the symbol table.
-                case Some(varInfo) => List(Load(varInfo.asInstanceOf[Operand], Register(0)))
+                case Some(varInfo) => List(Load(varInfo.asInstanceOf[Operand], outputRegister))
                 // Variable was not found in the symbol table.
                 case None => throw new RuntimeException(s"Undefined variable: $id")
         }
@@ -89,38 +87,52 @@ class TreeWalker(var curSymTable: SymTable) {
         case _ => throw new RuntimeException("Undefined expression.")
     }
 
-    def generateInstructionList(list: List[Any]) : List[Instruction] = list match {
+    def translate(list: List[Any]): List[Instruction] = list match {
         // Defaulting case.
         case _ => throw new RuntimeException("Undefined list.")
     }
 
-    def generateInstructionList(program: Program) : List[Instruction] = {
+    def translate(program: Program): List[Instruction] = {
         program.funcs.foreach((f) => {
             curSymTable = curSymTable.findFunGlobal(f.id).get.st // We are in the local symbolTable.
-            generateInstructionList(f.s)
+            translate(f.s)
             curSymTable = curSymTable.parent().get // We are in the parent/global symbolTable.
         })
-        instructionList ::: generateInstructionList(program.s) // [tm1722] either ::: or ++ can be used.
-        return instructionList
+        instructionList ++ translate(program.s)
+        return instructionList // A bit redundant here? Can just return the generated List
     }
 
-    def generateInstructionList(stmt: Stmt) : List[Instruction] = stmt match {
+    def translate(func: Func): List[Instruction] = 
+        Label(func.id) :: translate(func.s) ++ List(ReturnI(func.id))
 
+    def translate(stmt: Stmt): List[Instruction] = stmt match {
+        case Skip() => Nil
+        case Decl(tp, id, rv) => ???
+        case Asgn(lv, rv) => ???
+        case Read(lv) => ???
+        case Free(x) => ???
+        case Return(x) => ???
+        case Exit(x) => ???
+        case Print(x) => ???
+        case Println(x) => ???
+        case Cond(x, s1, s2) => ???
+        case Loop(x, s) => ???
+        case Body(s) => ???
         // Defaulting case.
         case _ => throw new RuntimeException("Undefined statement.")
     }
 
-    def generateInstructionList(lv: LValue) : List[Instruction] = lv match {
+    def translate(lv: LValue): List[Instruction] = lv match {
         // Defaulting case.
         case _ => throw new RuntimeException("Undefined left value.")
     }
 
-    def generateInstructionList(rv: RValue) : List[Instruction] = rv match {
+    def translate(rv: RValue): List[Instruction] = rv match {
         // Defaulting case.
         case _ => throw new RuntimeException("Undefined right value.")
     }
 
-    def generateInstructionList(pe: PairElem) : List[Instruction] = pe match {
+    def translate(pe: PairElem): List[Instruction] = pe match {
         // Defaulting case.
         case _ => throw new RuntimeException("Undefined pair.")
     }

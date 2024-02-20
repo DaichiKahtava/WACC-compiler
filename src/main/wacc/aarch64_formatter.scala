@@ -68,7 +68,7 @@ _errDivZero:
         case r@Register(_) => generateRegister(r)
     }
 
-    def generateRegister(reg: Register): String = "X" + String.valueOf(reg.addr)
+    def generateRegister(reg: Register): String = "X" + String.valueOf(reg.regN)
 
     def generateCondition(cond: CondI): String =  cond match {
         case EqI => "eq"

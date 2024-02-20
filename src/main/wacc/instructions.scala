@@ -31,7 +31,8 @@ case class Compare(r1: Operand, r2: Operand) extends Instruction
 
 // TODO: Fill in with all types of operands
 sealed trait Operand
-case class Register(addr: Int) extends Operand
+case class Register(regN: Int) extends Operand
+
 case class ImmNum(n: Int) extends Operand
 
 sealed trait CondI
