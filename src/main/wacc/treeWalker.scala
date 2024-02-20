@@ -13,14 +13,18 @@ class TreeWalker(var curSymTable: SymTable) {
     availRegs.addAll(gpRegs)
     
     val outputRegister = Register(0)
-    val fp = Register(29)
-    val lr = Register(30)
-    val sp = Register(31)
+    val fp = Register(29) // Frame pointer register
+    val lr = Register(30) // Link register
+    val sp = Register(31) // Stack pointer
+    val xr = Register(8)  // Indirect result register
+
+    // Conventions for translate: 
+    //  regs contains a list of all available general purpose registers
+    //  and the first register is used as the `return` register for the
+    //  specific instruction
+
 
     def translate(e: Expr, regs: List[Register]): List[Instruction] = e match {
-        // Conventions: regs contains a list of all available registers and the first register
-        //              is used as the return register
-
 
         // UnOp expressions.
         case Not(x) => List()
@@ -63,13 +67,13 @@ class TreeWalker(var curSymTable: SymTable) {
         // Atom expressions.
 
         // Load the integer directly.
-        case IntL(n) => List(Load(ImmNum(n), outputRegister))
+        case IntL(n) => List(Load(ImmNum(n), regs(0)))
 
         // Load the boolean value using integers.
-        case BoolL(b) => List(Load(ImmNum(if (b) 1 else 0), outputRegister))
+        case BoolL(b) => List(Load(ImmNum(if (b) 1 else 0), regs(0)))
 
         // Obtain the integer value of a character.
-        case CharL(c) => List(Load(ImmNum(c.toInt), outputRegister))
+        case CharL(c) => List(Load(ImmNum(c.toInt), regs(0)))
         
         case StrL(s) => {
             val label = aarch64_formatter.includeString(s)
@@ -77,13 +81,13 @@ class TreeWalker(var curSymTable: SymTable) {
         }
 
         case PairL() => 
-            List(Load(ImmNum(0), outputRegister)) // Treat as null pointer?
+            List(Load(ImmNum(0), regs(0))) // Treat as null pointer?
 
         // Pattern match for the identifier.
         case Ident(id) =>
             curSymTable.findVarGlobal(id) match {
                 // Variable was found in the symbol table.
-                case Some(varInfo) => List(Load(varInfo.asInstanceOf[Operand], outputRegister))
+                case Some(varInfo) => List(Load(varInfo.asInstanceOf[Operand], regs(0)))
                 // Variable was not found in the symbol table.
                 case None => throw new RuntimeException(s"Undefined variable: $id")
         }
@@ -91,7 +95,7 @@ class TreeWalker(var curSymTable: SymTable) {
         case ArrElem(id, xs) => List()
     }
 
-    def translate(list: List[Any]): List[Instruction] = list match {
+    def translate(list: List[Any], regs: List[Register]): List[Instruction] = list match {
         // Defaulting case.
         case _ => throw new RuntimeException("Undefined list.")
     }
@@ -99,17 +103,18 @@ class TreeWalker(var curSymTable: SymTable) {
     def translate(program: Program): List[Instruction] = {
         program.funcs.foreach((f) => {
             curSymTable = curSymTable.findFunGlobal(f.id).get.st // We are in the local symbolTable.
-            translate(f.s)
+            translate(f)
             curSymTable = curSymTable.parent().get // We are in the parent/global symbolTable.
         })
-        instructionList ++ translate(program.s)
+        instructionList ++ translate(program.s, gpRegs.toList)
         return instructionList // A bit redundant here? Can just return the generated List
     }
 
     def translate(func: Func): List[Instruction] = 
-        Label(func.id) :: translate(func.s) ++ List(ReturnI(func.id))
+        // Callee saves and callee restore must go here.
+        Label(func.id) :: translate(func.s, gpRegs.toList) ++ List(ReturnI(func.id))
 
-    def translate(stmt: Stmt): List[Instruction] = stmt match {
+    def translate(stmt: Stmt, regs: List[Register]): List[Instruction] = stmt match {
         case Skip() => Nil
         case Decl(tp, id, rv) => ???
         case Asgn(lv, rv) => ???
@@ -122,19 +127,20 @@ class TreeWalker(var curSymTable: SymTable) {
         case Cond(x, s1, s2) => ???
         case Loop(x, s) => ???
         case Body(s) => ???
+        case Delimit(s1, s2) => ???
     }
 
-    def translate(lv: LValue): List[Instruction] = lv match {
+    def translate(lv: LValue, regs: List[Register]): List[Instruction] = lv match {
         // Defaulting case.
         case _ => throw new RuntimeException("Undefined left value.")
     }
 
-    def translate(rv: RValue): List[Instruction] = rv match {
+    def translate(rv: RValue, regs: List[Register]): List[Instruction] = rv match {
         // Defaulting case.
         case _ => throw new RuntimeException("Undefined right value.")
     }
 
-    def translate(pe: PairElem): List[Instruction] = pe match {
+    def translate(pe: PairElem, regs: List[Register]): List[Instruction] = pe match {
         // Defaulting case.
         case _ => throw new RuntimeException("Undefined pair.")
     }
