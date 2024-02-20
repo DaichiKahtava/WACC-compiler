@@ -6,8 +6,7 @@ class TreeWalker(var curSymTable: SymTable) {
     // GLOBAL POINTER TO THE FINAL (NOT-FORMATTED) ASSEMBLY CODE
     var instructionList = List[Instruction]()
     var gpRegs = ListBuffer.empty[Register]
-    for (n <- 0 to 15) gpRegs.addOne(Register(n))
-    for (n <- 19 to 28) gpRegs.addOne(Register(n))
+    for (n <- 0 to 28) if (n != 8 || n < 15 || n > 19) gpRegs.addOne(Register(n))
 
     var availRegs = ListBuffer.empty[Register]
     availRegs.addAll(gpRegs)
@@ -29,30 +28,26 @@ class TreeWalker(var curSymTable: SymTable) {
     def translate(e: Expr, regs: List[Register]): List[Instruction] = e match {
 
         // UnOp expressions.
-        case Not(x) => List()
-        case Neg(x) => List()
-        case Len(x) => List()
-        case Ord(x) => List()
-        case Chr(x) => List()
+        case Not(x) => translate(x, regs) ++ List(Compare(regs.head, ImmNum(1)), SetCond(xr, NeI))
+        case Neg(x) => translate(x, regs) ++ List(Move(ImmNum(0), xr), SubI(xr, regs(dst)))
+        case Len(x) => translate(x, regs) // TODO
+        case Ord(x) => translate(x, regs) // TODO
+        case Chr(x) => translate(x, regs) // TODO
 
         // BinOp expressions.
         case Mod(x, y) => List()
         case Add(x, y) => 
-            val dst = regs.head
-            val nxt = regs.tail.head
-            translate(x, regs) ++ translate(y, regs.tail) ++ List(AddI(nxt, dst))
+            translate(x, regs) ++ translate(y, regs.tail) ++ List(AddI(regs(nxt), regs(dst)))
         
         case Minus(x, y) => 
-            val dst = regs.head
-            val nxt = regs.tail.head
-            translate(x, regs) ++ translate(y, regs.tail) ++ List(SubI(nxt, dst))
+            translate(x, regs) ++ translate(y, regs.tail) ++ List(SubI(regs(nxt), regs(dst)))
 
         case Mul(x, y) =>
-            val dst = regs.head
-            val nxt = regs.tail.head
-            translate(x, regs) ++ translate(y, regs.tail) ++ List(MulI(nxt, dst))
+            translate(x, regs) ++ translate(y, regs.tail) ++ List(MulI(regs(nxt), regs(dst)))
 
         case Div(x, y) =>
+            translate(x, regs) ++ translate(y, regs.tail) ++ List(DivI(regs(nxt), regs(dst)))
+
         case GrT(x, y) => 
             translate(x, regs) ++ 
             translate(y, regs.tail) ++ 
@@ -82,6 +77,16 @@ class TreeWalker(var curSymTable: SymTable) {
             translate(x, regs) ++ 
             translate(y, regs.tail) ++ 
             List(Compare(regs(dst), regs(nxt)), SetCond(xr, NeI))
+            
+        case And(x, y) => 
+            translate(x, regs) ++ 
+            translate(y, regs.tail) ++ 
+            List(Compare(regs(dst), ImmNum(1)))
+
+        case Or(x, y) => 
+            translate(x, regs) ++ 
+            translate(y, regs.tail) ++ 
+            List(Compare(regs(dst), ImmNum(1)))
 
         // Atom expressions.
 
