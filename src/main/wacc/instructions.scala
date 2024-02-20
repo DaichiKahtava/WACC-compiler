@@ -27,7 +27,7 @@ case class SubI(src: Operand, dst: Register) extends Instruction
 case class MulI(src: Operand, dst: Register) extends Instruction
 case class DivI(src: Operand, dst: Register) extends Instruction
 
-case class SetCond(r1: Register, cond: CondI) extends Instruction
+case class SetCond(r: Register, cond: CondI) extends Instruction
 case class Compare(r1: Operand, r2: Operand) extends Instruction
 
 

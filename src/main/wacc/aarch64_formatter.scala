@@ -91,8 +91,8 @@ _errDivZero:
 
         case Address(label, dst) => "adr\t" + generateOperand(dst) + ", " + label + "\n"
         
-        case Compare(r1, r2) => "cmp\t" + generateOperand(r1) + generateOperand(r2) + "\n" +
-        ""
+        case Compare(r1, r2) => "cmp\t" + generateOperand(r1) + generateOperand(r2) + "\n" + ""
+        case SetCond(r, cond) => ???
     }
 
     def generateOperand(op: Operand): String = op match {

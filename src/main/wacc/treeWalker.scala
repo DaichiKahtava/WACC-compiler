@@ -145,7 +145,7 @@ class TreeWalker(var curSymTable: SymTable) {
 
     def translate(stmt: Stmt, regs: List[Register]): List[Instruction] = stmt match {
         case Skip() => Nil
-        case Decl(tp, id, rv) => ???
+        case Decl(tp, id, rv) => translate(rv, regs)
         case Asgn(lv, rv) => ???
         case Read(lv) => ???
         case Free(x) => ???
@@ -175,7 +175,7 @@ class TreeWalker(var curSymTable: SymTable) {
     def translate(rv: RValue, regs: List[Register]): List[Instruction] = rv match {
         case ArrL(xs) => ???
         case Call(id, xs) => ???
-        case RExpr(e) => ???
+        case RExpr(e) => translate(e, regs)
         case NewPair(e1, e2) => ???
         case pe: PairElem => translate(pe, regs.tail)
     }
