@@ -28,39 +28,7 @@ case class Compare(r1: Operand, r2: Operand) extends Instruction
 
 // TODO: Fill in with all types of operands
 sealed trait Operand
-sealed trait Register extends Operand
-case object R0 extends Register
-case object R1 extends Register
-case object R2 extends Register
-case object R3 extends Register
-case object R4 extends Register
-case object R5 extends Register
-case object R6 extends Register
-case object R7 extends Register
-case object R8 extends Register
-case object R9 extends Register
-case object R10 extends Register
-case object R11 extends Register
-case object R12 extends Register
-case object R13 extends Register
-case object R14 extends Register
-case object R15 extends Register
-case object R16 extends Register
-case object R17 extends Register
-case object R18 extends Register
-case object R19 extends Register
-case object R20 extends Register
-case object R21 extends Register
-case object R22 extends Register
-case object R23 extends Register
-case object R24 extends Register
-case object R25 extends Register
-case object R26 extends Register
-case object R27 extends Register
-case object R28 extends Register
-case object R29 extends Register
-case object R30 extends Register
-case object R31 extends Register
+case class Register(regN: Int) extends Operand
 
 case class ImmNum(n: Int) extends Operand
 

@@ -1,16 +1,21 @@
 package wacc
 
+import scala.collection.mutable.ListBuffer
+
 class TreeWalker(var curSymTable: SymTable) {
     // GLOBAL POINTER TO THE FINAL (NOT-FORMATTED) ASSEMBLY CODE
     var instructionList = List[Instruction]()
-    val allRegs = List(
-        R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11, R12, R13, R14, R15, R16,
-        R17, R18, R19, R20, R21, R22, R23, R24, R25, R26, R27, R28, R29, R30, R31
-    )
-    val outputRegister = R0
-    val fp = R29
-    val lr = R30
-    val sp = R31
+    var gpRegs = ListBuffer.empty[Register]
+    for (n <- 0 to 15) gpRegs.addOne(Register(n))
+    for (n <- 19 to 28) gpRegs.addOne(Register(n))
+
+    var availRegs = ListBuffer.empty[Register]
+    availRegs.addAll(gpRegs)
+    
+    val outputRegister = Register(0)
+    val fp = Register(29)
+    val lr = Register(30)
+    val sp = Register(31)
 
     def translate(e: Expr, regs: List[Register]): List[Instruction] = e match {
         // UnOp expressions.
@@ -71,7 +76,7 @@ class TreeWalker(var curSymTable: SymTable) {
         case Ident(id) =>
             curSymTable.findVarGlobal(id) match {
                 // Variable was found in the symbol table.
-                case Some(varInfo) => List(Load(varInfo.asInstanceOf[Operand], R0))
+                case Some(varInfo) => List(Load(varInfo.asInstanceOf[Operand], outputRegister))
                 // Variable was not found in the symbol table.
                 case None => throw new RuntimeException(s"Undefined variable: $id")
         }
