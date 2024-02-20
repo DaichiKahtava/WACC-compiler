@@ -1,14 +1,39 @@
 package wacc
 
 import java.util.stream.Collectors
+import scala.collection.mutable.ListBuffer
 
 object aarch64_formatter {
 
     var errorDivZero = false
 
+    var stringLabelCounter = -1 // -1 means no string
+    val stringLabel = ".str"
+    val data = ListBuffer.empty[String]
+
     def generateAssembly(instructions: List[Instruction]): String = {
         val full_assembly = new StringBuilder
+
+        // String literal data
+
+        if (stringLabelCounter != -1) {
+            full_assembly.addAll(".data\n")
+            for (i <- 0 to (data.length)) {
+                val str = data(i)
+                full_assembly.addAll("\t.word" + str.length +"\n\t.asciz " + str + "\n")
+            }
+        }
+
+        // Pre-amble for instructions
+
+        full_assembly.addAll(".align 4\n.text\n.global main\n")
+
+        // Instruction list
+        
         instructions.map(generateAssembly(_)).foreach(full_assembly.addAll(_))
+        
+        // Error handling functions.
+        
         if (errorDivZero) {
             full_assembly.addAll("""
 	// Division by zero error handler as seen in the ref. compiler
@@ -24,7 +49,15 @@ _errDivZero:
 	bl exit
 """)
         }
+
+
         return full_assembly.result()
+    }
+
+    def includeString(s: String): String = {
+        data.addOne(s)
+        stringLabelCounter += stringLabelCounter
+        return stringLabel + String.valueOf(stringLabelCounter)
     }
 
     def generateAssembly(instr: Instruction): String = instr match {
