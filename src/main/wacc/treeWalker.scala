@@ -18,6 +18,10 @@ class TreeWalker(var curSymTable: SymTable) {
     val sp = Register(31)
 
     def translate(e: Expr, regs: List[Register]): List[Instruction] = e match {
+        // Conventions: regs contains a list of all available registers and the first register
+        //              is used as the return register
+
+
         // UnOp expressions.
         case Not(x) => List()
         case Neg(x) => List()
@@ -67,7 +71,10 @@ class TreeWalker(var curSymTable: SymTable) {
         // Obtain the integer value of a character.
         case CharL(c) => List(Load(ImmNum(c.toInt), outputRegister))
         
-        case StrL(s) => List()
+        case StrL(s) => {
+            val label = aarch64_formatter.includeString(s)
+            return List(Address(label, availRegs(0)))
+        }
 
         case PairL() => 
             List(Load(ImmNum(0), outputRegister)) // Treat as null pointer?
@@ -82,9 +89,6 @@ class TreeWalker(var curSymTable: SymTable) {
         }
 
         case ArrElem(id, xs) => List()
-
-        // Defaulting case.
-        case _ => throw new RuntimeException("Undefined expression.")
     }
 
     def translate(list: List[Any]): List[Instruction] = list match {
@@ -118,8 +122,6 @@ class TreeWalker(var curSymTable: SymTable) {
         case Cond(x, s1, s2) => ???
         case Loop(x, s) => ???
         case Body(s) => ???
-        // Defaulting case.
-        case _ => throw new RuntimeException("Undefined statement.")
     }
 
     def translate(lv: LValue): List[Instruction] = lv match {
