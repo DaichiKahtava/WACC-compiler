@@ -10,6 +10,7 @@ class SymTable(parentTable: Option[SymTable], returnType: Option[S_TYPE]) {
     val parDict = LinkedHashMap.empty[String, VARIABLE] // Preserves insersion order
     val funDict = Map.empty[String, FUNCTION]
     val childScopes = ListBuffer.empty[SymTable]
+    val regDict = Map.empty[String, Register]
 
     def parent() = parentTable
 
@@ -44,6 +45,16 @@ class SymTable(parentTable: Option[SymTable], returnType: Option[S_TYPE]) {
         }
     }
 
+    def addRegister(id: String, reg: Register): Boolean = {
+        if (regDefined(id)) {
+            return false
+        } else {
+           regDict.addOne(id, reg)
+        return true 
+        }
+        
+    }
+
     // Redefining variables or functions if needed
     def redefineSymbol(id: String, te: VARIABLE): Unit = {
         varDict(id) = te
@@ -54,7 +65,6 @@ class SymTable(parentTable: Option[SymTable], returnType: Option[S_TYPE]) {
     }
 
     // Finding variables
-    
     def findVarLocal(id: String): Option[VARIABLE] = {
         return varDict.get(id)
     }
@@ -85,6 +95,10 @@ class SymTable(parentTable: Option[SymTable], returnType: Option[S_TYPE]) {
         }
     }
 
+    def findReg(id: String): Option[Register] = {
+        return regDict.get(id)
+    }
+
     // Defined functions
     def varDefinedGlobal(id: String): Boolean = {
         return findVarGlobal(id) != None
@@ -104,6 +118,10 @@ class SymTable(parentTable: Option[SymTable], returnType: Option[S_TYPE]) {
 
     def funDefinedLocal(id: String): Boolean = {
         return findFunLocal(id) != None
+    }
+
+    def regDefined(id: String): Boolean = {
+        return findReg(id) != None
     }
 
     def newUnamedScope(): SymTable = {
