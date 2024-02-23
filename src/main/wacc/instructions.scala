@@ -8,6 +8,7 @@ case class Label(label: String) extends Instruction
 case class Data(s: String, label: String) extends Instruction 
 // Data puts the data where specified. This is useful for internal functions,
 // but for the main program, use includeString instead.
+// Note: String can use escaped characters like normal
 case class AlignInstr() extends Instruction
 
 

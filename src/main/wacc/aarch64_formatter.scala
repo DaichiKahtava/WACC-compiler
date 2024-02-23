@@ -21,7 +21,7 @@ object aarch64_formatter {
             full_assembly.addAll(".data\n")
             for (i <- 0 to (data.length - 1)) {
                 val str = data(i)
-                full_assembly.addAll("\t.word " + str.length + "\n" + stringLabel + i +":\n\t.asciz \"" + str + "\"\n")
+                full_assembly.addAll("\t.word " + str.length + "\n" + stringLabel + i +":\n\t.asciz \"" + deescapeString(str) + "\"\n")
             }
         }
 
@@ -96,7 +96,7 @@ _prints:
         case Comment(cmnt) => "// " + cmnt + "\n"
         
         case Label(label) => label + ":\n"
-        case Data(s, l) => "\t.word " + s.length + "\n" + l +":\n\t.asciz \"" + s + "\"\n"
+        case Data(s, l) => "\t.word " + s.length + "\n" + l +":\n\t.asciz \"" + deescapeString(s) + "\"\n"
         case AlignInstr() => ".align 4\n"
 
 
@@ -180,5 +180,20 @@ _prints:
         case LtI => "lt"
         case GtI => "gt"
         case LeI => "le"
+    }
+
+    def deescapeString(str: String): String = str.flatMap(deescapeChar)
+
+    def deescapeChar(ch: Char): String = ch match {
+        case '\u0000' => "\\0"
+        case '\b' => "\\b"
+        case '\t' => "\\t"
+        case '\n' => "\\n"
+        case '\f' => "\\f"
+        case '\r' => "\\r"
+        case '\"' => "\\\""
+        case '\'' => "\\\'"
+        case '\\' => "\\\\"
+        case c: Char => String.valueOf(c)
     }
 }
