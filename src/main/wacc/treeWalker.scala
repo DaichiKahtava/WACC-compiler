@@ -31,7 +31,13 @@ class TreeWalker(var curSymTable: SymTable) {
         case Chr(x) => translate(x, regs) // TODO
 
         // BinOp expressions.
-        case Mod(x, y) => List()
+        case Mod(x, y) =>
+            translate(x, regs) ++ translate(y, regs.tail) ++ 
+            List(Move(RegisterX(regs(dst)), RegisterX(regs(nxt + 1))), // Store x into another register.
+                DivI(RegisterX(regs(nxt)), RegisterX(regs(nxt + 1))), // Divide x by y.
+                MulI(RegisterX(regs(nxt)), RegisterX(regs(nxt + 1))), // Multiply (y * quotient).
+                SubI(RegisterX(regs(nxt + 1)), RegisterX(regs(dst))))  // Calculate remainder.
+
         case Add(x, y) => 
             translate(x, regs) ++ translate(y, regs.tail) ++ List(AddI(RegisterX(regs(nxt)), RegisterX(regs(dst))))
         
