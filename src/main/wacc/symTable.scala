@@ -123,7 +123,7 @@ case class FUNCTION(tp: S_TYPE)(val st: SymTable)
 
 sealed trait Position
 case object Undefined extends Position
-case class InRegister(r: Register) extends Position
+case class InRegister(r: Int) extends Position
 case class OnStack(offset: Int) extends Position
 
 // Nested scopes may be implemented with multiple symbol tables
