@@ -5,6 +5,12 @@ sealed trait Instruction
 case class Comment(cmnt: String) extends Instruction
 
 case class Label(label: String) extends Instruction
+case class Data(s: String, label: String) extends Instruction 
+// Data puts the data where specified. This is useful for internal functions,
+// but for the main program, use includeString instead.
+case class AlignInstr() extends Instruction
+
+
 case class Jump(label: String) extends Instruction
 case object ReturnI extends Instruction
 

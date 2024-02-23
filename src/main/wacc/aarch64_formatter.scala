@@ -92,6 +92,10 @@ _prints:
         case Comment(cmnt) => "// " + cmnt + "\n"
         
         case Label(label) => label + ":\n"
+        case Data(s, l) => "\t.word " + s.length + "\n" + l +":\n\t.asciz \"" + s + "\"\n"
+        case AlignInstr() => ".align 4\n"
+
+
         case Jump(label) => "b\t" + label + "\n"
         case ReturnI => "ret\n"
         case Move(src, dst) => "mov\t" + generateRegister(dst) + ", " + generateOperand(src) + "\n"
