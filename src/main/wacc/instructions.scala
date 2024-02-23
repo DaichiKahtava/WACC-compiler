@@ -2,6 +2,8 @@ package wacc
 
 sealed trait Instruction
 
+case class Comment(cmnt: String) extends Instruction
+
 case class Label(label: String) extends Instruction
 case class Jump(label: String) extends Instruction
 case object ReturnI extends Instruction

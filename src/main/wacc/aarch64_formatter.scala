@@ -89,6 +89,8 @@ _prints:
     }
 
     def generateAssembly(instr: Instruction): String = instr match {
+        case Comment(cmnt) => "// " + cmnt + "\n"
+        
         case Label(label) => label + ":\n"
         case Jump(label) => "b\t" + label + "\n"
         case ReturnI => "ret\n"
