@@ -6,9 +6,10 @@ import scala.collection.mutable.ListBuffer
 object aarch64_formatter {
 
     var errorDivZero = false
+    var print = false
 
     var stringLabelCounter = -1 // -1 means no string
-    val stringLabel = ".str"
+    val stringLabel = ".L.str"
     val data = ListBuffer.empty[String]
 
     def generateAssembly(instructions: List[Instruction]): String = {
@@ -18,9 +19,9 @@ object aarch64_formatter {
 
         if (stringLabelCounter != -1) {
             full_assembly.addAll(".data\n")
-            for (i <- 0 to (data.length)) {
+            for (i <- 0 to (data.length - 1)) {
                 val str = data(i)
-                full_assembly.addAll("\t.word" + str.length +"\n\t.asciz " + str + "\n")
+                full_assembly.addAll("\t.word " + str.length + "\n" + stringLabel + i +":\n\t.asciz \"" + str + "\"\n")
             }
         }
 
@@ -32,7 +33,8 @@ object aarch64_formatter {
         
         instructions.map(generateAssembly(_)).foreach(full_assembly.addAll(_))
         
-        // Error handling functions.
+        // Helper functions (taken from the reference compiler). 
+        // TODO: Abstract them using Instruction
         
         if (errorDivZero) {
             full_assembly.addAll("""
@@ -50,14 +52,40 @@ _errDivZero:
 """)
         }
 
+        if (print) {
+            full_assembly.addAll("""
+// length of .L._prints_str0
+	.word 4
+.L._prints_str0:
+	.asciz "%.*s"
+.align 4
+_prints:
+	// push {lr}
+	stp lr, xzr, [sp, #-16]!
+	mov x2, x0
+	ldrsw x1, [x0, #-4]
+	adr x0, .L._prints_str0
+	bl printf
+	mov x0, #0
+	bl fflush
+	// pop {lr}
+	ldp lr, xzr, [sp], #16
+	ret
+""")
+        }
+
 
         return full_assembly.result()
     }
 
     def includeString(s: String): String = {
         data.addOne(s)
-        stringLabelCounter += stringLabelCounter
+        stringLabelCounter = stringLabelCounter + 1 
         return stringLabel + String.valueOf(stringLabelCounter)
+    }
+
+    def includePrint() = {
+        print = true
     }
 
     def generateAssembly(instr: Instruction): String = instr match {
