@@ -20,8 +20,8 @@ class aarch64FormTest extends AnyFlatSpec {
     it should "add error checking for division" in {
         aarch64_formatter.generateAssembly(List(DivI(ImmNum(0), RegisterX(2)))) shouldBe 
         ".align 4\n.text\n.global main\ncmp\tXZR, #0\nb.eq\t_errDivZero\nsdiv\tX2, X2, #0\n" + """
-	// Division by zero error handler as seen in the ref. compiler
-	// length of .L._errDivZero_str0
+// Division by zero error handler as seen in the ref. compiler
+// length of .L._errDivZero_str0
 	.word 40
 .L._errDivZero_str0:
 	.asciz "fatal error: division or modulo by zero\n"
