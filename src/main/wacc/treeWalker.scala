@@ -153,7 +153,7 @@ class TreeWalker(var curSymTable: SymTable) {
             // Caller saves must go here
             BranchLink("exit"),
             // Caller resotre must go here
-            Move(ImmNum(0), availRegs(dst))) 
+            Move(ImmNum(0), RegisterX(availRegs(dst)))) 
         case Print(x) => ???
         case Println(x) => ???
         case Cond(x, s1, s2) => ???
