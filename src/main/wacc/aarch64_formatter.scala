@@ -98,10 +98,19 @@ _errDivZero:
     def generateOperand(op: Operand): String = op match {
         // The validity of the operand should be checked before!
         case ImmNum(n) => "#" + String.valueOf(n)
-        case r@Register(_) => generateRegister(r)
+        case r: Register => generateRegister(r)
     }
 
-    def generateRegister(reg: Register): String = "X" + String.valueOf(reg.regN)
+    def generateRegister(Register: Register): String = Register match {
+        case RegisterXR => "xr"
+        case RegisterFP => "fp"
+        case RegisterLR => "lr"
+        case RegisterSP => "sp"
+        case RegisterXZR => "xzr"
+        case RegisterWZR => "wzr"
+        case RegisterX(n) => "X" + String.valueOf(n)
+        case RegisterW(n) => "W" + String.valueOf(n)
+    }
 
     def generateCondition(cond: CondI): String =  cond match {
         case EqI => "eq"
