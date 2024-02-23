@@ -38,8 +38,8 @@ object aarch64_formatter {
         
         if (errorDivZero) {
             full_assembly.addAll("""
-	// Division by zero error handler as seen in the ref. compiler
-	// length of .L._errDivZero_str0
+// Division by zero error handler as seen in the ref. compiler
+// length of .L._errDivZero_str0
 	.word 40
 .L._errDivZero_str0:
 	.asciz "fatal error: division or modulo by zero\n"
@@ -96,12 +96,12 @@ _prints:
         
         case Load(src, dst) => "mov\t" + generateRegister(dst) + ", " + generateOperand(src) + "\n"
         case Pop(src, dst1, dst2) => "ldp\t" + generateRegister(dst1) + ", " +
-            generateRegister(dst2) + ", [" + generateRegister(src) + "]\n"
+            generateRegister(dst2) + ", [" + generateRegister(src) + "], #16\n"
             // TODO: provision for src to be an operand (+- do we need pairs?)
 
         case Store(src, dst) => "str\t" + generateRegister(src) + ", [" + generateRegister(dst) + "]\n" 
         case Push(src, dst1, dst2) => "stp\t" + generateRegister(dst1) + ", " +
-            generateRegister(dst2) + ", [" + generateRegister(src) + "]\n"
+            generateRegister(dst2) + ", [" + generateRegister(src) + ", #16]!\n" // TODO: Generalise offsets
 
         case Branch(label) => "b\t" + label
         case BranchCond(label, cond) => "b." + generateCondition(cond) + "\t" + label + "\n"
@@ -117,7 +117,11 @@ _prints:
             "sdiv\t" + generateRegister(dst) + ", " + generateRegister(dst) + ", " + generateOperand(src) + "\n"
         }
 
-        case Address(label, dst) => "adr\t" + generateOperand(dst) + ", " + label + "\n"
+        case Address(label, dst) => {
+            val Register = generateRegister(dst)
+            return "adrp\t" + generateRegister(dst) + ", " + label + "\n" +
+                "add\t" + generateRegister(dst) + ", " + generateRegister(dst) + ", :lo12:" + label + "\n"
+        }
         
         case Compare(r1, r2) => "cmp\t" + generateOperand(r1) + generateOperand(r2) + "\n" + ""
         case SetCond(r, cond) => ???
@@ -130,12 +134,23 @@ _prints:
     }
 
     def generateRegister(Register: Register): String = Register match {
-        case RegisterXR => "xr"
+        case RegisterXR => "X8"
         case RegisterFP => "fp"
         case RegisterLR => "lr"
         case RegisterSP => "sp"
         case RegisterXZR => "xzr"
         case RegisterWZR => "wzr"
+        case RegisterX(n) => "X" + String.valueOf(n)
+        case RegisterW(n) => "W" + String.valueOf(n)
+    }
+
+    def generateGPRegister(Register: Register): String = Register match {
+        case RegisterXR => "X8"
+        case RegisterFP => "X29"
+        case RegisterLR => "X30"
+        case RegisterSP => "X31"
+        case RegisterXZR => "X31"
+        case RegisterWZR => "X31"
         case RegisterX(n) => "X" + String.valueOf(n)
         case RegisterW(n) => "W" + String.valueOf(n)
     }
