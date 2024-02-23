@@ -154,7 +154,16 @@ class TreeWalker(var curSymTable: SymTable) {
             BranchLink("exit"),
             // Caller resotre must go here
             Move(ImmNum(0), RegisterX(availRegs(dst)))) 
-        case Print(x) => ???
+        case Print(x) => {
+            aarch64_formatter.includePrint()
+            translate(x, regs) ++
+            List(Move(RegisterX(regs(dst)), RegisterXR),
+            Move(RegisterX(availRegs(dst)), RegisterXR), // TODO:<Same as upwards!>
+            // Caller saves must go here
+            // Caller resotre must go here
+            BranchLink("_prints"),
+            Move(ImmNum(0), RegisterX(availRegs(dst))))
+        }
         case Println(x) => ???
         case Cond(x, s1, s2) => ???
         case Loop(x, s) => ???
