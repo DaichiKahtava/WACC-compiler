@@ -10,7 +10,7 @@ case object ReturnI extends Instruction
 case class Move(src: Operand, dst: Register) extends Instruction
 case class Load(src: Operand, dst: Register) extends Instruction
 case class Store(src: Register, dst: Register) extends Instruction
-case class Address(label: String, dst: Operand) extends Instruction
+case class Address(label: String, dst: Register) extends Instruction
 case class Branch(label: String) extends Instruction
 case class BranchCond(label: String, cond: CondI) extends Instruction
 case class BranchLink(label: String) extends Instruction // Calls function and stores address in the link register...
@@ -33,7 +33,15 @@ case class Compare(r1: Operand, r2: Operand) extends Instruction
 
 // TODO: Fill in with all types of operands
 sealed trait Operand
-case class Register(regN: Int) extends Operand
+sealed trait Register extends Operand
+case class RegisterX(regN: Int) extends Register
+case class RegisterW(regN: Int) extends Register
+case object RegisterXR extends Register // Indirect result register
+case object RegisterFP extends Register // Frame pointer
+case object RegisterLR extends Register // Link register
+case object RegisterSP extends Register // Stack pointer
+case object RegisterXZR extends Register // Zero register
+case object RegisterWZR extends Register // Zero register
 
 case class ImmNum(n: Int) extends Operand
 
