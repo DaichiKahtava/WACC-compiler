@@ -36,20 +36,24 @@ object aarch64_formatter {
         // Helper functions (taken from the reference compiler). 
         // TODO: Abstract them using Instruction
         
+//         if (errorDivZero) {
+//             full_assembly.addAll("""
+// // Division by zero error handler as seen in the ref. compiler
+// // length of .L._errDivZero_str0
+// 	.word 40
+// .L._errDivZero_str0:
+// 	.asciz "fatal error: division or modulo by zero\n"
+// .align 4
+// _errDivZero:
+// 	adr x0, .L._errDivZero_str0
+// 	bl _prints
+// 	mov w0, #-1
+// 	bl exit
+// """)
+//         }
+
         if (errorDivZero) {
-            full_assembly.addAll("""
-// Division by zero error handler as seen in the ref. compiler
-// length of .L._errDivZero_str0
-	.word 40
-.L._errDivZero_str0:
-	.asciz "fatal error: division or modulo by zero\n"
-.align 4
-_errDivZero:
-	adr x0, .L._errDivZero_str0
-	bl _prints
-	mov w0, #-1
-	bl exit
-""")
+            errorDivZeroFx.instructions.map(generateAssembly(_)).foreach(full_assembly.addAll(_))
         }
 
         if (print) {
