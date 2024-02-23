@@ -38,7 +38,7 @@ object Main {
                     val treeWalker = new TreeWalker(sem.curSymTable)
                     val writer = new FileWriter(FilenameUtils.getBaseName(inputFile.getName()) + ".s")
                     val str = aarch64_formatter.generateAssembly(treeWalker.translate(ast))
-                    printf(str)
+                    print(str)
                     writer.append(str)
                     writer.flush()
                 }   
