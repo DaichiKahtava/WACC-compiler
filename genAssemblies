@@ -1,0 +1,14 @@
+#/bin/bash
+
+rm -r assemblies
+mkdir assemblies
+fileLs=$(cat exampleProgs/valid.selection | tr " " "\n")
+for file in $fileLs
+do
+  echo $file
+  ./compile $file
+  fnameExt=$(basename $file | head)
+  fname=${fnameExt%.*}
+  fnameAss="${fname}.s"
+  mv $fnameAss "assemblies/$fnameAss"
+done
