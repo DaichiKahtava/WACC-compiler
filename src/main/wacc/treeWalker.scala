@@ -155,7 +155,7 @@ class TreeWalker(var curSymTable: SymTable) {
             // Caller resotre must go here
             Move(ImmNum(0), RegisterX(availRegs(dst)))) 
         case Print(x) => {
-            aarch64_formatter.includePrint()
+            aarch64_formatter.includeFx(printStringFx)
             translate(x, regs) ++
             List(Move(RegisterX(regs(dst)), RegisterXR),
             Move(RegisterX(availRegs(dst)), RegisterXR), // TODO:<Same as upwards!>

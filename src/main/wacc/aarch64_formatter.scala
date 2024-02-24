@@ -8,6 +8,10 @@ object aarch64_formatter {
     var errorDivZero = false
     var printString = false
 
+    val internalFxs = collection.mutable.Set.empty[InternalFunction]
+
+    // Global data for program. Note that data for internal programs are
+    // Included in the internal programs themselves
     var stringLabelCounter = -1 // -1 means no string
     val stringLabel = ".L.str"
     val data = ListBuffer.empty[String]
@@ -37,14 +41,7 @@ object aarch64_formatter {
         // TODO: Abstract them using Instruction
         
 
-        if (errorDivZero) {
-            errorDivZeroFx.instructions.map(generateAssembly(_)).foreach(full_assembly.addAll(_))
-        }
-
-        if (printString) {
-            printStringFx.instructions.map(generateAssembly(_)).foreach(full_assembly.addAll(_))
-        }
-
+        internalFxs.foreach(f => f.instructions.map(generateAssembly(_)).foreach(full_assembly.addAll(_)))
 
         return full_assembly.result()
     }
@@ -55,8 +52,8 @@ object aarch64_formatter {
         return stringLabel + String.valueOf(stringLabelCounter)
     }
 
-    def includePrint() = {
-        printString = true
+    def includeFx(f: InternalFunction) = {
+        internalFxs.add(f)
     }
 
     def generateAssembly(instr: Instruction): String = instr match {
