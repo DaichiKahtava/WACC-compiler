@@ -3,6 +3,7 @@
 .scala-build/
 .vscode/
 .idea/
+assemblies/
 wacc-compiler
 semanticRes.xml
 syntaxRes.xml

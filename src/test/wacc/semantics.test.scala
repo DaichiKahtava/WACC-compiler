@@ -53,14 +53,14 @@ class semanticsTests extends AnyFlatSpec with BeforeAndAfterEach {
     }
 
     "Read statements" should "accept arguments of either type int or type char" in {
-        sem.curSymTable.addSymbol("x", VARIABLE(S_INT)) shouldBe true
-        sem.curSymTable.addSymbol("y", VARIABLE(S_CHAR)) shouldBe true
-        sem.curSymTable.addSymbol("z", VARIABLE(S_STRING)) shouldBe true
-        sem.curSymTable.addSymbol("xs", VARIABLE(S_ARRAY(S_INT))) shouldBe true
-        sem.curSymTable.addSymbol("ys", VARIABLE(S_ARRAY(S_CHAR))) shouldBe true
-        sem.curSymTable.addSymbol("zs", VARIABLE(S_ARRAY(S_STRING))) shouldBe true
+        sem.curSymTable.addSymbol("x", VARIABLE(S_INT, Undefined)) shouldBe true
+        sem.curSymTable.addSymbol("y", VARIABLE(S_CHAR, Undefined)) shouldBe true
+        sem.curSymTable.addSymbol("z", VARIABLE(S_STRING, Undefined)) shouldBe true
+        sem.curSymTable.addSymbol("xs", VARIABLE(S_ARRAY(S_INT), Undefined)) shouldBe true
+        sem.curSymTable.addSymbol("ys", VARIABLE(S_ARRAY(S_CHAR), Undefined)) shouldBe true
+        sem.curSymTable.addSymbol("zs", VARIABLE(S_ARRAY(S_STRING), Undefined)) shouldBe true
 
-        sem.curSymTable.addSymbol("pair", VARIABLE(S_PAIR(S_CHAR, S_INT))) shouldBe true
+        sem.curSymTable.addSymbol("pair", VARIABLE(S_PAIR(S_CHAR, S_INT), Undefined)) shouldBe true
 
         sem.isSemCorrect(Read(LIdent("x")(0, 0))(0, 0)) shouldBe true
         sem.isSemCorrect(Read(LIdent("y")(0, 0))(0, 0)) shouldBe true
@@ -86,7 +86,7 @@ class semanticsTests extends AnyFlatSpec with BeforeAndAfterEach {
         sem.isSemCorrect(Decl(Pair(IntT()(0, 0), StringT()(0, 0))(0, 0), "p2", NewPair(IntL(1)(0, 0), CharL('a')(0, 0))(0, 0))(0, 0)) shouldBe false
         sem.isSemCorrect(Decl(IntT()(0, 0), "p3", NewPair(IntL(1)(0, 0), CharL('a')(0, 0))(0, 0))(0, 0)) shouldBe false
 
-        sem.curSymTable.addSymbol("x", VARIABLE(S_PAIR(S_INT, S_CHAR)))
+        sem.curSymTable.addSymbol("x", VARIABLE(S_PAIR(S_INT, S_CHAR), Undefined))
         sem.isSemCorrect(Decl(IntT()(0, 0), "pe1", First(LIdent("x")(0, 0))(0, 0))(0, 0)) shouldBe true
         sem.isSemCorrect(Decl(CharT()(0, 0), "pe2", First(LIdent("x")(0, 0))(0, 0))(0, 0)) shouldBe false
         sem.isSemCorrect(Decl(CharT()(0, 0), "pe3", Second(LIdent("x")(0, 0))(0, 0))(0, 0)) shouldBe true
