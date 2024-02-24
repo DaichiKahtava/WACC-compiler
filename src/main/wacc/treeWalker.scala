@@ -24,8 +24,12 @@ class TreeWalker(var curSymTable: SymTable) {
     def translate(e: Expr, regs: List[Int]): List[Instruction] = e match {
 
         // UnOp expressions.
-        case Not(x) => translate(x, regs) ++ List(Compare(RegisterX(regs(regs.head)), ImmNum(1)), SetCond(RegisterXR, NeI))
-        case Neg(x) => translate(x, regs) ++ List(Move(ImmNum(0), RegisterXR), SubI(RegisterXR, RegisterX(regs(dst))))
+        case Not(x) => translate(x, regs.tail) ++ List(Compare(RegisterX(regs(regs.head)), ImmNum(1)), SetCond(RegisterXR, NeI))
+
+        case Neg(x) => translate(x, regs.tail) ++
+            List(Move(ImmNum(0), RegisterX(regs.head)), 
+            SubI(RegisterX(regs(nxt)), RegisterX(regs.head)))
+
         case Len(x) => translate(x, regs) // TODO
         case Ord(x) => translate(x, regs) // TODO
         case Chr(x) => translate(x, regs) // TODO
@@ -110,12 +114,10 @@ class TreeWalker(var curSymTable: SymTable) {
             List(Load(ImmNum(0), RegisterX(regs(dst)))) // Treat as null pointer?
 
         // Pattern match for the identifier.
-        case Ident(id) =>
-            curSymTable.findVarGlobal(id) match {
-                // Variable was found in the symbol table.
-                case Some(varInfo) => List(Load(varInfo.asInstanceOf[Operand], RegisterX(regs(dst))))
-                // Variable was not found in the symbol table.
-                case None => throw new RuntimeException(s"Undefined variable: $id")
+        case Ident(id) => curSymTable.findVarGlobal(id).get.pos match {
+            case InRegister(r) => List(Move(RegisterX(r), RegisterX(regs(dst))))
+            case OnStack(offset) => ???
+            case Undefined => ??? // Should not get here
         }
 
         case ArrElem(id, xs) => List()
@@ -147,7 +149,15 @@ class TreeWalker(var curSymTable: SymTable) {
 
     def translate(stmt: Stmt, regs: List[Int]): List[Instruction] = stmt match {
         case Skip() => Nil
-        case Decl(tp, id, rv) => translate(rv, regs)
+        case Decl(_, id, rv) => 
+            val v = curSymTable.findVarGlobal(id).get
+            v.pos match {
+            case InRegister(r) => translate(rv, r :: regs)
+            case OnStack(offset) => ???
+            case Undefined =>
+                curSymTable.redefineSymbol(id, VARIABLE(v.tp, InRegister(regs.head)))
+                translate(rv, regs)
+        }
         case Asgn(lv, rv) => ???
         case Read(lv) => ???
         case Free(x) => ???
@@ -170,7 +180,16 @@ class TreeWalker(var curSymTable: SymTable) {
             BranchLink("_prints"),
             Move(ImmNum(0), RegisterX(availRegs(dst))))
         }
-        case Println(x) => ???
+        case Println(x) => {
+            aarch64_formatter.includePrint()
+            translate(x, regs) ++
+            List(Move(RegisterX(regs(dst)), RegisterXR),
+            Move(RegisterX(availRegs(dst)), RegisterXR), // TODO:<Same as upwards!>
+            // Caller saves must go here
+            // Caller resotre must go here
+            BranchLink("_prints"),
+            Move(ImmNum(0), RegisterX(availRegs(dst))))
+        }
         case Cond(x, s1, s2) => ???
         case Loop(x, s) => ???
         case Body(s) => ???
