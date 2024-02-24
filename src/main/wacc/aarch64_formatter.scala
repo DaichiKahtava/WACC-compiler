@@ -91,7 +91,7 @@ _prints:
     def generateAssembly(instr: Instruction): String = instr match {
         case Comment(cmnt) => "// " + cmnt + "\n"
         
-        case Label(label) => label + ":\n"
+                case Label(label) => label + ":\n"
         case Jump(label) => "b\t" + label + "\n"
         case ReturnI => "ret\n"
         case Move(src, dst) => "mov\t" + generateRegister(dst) + ", " + generateOperand(src) + "\n"
@@ -125,8 +125,8 @@ _prints:
                 "add\t" + generateRegister(dst) + ", " + generateRegister(dst) + ", :lo12:" + label + "\n"
         }
         
-        case Compare(r1, r2) => "cmp\t" + generateOperand(r1) + generateOperand(r2) + "\n" + ""
-        case SetCond(r, cond) => ???
+        case Compare(r1, r2) => "cmp\t" + generateOperand(r1) + ", " + generateOperand(r2) + "\n" + ""
+        case SetCond(r, cond) => "cset\t" + generateOperand(r) + ", " + generateCondition(cond) + "\n"
     }
 
     def generateOperand(op: Operand): String = op match {
