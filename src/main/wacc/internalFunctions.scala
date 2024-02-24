@@ -19,3 +19,20 @@ object errorDivZeroFx extends internalFunctions {
     val label: String = "_errDivZero"
 }
 
+object printStringFx extends internalFunctions {
+    val instructions: List[Instruction] = List (
+        Comment("Print string as seen in the ref. compiler"),
+        Data("%.*s", ".L._errDivZero_str0"),
+        Push(RegisterLR, RegisterXZR, PreIndxA(RegisterSP, -16)),
+        Move(RegisterX(0), RegisterX(2)),
+        LoadWord(BaseOfsIA(RegisterX(0), -4), RegisterX(1), true),
+        Address(".L._errDivZero_str0", RegisterX(0)),
+        BranchLink("printf"),
+        Move(ImmNum(0), RegisterX(0)),
+        BranchLink("fflush"),
+        Pop(PstIndxIA(RegisterSP, 16), RegisterLR, RegisterXZR),
+        ReturnI
+    ) 
+    val label: String = "_prints"
+}
+

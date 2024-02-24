@@ -6,7 +6,7 @@ import scala.collection.mutable.ListBuffer
 object aarch64_formatter {
 
     var errorDivZero = false
-    var print = false
+    var printString = false
 
     var stringLabelCounter = -1 // -1 means no string
     val stringLabel = ".L.str"
@@ -36,46 +36,13 @@ object aarch64_formatter {
         // Helper functions (taken from the reference compiler). 
         // TODO: Abstract them using Instruction
         
-//         if (errorDivZero) {
-//             full_assembly.addAll("""
-// // Division by zero error handler as seen in the ref. compiler
-// // length of .L._errDivZero_str0
-// 	.word 40
-// .L._errDivZero_str0:
-// 	.asciz "fatal error: division or modulo by zero\n"
-// .align 4
-// _errDivZero:
-// 	adr x0, .L._errDivZero_str0
-// 	bl _prints
-// 	mov w0, #-1
-// 	bl exit
-// """)
-//         }
 
         if (errorDivZero) {
             errorDivZeroFx.instructions.map(generateAssembly(_)).foreach(full_assembly.addAll(_))
         }
 
-        if (print) {
-            full_assembly.addAll("""
-// length of .L._prints_str0
-	.word 4
-.L._prints_str0:
-	.asciz "%.*s"
-.align 4
-_prints:
-	// push {lr}
-	stp lr, xzr, [sp, #-16]!
-	mov x2, x0
-	ldrsw x1, [x0, #-4]
-	adr x0, .L._prints_str0
-	bl printf
-	mov x0, #0
-	bl fflush
-	// pop {lr}
-	ldp lr, xzr, [sp], #16
-	ret
-""")
+        if (printString) {
+            printStringFx.instructions.map(generateAssembly(_)).foreach(full_assembly.addAll(_))
         }
 
 
@@ -89,7 +56,7 @@ _prints:
     }
 
     def includePrint() = {
-        print = true
+        printString = true
     }
 
     def generateAssembly(instr: Instruction): String = instr match {
