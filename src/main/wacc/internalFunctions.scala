@@ -25,7 +25,7 @@ object printStringFx extends internalFunctions {
         Data("%.*s", ".L._errDivZero_str0"),
         Push(RegisterLR, RegisterXZR, PreIndxA(RegisterSP, -16)),
         Move(RegisterX(0), RegisterX(2)),
-        LoadWord(BaseOfsIA(RegisterX(0), -4), RegisterX(1), true),
+        LoadWord(BaseOfsIA(RegisterX(0), -4), RegisterX(1)),
         Address(".L._errDivZero_str0", RegisterX(0)),
         BranchLink("printf"),
         Move(ImmNum(0), RegisterX(0)),

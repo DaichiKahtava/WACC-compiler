@@ -73,17 +73,14 @@ object aarch64_formatter {
         
         case Load(src, dst) => "ldr\t" + generateRegister(dst) + ", " + generateAddress(src) + "\n"
         case LoadByte(src, dst, signed) => signed match {
-            case true  => "ldrb\t" + generateRegister(dst) + ", " + generateAddress(src) + "\n"
-            case false => "ldrsb\t" + generateRegister(dst) + ", " + generateAddress(src) + "\n"
+            case false => "ldrb\t" + generateRegister(dst) + ", " + generateAddress(src) + "\n"
+            case true  => "ldrsb\t" + generateRegister(dst) + ", " + generateAddress(src) + "\n"
         }
         case LoadHalf(src, dst, signed) => signed match {
-            case true  => "ldrh\t" + generateRegister(dst) + ", " + generateAddress(src) + "\n"
-            case false => "ldrsh\t" + generateRegister(dst) + ", " + generateAddress(src) + "\n"
+            case false => "ldrh\t" + generateRegister(dst) + ", " + generateAddress(src) + "\n"
+            case true  => "ldrsh\t" + generateRegister(dst) + ", " + generateAddress(src) + "\n"
         }
-        case LoadWord(src, dst, signed) => signed match {
-            case true  => "ldrw\t" + generateRegister(dst) + ", " + generateAddress(src) + "\n"
-            case false => "ldrsw\t" + generateRegister(dst) + ", " + generateAddress(src) + "\n"
-        }
+        case LoadWord(src, dst) => "ldrsw\t" + generateRegister(dst) + ", " + generateAddress(src) + "\n"
         case Pop(src, dst1, dst2) => "ldp\t" + generateRegister(dst1) + ", " +
             generateRegister(dst2) + ", " + generateAddress(src) + "\n"
             // TODO: do we need pair loading?

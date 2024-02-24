@@ -28,7 +28,7 @@ case class Push(src1: Register, src2: Register, dst: AdrMode) extends Instructio
 case class Pop(src: AdrMode, dst1: Register, dst2: Register) extends Instruction
 
 case class Load(src: AdrMode, dst: Register) extends Instruction
-case class LoadWord(src: AdrMode, dst: Register, signed: Boolean) extends Instruction
+case class LoadWord(src: AdrMode, dst: Register) extends Instruction // always signed
 case class LoadByte(src: AdrMode, dst: Register, signed: Boolean) extends Instruction
 case class LoadHalf(src: AdrMode, dst: Register, signed: Boolean) extends Instruction
 // Load and store pair are used for push and pop only.
