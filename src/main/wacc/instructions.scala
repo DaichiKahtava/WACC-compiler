@@ -11,21 +11,28 @@ case class Data(s: String, label: String) extends Instruction
 // Note: String can use escaped characters like normal
 case class AlignInstr() extends Instruction
 
-
 case class Jump(label: String) extends Instruction
 case object ReturnI extends Instruction
 
+// All instructions are formed in such a way that data is flowing from
+// The first argument towards the last argument that is a register.
+
 // Replace operand with more specific classes if necessary
 case class Move(src: Operand, dst: Register) extends Instruction
-case class Load(src: Operand, dst: Register) extends Instruction
-case class Store(src: Register, dst: Register) extends Instruction
 case class Address(label: String, dst: Register) extends Instruction
 case class Branch(label: String) extends Instruction
 case class BranchCond(label: String, cond: CondI) extends Instruction
 case class BranchLink(label: String) extends Instruction // Calls function and stores address in the link register...
 
-case class Push(src1: Register, src2: Register, dst: Register) extends Instruction
-case class Pop(src: Register, dst1: Register, dst2: Register) extends Instruction
+case class Push(src1: Register, src2: Register, dst: AdrMode) extends Instruction
+case class Pop(src: AdrMode, dst1: Register, dst2: Register) extends Instruction
+
+case class Load(src: AdrMode, dst: Register) extends Instruction
+case class LoadWord(src: AdrMode, dst: Register, signed: Boolean) extends Instruction
+case class LoadByte(src: AdrMode, dst: Register, signed: Boolean) extends Instruction
+case class LoadHalf(src: AdrMode, dst: Register, signed: Boolean) extends Instruction
+// Load and store pair are used for push and pop only.
+case class Store(src: Register, dst: AdrMode) extends Instruction
 
 // May want to have the two operands and the destination as separate arguments
 // case class Add(op1, op2, dst)
@@ -43,14 +50,39 @@ case class Compare(r1: Operand, r2: Operand) extends Instruction
 // TODO: Fill in with all types of operands
 sealed trait Operand
 sealed trait Register extends Operand
-case class RegisterX(regN: Int) extends Register
+
+// Groups of registers can go here
+sealed trait RegisterXorSP extends Register
+
+
+case class RegisterX(regN: Int) extends Register with RegisterXorSP
 case class RegisterW(regN: Int) extends Register
 case object RegisterXR extends Register // Indirect result register
 case object RegisterFP extends Register // Frame pointer
 case object RegisterLR extends Register // Link register
+case object RegisterSP extends Register with RegisterXorSP // Stack pointer
 case object RegisterWSP extends Register // Stack pointer
 case object RegisterXZR extends Register // Zero register
 case object RegisterWZR extends Register // Zero register
+
+
+
+sealed trait AdrMode
+// [base]
+case class BaseA(base: RegisterXorSP) extends AdrMode 
+// [base, #imm]
+case class BaseOfsIA(base: RegisterXorSP, ofs: Int) extends AdrMode 
+// [base, Xm]
+case class BaseOfsRA(base: RegisterXorSP, ofsReg: RegisterX, shift: Option[Int]) extends AdrMode 
+// [base #imm]!
+case class PreIndxA(base: RegisterXorSP, ofs: Int) extends AdrMode 
+// [base], #imm
+case class PstIndxIA(base: RegisterXorSP, ofs: Int) extends AdrMode 
+// [base], Xm
+// Probably not needed as we are not doing SIMD instructions
+case class PstIndxRA(base: RegisterXorSP, ofsReg: RegisterX) extends AdrMode 
+// label
+case class LiteralA(l: String) extends AdrMode 
 
 case class ImmNum(n: Int) extends Operand
 

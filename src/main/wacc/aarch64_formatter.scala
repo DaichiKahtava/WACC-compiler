@@ -104,14 +104,26 @@ _prints:
         case ReturnI => "ret\n"
         case Move(src, dst) => "mov\t" + generateRegister(dst) + ", " + generateOperand(src) + "\n"
         
-        case Load(src, dst) => "mov\t" + generateRegister(dst) + ", " + generateOperand(src) + "\n"
+        case Load(src, dst) => "ldr\t" + generateRegister(dst) + ", " + generateAddress(src) + "\n"
+        case LoadByte(src, dst, signed) => signed match {
+            case true  => "ldrb\t" + generateRegister(dst) + ", " + generateAddress(src) + "\n"
+            case false => "ldrsb\t" + generateRegister(dst) + ", " + generateAddress(src) + "\n"
+        }
+        case LoadHalf(src, dst, signed) => signed match {
+            case true  => "ldrh\t" + generateRegister(dst) + ", " + generateAddress(src) + "\n"
+            case false => "ldrsh\t" + generateRegister(dst) + ", " + generateAddress(src) + "\n"
+        }
+        case LoadWord(src, dst, signed) => signed match {
+            case true  => "ldrw\t" + generateRegister(dst) + ", " + generateAddress(src) + "\n"
+            case false => "ldrsw\t" + generateRegister(dst) + ", " + generateAddress(src) + "\n"
+        }
         case Pop(src, dst1, dst2) => "ldp\t" + generateRegister(dst1) + ", " +
-            generateRegister(dst2) + ", [" + generateRegister(src) + "], #16\n"
-            // TODO: provision for src to be an operand (+- do we need pairs?)
+            generateRegister(dst2) + ", " + generateAddress(src) + "\n"
+            // TODO: do we need pair loading?
 
-        case Store(src, dst) => "str\t" + generateRegister(src) + ", [" + generateRegister(dst) + "]\n" 
-        case Push(src, dst1, dst2) => "stp\t" + generateRegister(dst1) + ", " +
-            generateRegister(dst2) + ", [" + generateRegister(src) + ", #16]!\n" // TODO: Generalise offsets
+        case Store(src, dst) => "str\t" + generateRegister(src) + ", " + generateAddress(dst) + "\n" 
+        case Push(src1, src2, dst) => "stp\t" + generateRegister(src1) + ", " +
+            generateRegister(src2) + ", " + generateAddress(dst) + "\n" // TODO: Generalise offsets
 
         case Branch(label) => "b\t" + label
         case BranchCond(label, cond) => "b." + generateCondition(cond) + "\t" + label + "\n"
@@ -165,6 +177,17 @@ _prints:
         case RegisterWZR => "W31"
         case RegisterX(n) => "X" + String.valueOf(n)
         case RegisterW(n) => "W" + String.valueOf(n)
+    }
+
+    def generateAddress(a: AdrMode): String = a match {
+        case BaseA(base) => "[" + generateRegister(base) + "]"
+        case BaseOfsIA(base, ofs) => "[" + generateRegister(base) + ", #" + ofs + "]"
+        case BaseOfsRA(base, ofsReg, shift) => "[" + generateRegister(base) + ", " +
+            generateRegister(ofsReg) + "]"
+        case PreIndxA(base, ofs) => "[" + generateRegister(base) + ", #" + ofs + "]!"
+        case PstIndxIA(base, ofs) => "[" + generateRegister(base) + "], #" + ofs
+        case PstIndxRA(base, ofsReg) => "[" + generateRegister(base) + "], " + generateRegister(ofsReg)
+        case LiteralA(l) => l
     }
 
     def generateCondition(cond: CondI): String =  cond match {

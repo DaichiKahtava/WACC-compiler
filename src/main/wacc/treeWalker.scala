@@ -87,13 +87,13 @@ class TreeWalker(var curSymTable: SymTable) {
         // Atom expressions.
 
         // Load the integer directly.
-        case IntL(n) => List(Load(ImmNum(n), RegisterX(regs(dst))))
+        case IntL(n) => List(Move(ImmNum(n), RegisterX(regs(dst))))
 
         // Load the boolean value using integers.
-        case BoolL(b) => List(Load(ImmNum(if (b) 1 else 0), RegisterX(regs(dst))))
+        case BoolL(b) => List(Move(ImmNum(if (b) 1 else 0), RegisterX(regs(dst))))
 
         // Obtain the integer value of a character.
-        case CharL(c) => List(Load(ImmNum(c.toInt), RegisterX(regs(dst))))
+        case CharL(c) => List(Move(ImmNum(c.toInt), RegisterX(regs(dst))))
         
         case StrL(s) => {
             val label = aarch64_formatter.includeString(s)
@@ -101,13 +101,13 @@ class TreeWalker(var curSymTable: SymTable) {
         }
 
         case PairL() => 
-            List(Load(ImmNum(0), RegisterX(regs(dst)))) // Treat as null pointer?
+            List(Move(ImmNum(0), RegisterX(regs(dst)))) // Treat as null pointer?
 
         // Pattern match for the identifier.
         case Ident(id) =>
             curSymTable.findVarGlobal(id) match {
                 // Variable was found in the symbol table.
-                case Some(varInfo) => List(Load(varInfo.asInstanceOf[Operand], RegisterX(regs(dst))))
+                case Some(varInfo) => List(Move(varInfo.asInstanceOf[Operand], RegisterX(regs(dst))))
                 // Variable was not found in the symbol table.
                 case None => throw new RuntimeException(s"Undefined variable: $id")
         }
@@ -128,9 +128,9 @@ class TreeWalker(var curSymTable: SymTable) {
             curSymTable = curSymTable.parent().get // We are in the parent/global symbolTable.
         })
         // TODO: Use blocks of sorts...
-        instructionList ++= List(Label("main"), Push(RegisterSP, RegisterFP, RegisterLR))
+        instructionList ++= List(Label("main"), Push(RegisterFP, RegisterLR, PreIndxA(RegisterSP, -16)))
         instructionList ++= translate(program.s, gpRegs.toList)
-        return instructionList ++ List(Pop(RegisterSP, RegisterFP, RegisterLR), ReturnI)
+        return instructionList ++ List(Pop(PstIndxIA(RegisterSP, 16), RegisterFP, RegisterLR), ReturnI)
         // return instructionList // A bit redundant here? Can just return the generated List
     }
 
