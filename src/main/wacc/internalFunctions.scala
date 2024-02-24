@@ -22,11 +22,13 @@ object errorDivZeroFx extends internalFunctions {
 object printStringFx extends internalFunctions {
     val instructions: List[Instruction] = List (
         Comment("Print string as seen in the ref. compiler"),
-        Data("%.*s", ".L._errDivZero_str0"),
+        Data("%.*s", ".L._prints_str0"),
+        AlignInstr(),
+        Label("_prints"), // TODO: Possibly abstract common patterns (e.g. label after align)?
         Push(RegisterLR, RegisterXZR, PreIndxA(RegisterSP, -16)),
         Move(RegisterX(0), RegisterX(2)),
         LoadWord(BaseOfsIA(RegisterX(0), -4), RegisterX(1)),
-        Address(".L._errDivZero_str0", RegisterX(0)),
+        Address(".L._prints_str0", RegisterX(0)),
         BranchLink("printf"),
         Move(ImmNum(0), RegisterX(0)),
         BranchLink("fflush"),
