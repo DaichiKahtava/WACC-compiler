@@ -93,12 +93,7 @@ object aarch64_formatter {
         case AddI(src, dst) => "add\t" + generateRegister(dst) + ", " + generateRegister(dst) + ", " + generateOperand(src) + "\n"
         case SubI(src, dst) => "sub\t" + generateRegister(dst) + ", " + generateRegister(dst) + ", " + generateOperand(src) + "\n"
         case MulI(src, dst) => "mul\t" + generateRegister(dst) + ", " + generateRegister(dst) + ", " + generateOperand(src) + "\n"
-        case DivI(src, dst) => {
-            errorDivZero = true
-            return "cmp\tXZR, " + generateOperand(src) + "\n" + 
-            "b.eq\t_errDivZero\n"+
-            "sdiv\t" + generateRegister(dst) + ", " + generateRegister(dst) + ", " + generateOperand(src) + "\n"
-        }
+        case DivI(src, dst) => "sdiv\t" + generateRegister(dst) + ", " + generateRegister(dst) + ", " + generateOperand(src) + "\n"
 
         case Address(label, dst) => {
             val Register = generateRegister(dst)

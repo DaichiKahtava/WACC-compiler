@@ -41,8 +41,14 @@ class TreeWalker(var curSymTable: SymTable) {
         case Mul(x, y) =>
             translate(x, regs) ++ translate(y, regs.tail) ++ List(MulI(RegisterX(regs(nxt)), RegisterX(regs(dst))))
 
-        case Div(x, y) =>
-            translate(x, regs) ++ translate(y, regs.tail) ++ List(DivI(RegisterX(regs(nxt)), RegisterX(regs(dst))))
+        case Div(x, y) => {
+            aarch64_formatter.includeFx(errorDivZeroFx)
+            return translate(x, regs) ++ translate(y, regs.tail) ++ List(
+                    Compare(RegisterXZR, RegisterX(regs(nxt))),
+                    BranchCond(errorDivZeroFx.label, EqI),
+                    DivI(RegisterX(regs(nxt)), RegisterX(regs(dst)))
+                )
+        }
 
         case GrT(x, y) => 
             translate(x, regs) ++ 
