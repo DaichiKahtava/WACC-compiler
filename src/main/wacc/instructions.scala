@@ -48,7 +48,7 @@ case class RegisterW(regN: Int) extends Register
 case object RegisterXR extends Register // Indirect result register
 case object RegisterFP extends Register // Frame pointer
 case object RegisterLR extends Register // Link register
-case object RegisterSP extends Register // Stack pointer
+case object RegisterWSP extends Register // Stack pointer
 case object RegisterXZR extends Register // Zero register
 case object RegisterWZR extends Register // Zero register
 

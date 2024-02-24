@@ -148,6 +148,7 @@ _prints:
         case RegisterFP => "fp"
         case RegisterLR => "lr"
         case RegisterSP => "sp"
+        case RegisterWSP => "wsp"
         case RegisterXZR => "xzr"
         case RegisterWZR => "wzr"
         case RegisterX(n) => "X" + String.valueOf(n)
@@ -159,8 +160,9 @@ _prints:
         case RegisterFP => "X29"
         case RegisterLR => "X30"
         case RegisterSP => "X31"
+        case RegisterWSP => "W31"
         case RegisterXZR => "X31"
-        case RegisterWZR => "X31"
+        case RegisterWZR => "W31"
         case RegisterX(n) => "X" + String.valueOf(n)
         case RegisterW(n) => "W" + String.valueOf(n)
     }
