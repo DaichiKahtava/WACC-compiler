@@ -2,7 +2,7 @@ package wacc
 
 import scala.collection.mutable.ListBuffer
 
-class TreeWalker(var curSymTable: SymTable) {
+class TreeWalker(var sem: Semantics) {
     // GLOBAL POINTER TO THE FINAL (NOT-FORMATTED) ASSEMBLY CODE
     var instructionList = List[Instruction]()
     var gpRegs = ListBuffer.empty[Int]
@@ -111,7 +111,7 @@ class TreeWalker(var curSymTable: SymTable) {
 
         // Pattern match for the identifier.
         case Ident(id) =>
-            curSymTable.findVarGlobal(id) match {
+            sem.curSymTable.findVarGlobal(id) match {
                 // Variable was found in the symbol table.
                 case Some(varInfo) => List(Move(varInfo.asInstanceOf[Operand], RegisterX(regs(dst))))
                 // Variable was not found in the symbol table.
@@ -129,9 +129,10 @@ class TreeWalker(var curSymTable: SymTable) {
     def translate(program: Program): List[Instruction] = {
         var instructionList = List.empty[Instruction]
         program.funcs.foreach((f) => {
-            curSymTable = curSymTable.findFunGlobal(f.id).get.st // We are in the local symbolTable.
+            // TODO: More idiomatic way of accessing the symbol table?
+            sem.curSymTable = sem.curSymTable.findFunGlobal(f.id).get.st // We are in the local symbolTable.
             instructionList ++= translate(f)
-            curSymTable = curSymTable.parent().get // We are in the parent/global symbolTable.
+            sem.curSymTable = sem.curSymTable.parent().get // We are in the parent/global symbolTable.
         })
         // TODO: Use blocks of sorts...
         instructionList ++= List(Label("main"), Push(RegisterFP, RegisterLR, PreIndxA(RegisterSP, -16)))
@@ -174,7 +175,8 @@ class TreeWalker(var curSymTable: SymTable) {
         case Cond(x, s1, s2) => ???
         case Loop(x, s) => ???
         case Body(s) => ???
-        case Delimit(s1, s2) => translate(s1, regs) ++ translate(s2, regs.tail) // Todo: Weighting?
+        case Delimit(s1, s2) => translate(s1, regs) ++ translate(s2, regs) 
+        // TODO (for delimit): Weighting? and register allocation
     }
 
     def translate(lv: LValue, regs: List[Int]): List[Instruction] = lv match {
