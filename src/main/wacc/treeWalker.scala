@@ -161,7 +161,7 @@ class TreeWalker(var sem: Semantics) {
         Label(func.id) :: translate(func.s, gpRegs.toList) ++ List(ReturnI)
 
     def translate(stmt: Stmt, regs: List[Int]): List[Instruction] = stmt match {
-        case Skip() => Nil
+        case Skip() => List(Move(ImmNum(0), outputRegister))
         case Decl(_, id, rv) => 
             val v = sem.curSymTable.findVarGlobal(id).get
             v.pos match {
