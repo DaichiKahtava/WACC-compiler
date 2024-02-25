@@ -66,8 +66,8 @@ object printBoolFx extends InternalFunction {
     val label: String = "_printb"
     val instructions: List[Instruction] = List (
         Comment("Print bool as seen in the ref. compiler"),
-        Data("true", ".L._printb_str0"),
-        Data("false", ".L._printb_str1"),
+        Data("false", ".L._printb_str0"),
+        Data("true", ".L._printb_str1"),
         AlignInstr(),
         Label(label), // TODO: Possibly abstract common patterns (e.g. label after align and push/pop)?
         Push(RegisterLR, RegisterXZR, PreIndxA(RegisterSP, -16)),

@@ -98,8 +98,8 @@ class TreeWalker(var sem: Semantics) {
         // Load the boolean value using integers.
         case BoolL(b) => {
             val value = b match {
-                case true  => 0
-                case false => 1 
+                case true  => 1
+                case false => 0 
             }
             List(Move(ImmNum(value), RegisterX(regs(dst))))
         }
