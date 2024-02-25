@@ -165,7 +165,7 @@ class TreeWalker(var sem: Semantics) {
         case Decl(_, id, rv) => 
             val v = sem.curSymTable.findVarGlobal(id).get
             v.pos match {
-            case InRegister(r) => translate(rv, r::regs)
+            case InRegister(r) => translate(rv, r :: regs)
             case OnStack(offset) => ???
             case Undefined =>
                 sem.curSymTable.redefineSymbol(id, VARIABLE(v.tp, InRegister(regs.head)))
@@ -173,7 +173,7 @@ class TreeWalker(var sem: Semantics) {
         }
 
         case Asgn(LIdent(id), rv) => sem.curSymTable.findVarGlobal(id).get.pos match {
-            case InRegister(r) => translate(rv, r::regs)
+            case InRegister(r) => translate(rv, r :: regs)
             case OnStack(offset) => ???
             case Undefined => ??? // Should not come here
         }
