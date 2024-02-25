@@ -168,37 +168,15 @@ class TreeWalker(var sem: Semantics) {
             // Caller resotre must go here
             Move(ImmNum(0), RegisterX(availRegs(dst)))) 
         case Print(x) => {
-            val printfx: Instruction = sem.getType(x) match {
-                case S_STRING => {
-                    aarch64_formatter.includeFx(printStringFx)
-                    BranchLink("_prints")
-                }
-                case S_BOOL => {
-                    aarch64_formatter.includeFx(printBoolFx)
-                    BranchLink("_printb")
-                }
-                case _ => ???
-            }
             translate(x, regs) ++
             List(Move(RegisterX(regs(dst)), RegisterXR),
             Move(RegisterX(availRegs(dst)), RegisterXR), // TODO:<Same as upwards!>
             // Caller saves must go here
             // Caller resotre must go here
-            printfx,
+            determinePrintBr(x),
             Move(ImmNum(0), RegisterX(availRegs(dst))))
         }
         case Println(x) => {
-            val printfx: Instruction = sem.getType(x) match {
-                case S_STRING => {
-                    aarch64_formatter.includeFx(printStringFx)
-                    BranchLink("_prints")
-                }
-                case S_BOOL => {
-                    aarch64_formatter.includeFx(printBoolFx)
-                    BranchLink("_printb")
-                }
-                case _ => ???
-            }
             aarch64_formatter.includeFx(printStringFx)
             aarch64_formatter.includeFx(printLineFx)
             List(Comment("Translating expression for println")) ++
@@ -207,7 +185,7 @@ class TreeWalker(var sem: Semantics) {
             Move(RegisterX(availRegs(dst)), RegisterXR), // TODO:<Same as upwards!>
             // Caller saves must go here
             // Caller resotre must go here
-            printfx,
+            determinePrintBr(x),
             BranchLink(printLineFx.label),
             Move(ImmNum(0), RegisterX(availRegs(dst))))
         }
@@ -235,5 +213,22 @@ class TreeWalker(var sem: Semantics) {
     def translate(pe: PairElem, regs: List[Int]): List[Instruction] = pe match {
         case First(lv) => ??? 
         case Second(lv) => ???
+    }
+
+    // Gives the correct print branch for the expression
+    def determinePrintBr(x: Expr): Instruction = sem.getType(x) match {
+        case S_STRING => {
+            aarch64_formatter.includeFx(printStringFx)
+            BranchLink(printStringFx.label)
+        }
+        case S_BOOL => {
+            aarch64_formatter.includeFx(printBoolFx)
+            BranchLink(printBoolFx.label)
+        }
+        case S_CHAR => {
+            aarch64_formatter.includeFx(printCharFx)
+            BranchLink(printCharFx.label)
+        }
+        case _ => ???
     }
 }
