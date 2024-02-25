@@ -62,6 +62,26 @@ object printCharFx extends InternalFunction {
     val dependencies: List[InternalFunction] = List.empty
 }
 
+object printIntFx extends InternalFunction {
+    val label: String = "_printi"
+    val instructions: List[Instruction] = List (
+        Comment("Print character as seen in the ref. compiler"),
+        Comment("The pointer of the string to be printed is expected at X0"),
+        Data("%d", ".L._printi_str0"),
+        AlignInstr(),
+        Label(label), // TODO: Possibly abstract common patterns (e.g. label after align and push/pop)?
+        Push(RegisterLR, RegisterXZR, PreIndxA(RegisterSP, -16)),
+        Move(RegisterX(0), RegisterX(1)),
+        Address(".L._printi_str0", RegisterX(0)),
+        BranchLink("printf"),
+        Move(ImmNum(0), RegisterX(0)),
+        BranchLink("fflush"),
+        Pop(PstIndxIA(RegisterSP, 16), RegisterLR, RegisterXZR),
+        ReturnI
+    ) 
+    val dependencies: List[InternalFunction] = List.empty
+}
+
 object printBoolFx extends InternalFunction {
     val label: String = "_printb"
     val instructions: List[Instruction] = List (

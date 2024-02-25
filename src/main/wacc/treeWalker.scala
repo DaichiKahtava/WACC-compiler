@@ -229,6 +229,10 @@ class TreeWalker(var sem: Semantics) {
             aarch64_formatter.includeFx(printCharFx)
             BranchLink(printCharFx.label)
         }
+        case S_INT => {
+            aarch64_formatter.includeFx(printIntFx)
+            BranchLink(printIntFx.label)
+        }
         case _ => ???
     }
 }
