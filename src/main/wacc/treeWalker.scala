@@ -96,7 +96,13 @@ class TreeWalker(var sem: Semantics) {
         case IntL(n) => List(Move(ImmNum(n), RegisterX(regs(dst))))
 
         // Load the boolean value using integers.
-        case BoolL(b) => List(Move(ImmNum(if (b) 1 else 0), RegisterX(regs(dst))))
+        case BoolL(b) => {
+            val value = b match {
+                case true  => 0
+                case false => 1 
+            }
+            List(Move(ImmNum(value), RegisterX(regs(dst))))
+        }
 
         // Obtain the integer value of a character.
         case CharL(c) => List(Move(ImmNum(c.toInt), RegisterX(regs(dst))))
@@ -162,16 +168,49 @@ class TreeWalker(var sem: Semantics) {
             // Caller resotre must go here
             Move(ImmNum(0), RegisterX(availRegs(dst)))) 
         case Print(x) => {
-            aarch64_formatter.includeFx(printStringFx)
+            val printfx: Instruction = sem.getType(x) match {
+                case S_STRING => {
+                    aarch64_formatter.includeFx(printStringFx)
+                    BranchLink("_prints")
+                }
+                case S_BOOL => {
+                    aarch64_formatter.includeFx(printBoolFx)
+                    BranchLink("_printb")
+                }
+                case _ => ???
+            }
             translate(x, regs) ++
             List(Move(RegisterX(regs(dst)), RegisterXR),
             Move(RegisterX(availRegs(dst)), RegisterXR), // TODO:<Same as upwards!>
             // Caller saves must go here
             // Caller resotre must go here
-            BranchLink("_prints"),
+            printfx,
             Move(ImmNum(0), RegisterX(availRegs(dst))))
         }
-        case Println(x) => ???
+        case Println(x) => {
+            val printfx: Instruction = sem.getType(x) match {
+                case S_STRING => {
+                    aarch64_formatter.includeFx(printStringFx)
+                    BranchLink("_prints")
+                }
+                case S_BOOL => {
+                    aarch64_formatter.includeFx(printBoolFx)
+                    BranchLink("_printb")
+                }
+                case _ => ???
+            }
+            aarch64_formatter.includeFx(printStringFx)
+            aarch64_formatter.includeFx(printLineFx)
+            List(Comment("Translating expression for println")) ++
+            translate(x, regs) ++
+            List(Comment("Translating println"), Move(RegisterX(regs(dst)), RegisterXR),
+            Move(RegisterX(availRegs(dst)), RegisterXR), // TODO:<Same as upwards!>
+            // Caller saves must go here
+            // Caller resotre must go here
+            printfx,
+            BranchLink(printLineFx.label),
+            Move(ImmNum(0), RegisterX(availRegs(dst))))
+        }
         case Cond(x, s1, s2) => ???
         case Loop(x, s) => ???
         case Body(s) => ???

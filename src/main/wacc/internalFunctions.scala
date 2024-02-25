@@ -46,26 +46,43 @@ object printBoolFx extends InternalFunction {
     val label: String = "_printb"
     val instructions: List[Instruction] = List (
         Comment("Print bool as seen in the ref. compiler"),
-        Data("false", ".L._printb_str0"),
-        Data("true", ".L._printb_str1"),
-        Data("%.*s", ".L._printb_str2"),
+        Data("true", ".L._printb_str0"),
+        Data("false", ".L._printb_str1"),
         AlignInstr(),
         Label(label), // TODO: Possibly abstract common patterns (e.g. label after align and push/pop)?
         Push(RegisterLR, RegisterXZR, PreIndxA(RegisterSP, -16)),
 
         Compare(RegisterW(0), ImmNum(0)),
         BranchCond(".L_printb0", NeI),
-        Address(".L._printb_str0", RegisterX(1)),
+        Address(".L._printb_str0", RegisterX(0)),
         Branch(".L_printb1"),
 
         Label(".L_printb0"),
-        Address(".L._printb_str1", RegisterX(1)),
+        Address(".L._printb_str1", RegisterX(0)),
 
         Label(".L_printb1"),
-        Address(".L._printb_str2", RegisterX(0)),
         BranchLink(printStringFx.label),
+        Pop(PstIndxIA(RegisterSP, 16), RegisterLR, RegisterXZR),
         ReturnI
     ) 
 
+    val dependencies: List[InternalFunction] = List(printStringFx)
+}
+
+object printLineFx extends InternalFunction {
+    val label: String = "_println"
+    val instructions: List[Instruction] = List (
+        Comment("Just puts down a new line - used in conjunction with _print[i|b|s|...]"),
+        Data("\n", ".L._println_newline"),
+        AlignInstr(),
+        Label(label),
+        Push(RegisterLR, RegisterXZR, PreIndxA(RegisterSP, -16)),
+
+        Address(".L._println_newline", RegisterX(0)),
+        BranchLink(printStringFx.label),
+
+        Pop(PstIndxIA(RegisterSP, 16), RegisterLR, RegisterXZR),
+        ReturnI
+    )
     val dependencies: List[InternalFunction] = List(printStringFx)
 }
