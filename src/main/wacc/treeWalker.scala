@@ -165,14 +165,21 @@ class TreeWalker(var sem: Semantics) {
         case Decl(_, id, rv) => 
             val v = sem.curSymTable.findVarGlobal(id).get
             v.pos match {
-            case InRegister(r) => translate(rv, r :: regs)
+            case InRegister(r) => translate(rv, r::regs)
             case OnStack(offset) => ???
             case Undefined =>
                 sem.curSymTable.redefineSymbol(id, VARIABLE(v.tp, InRegister(regs.head)))
                 translate(rv, regs)
         }
-        case Asgn(lv, rv) => 
-            translate(lv, regs) ++ translate(rv, regs.tail) ++ List(Move(RegisterX(regs(nxt)), RegisterX(regs(dst))))
+
+        case Asgn(LIdent(id), rv) => sem.curSymTable.findVarGlobal(id).get.pos match {
+            case InRegister(r) => translate(rv, r::regs)
+            case OnStack(offset) => ???
+            case Undefined => ??? // Should not come here
+        }
+        // LArrElem and Pairs
+        case Asgn(lv, rv) => ???
+
         case Read(lv) => ???
         case Free(x) => ???
         case Return(x) => ???
@@ -209,17 +216,13 @@ class TreeWalker(var sem: Semantics) {
         case Cond(x, s1, s2) => ???
         case Loop(x, s) => ???
         case Body(s) => ???
-        case Delimit(s1, s2) => translate(s1, regs) ++ translate(s2, regs) 
+        case Delimit(s1, s2) => translate(s1, regs) ++ translate(s2, regs.tail) 
         // TODO (for delimit): Weighting? and register allocation
     }
 
     def translate(lv: LValue, regs: List[Int]): List[Instruction] = lv match {
         case LArrElem(id, xs) => ??? 
-        case LIdent(id) => sem.curSymTable.findVarGlobal(id).get.pos match {
-            case InRegister(r) => List(Move(RegisterX(r), RegisterX(regs(dst))))
-            case OnStack(offset) => ???
-            case Undefined => ??? // Should not get here
-        }
+        case LIdent(id) => ???
         case pe: PairElem => translate(pe, regs.tail)
     }
 

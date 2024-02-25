@@ -120,8 +120,8 @@ exampleProgs/valid/sequence/boolAssignment.wacc
 exampleProgs/valid/sequence/charAssignment.wacc
 exampleProgs/valid/sequence/exitSimple.wacc
 exampleProgs/valid/sequence/intAssignment.wacc
-'exampleProgs/valid/sequence/intLeadingZeros.wacc
-'exampleProgs/valid/sequence/stringAssignment.wacc
+exampleProgs/valid/sequence/intLeadingZeros.wacc
+exampleProgs/valid/sequence/stringAssignment.wacc
 'exampleProgs/valid/variables/boolDeclaration2.wacc
 'exampleProgs/valid/variables/boolDeclaration.wacc
 'exampleProgs/valid/variables/capCharDeclaration.wacc
