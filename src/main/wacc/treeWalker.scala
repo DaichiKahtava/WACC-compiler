@@ -151,7 +151,7 @@ class TreeWalker(var sem: Semantics) {
         // TODO: Use blocks of sorts...
         instructionList ++= List(Label("main"), Push(RegisterFP, RegisterLR, PreIndxA(RegisterSP, -16)))
         instructionList ++= translate(program.s, gpRegs.toList)
-        return instructionList ++ List(Pop(PstIndxIA(RegisterSP, 16), RegisterFP, RegisterLR), ReturnI)
+        return instructionList ++ List(Move(ImmNum(0), outputRegister), Pop(PstIndxIA(RegisterSP, 16), RegisterFP, RegisterLR), ReturnI)
         // return instructionList // A bit redundant here? Can just return the generated List
     }
 
@@ -161,7 +161,7 @@ class TreeWalker(var sem: Semantics) {
         Label(func.id) :: translate(func.s, gpRegs.toList) ++ List(ReturnI)
 
     def translate(stmt: Stmt, regs: List[Int]): List[Instruction] = stmt match {
-        case Skip() => List(Move(ImmNum(0), outputRegister))
+        case Skip() => Nil
         case Decl(_, id, rv) => 
             val v = sem.curSymTable.findVarGlobal(id).get
             v.pos match {
