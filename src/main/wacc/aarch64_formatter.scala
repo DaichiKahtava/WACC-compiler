@@ -86,7 +86,7 @@ object aarch64_formatter {
         case Push(src1, src2, dst) => "stp\t" + generateRegister(src1) + ", " +
             generateRegister(src2) + ", " + generateAddress(dst) + "\n" // TODO: Generalise offsets
 
-        case Branch(label) => "b\t" + label
+        case Branch(label) => "b\t" + label + "\n"
         case BranchCond(label, cond) => "b." + generateCondition(cond) + "\t" + label + "\n"
         case BranchLink(label) => "bl\t" + label + "\n"
 
@@ -101,7 +101,7 @@ object aarch64_formatter {
                 "add\t" + generateRegister(dst) + ", " + generateRegister(dst) + ", :lo12:" + label + "\n"
         }
         
-        case Compare(r1, r2) => "cmp\t" + generateOperand(r1) + generateOperand(r2) + "\n" + ""
+        case Compare(r1, r2) => "cmp\t" + generateOperand(r1) + ", " + generateOperand(r2) + "\n" + ""
         case SetCond(r, cond) => ???
     }
 
