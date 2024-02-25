@@ -2,7 +2,7 @@ package wacc
 
 import scala.collection.mutable.ListBuffer
 
-class TreeWalker(var curSymTable: SymTable) {
+class TreeWalker(var sem: Semantics) {
     // GLOBAL POINTER TO THE FINAL (NOT-FORMATTED) ASSEMBLY CODE
     var instructionList = List[Instruction]()
     var gpRegs = ListBuffer.empty[Int]
@@ -51,8 +51,14 @@ class TreeWalker(var curSymTable: SymTable) {
         case Mul(x, y) =>
             translate(x, regs) ++ translate(y, regs.tail) ++ List(MulI(RegisterX(regs(nxt)), RegisterX(regs(dst))))
 
-        case Div(x, y) =>
-            translate(x, regs) ++ translate(y, regs.tail) ++ List(DivI(RegisterX(regs(nxt)), RegisterX(regs(dst))))
+        case Div(x, y) => {
+            aarch64_formatter.includeFx(errorDivZeroFx)
+            return translate(x, regs) ++ translate(y, regs.tail) ++ List(
+                    Compare(RegisterXZR, RegisterX(regs(nxt))),
+                    BranchCond(errorDivZeroFx.label, EqI),
+                    DivI(RegisterX(regs(nxt)), RegisterX(regs(dst)))
+                )
+        }
 
         case GrT(x, y) => 
             translate(x, regs) ++ 
@@ -97,13 +103,19 @@ class TreeWalker(var curSymTable: SymTable) {
         // Atom expressions.
 
         // Load the integer directly.
-        case IntL(n) => List(Load(ImmNum(n), RegisterX(regs(dst))))
+        case IntL(n) => List(Move(ImmNum(n), RegisterX(regs(dst))))
 
         // Load the boolean value using integers.
-        case BoolL(b) => List(Load(ImmNum(if (b) 1 else 0), RegisterX(regs(dst))))
+        case BoolL(b) => {
+            val value = b match {
+                case true  => 1
+                case false => 0 
+            }
+            List(Move(ImmNum(value), RegisterX(regs(dst))))
+        }
 
         // Obtain the integer value of a character.
-        case CharL(c) => List(Load(ImmNum(c.toInt), RegisterX(regs(dst))))
+        case CharL(c) => List(Move(ImmNum(c.toInt), RegisterX(regs(dst))))
         
         case StrL(s) => {
             val label = aarch64_formatter.includeString(s)
@@ -111,10 +123,10 @@ class TreeWalker(var curSymTable: SymTable) {
         }
 
         case PairL() => 
-            List(Load(ImmNum(0), RegisterX(regs(dst)))) // Treat as null pointer?
+            List(Move(ImmNum(0), RegisterX(regs(dst)))) // Treat as null pointer?
 
         // Pattern match for the identifier.
-        case Ident(id) => curSymTable.findVarGlobal(id).get.pos match {
+        case Ident(id) => sem.curSymTable.findVarGlobal(id).get.pos match {
             case InRegister(r) => List(Move(RegisterX(r), RegisterX(regs(dst))))
             case OnStack(offset) => ???
             case Undefined => ??? // Should not get here
@@ -131,14 +143,15 @@ class TreeWalker(var curSymTable: SymTable) {
     def translate(program: Program): List[Instruction] = {
         var instructionList = List.empty[Instruction]
         program.funcs.foreach((f) => {
-            curSymTable = curSymTable.findFunGlobal(f.id).get.st // We are in the local symbolTable.
+            // TODO: More idiomatic way of accessing the symbol table?
+            sem.curSymTable = sem.curSymTable.findFunGlobal(f.id).get.st // We are in the local symbolTable.
             instructionList ++= translate(f)
-            curSymTable = curSymTable.parent().get // We are in the parent/global symbolTable.
+            sem.curSymTable = sem.curSymTable.parent().get // We are in the parent/global symbolTable.
         })
         // TODO: Use blocks of sorts...
-        instructionList ++= List(Label("main"), Push(RegisterSP, RegisterFP, RegisterLR))
+        instructionList ++= List(Label("main"), Push(RegisterFP, RegisterLR, PreIndxA(RegisterSP, -16)))
         instructionList ++= translate(program.s, gpRegs.toList)
-        return instructionList ++ List(Pop(RegisterSP, RegisterFP, RegisterLR), ReturnI)
+        return instructionList ++ List(Pop(PstIndxIA(RegisterSP, 16), RegisterFP, RegisterLR), ReturnI)
         // return instructionList // A bit redundant here? Can just return the generated List
     }
 
@@ -150,12 +163,12 @@ class TreeWalker(var curSymTable: SymTable) {
     def translate(stmt: Stmt, regs: List[Int]): List[Instruction] = stmt match {
         case Skip() => Nil
         case Decl(_, id, rv) => 
-            val v = curSymTable.findVarGlobal(id).get
+            val v = sem.curSymTable.findVarGlobal(id).get
             v.pos match {
             case InRegister(r) => translate(rv, r :: regs)
             case OnStack(offset) => ???
             case Undefined =>
-                curSymTable.redefineSymbol(id, VARIABLE(v.tp, InRegister(regs.head)))
+                sem.curSymTable.redefineSymbol(id, VARIABLE(v.tp, InRegister(regs.head)))
                 translate(rv, regs)
         }
         case Asgn(lv, rv) => ???
@@ -171,29 +184,32 @@ class TreeWalker(var curSymTable: SymTable) {
             // Caller resotre must go here
             Move(ImmNum(0), RegisterX(availRegs(dst)))) 
         case Print(x) => {
-            aarch64_formatter.includePrint()
             translate(x, regs) ++
             List(Move(RegisterX(regs(dst)), RegisterXR),
             Move(RegisterX(availRegs(dst)), RegisterXR), // TODO:<Same as upwards!>
             // Caller saves must go here
             // Caller resotre must go here
-            BranchLink("_prints"),
+            determinePrintBr(x),
             Move(ImmNum(0), RegisterX(availRegs(dst))))
         }
         case Println(x) => {
-            aarch64_formatter.includePrint()
+            aarch64_formatter.includeFx(printStringFx)
+            aarch64_formatter.includeFx(printLineFx)
+            List(Comment("Translating expression for println")) ++
             translate(x, regs) ++
-            List(Move(RegisterX(regs(dst)), RegisterXR),
+            List(Comment("Translating println"), Move(RegisterX(regs(dst)), RegisterXR),
             Move(RegisterX(availRegs(dst)), RegisterXR), // TODO:<Same as upwards!>
             // Caller saves must go here
             // Caller resotre must go here
-            BranchLink("_prints"),
+            determinePrintBr(x),
+            BranchLink(printLineFx.label),
             Move(ImmNum(0), RegisterX(availRegs(dst))))
         }
         case Cond(x, s1, s2) => ???
         case Loop(x, s) => ???
         case Body(s) => ???
-        case Delimit(s1, s2) => translate(s1, regs) ++ translate(s2, regs.tail) // Todo: Weighting?
+        case Delimit(s1, s2) => translate(s1, regs) ++ translate(s2, regs) 
+        // TODO (for delimit): Weighting? and register allocation
     }
 
     def translate(lv: LValue, regs: List[Int]): List[Instruction] = lv match {
@@ -213,5 +229,26 @@ class TreeWalker(var curSymTable: SymTable) {
     def translate(pe: PairElem, regs: List[Int]): List[Instruction] = pe match {
         case First(lv) => ??? 
         case Second(lv) => ???
+    }
+
+    // Gives the correct print branch for the expression
+    def determinePrintBr(x: Expr): Instruction = sem.getType(x) match {
+        case S_STRING => {
+            aarch64_formatter.includeFx(printStringFx)
+            BranchLink(printStringFx.label)
+        }
+        case S_BOOL => {
+            aarch64_formatter.includeFx(printBoolFx)
+            BranchLink(printBoolFx.label)
+        }
+        case S_CHAR => {
+            aarch64_formatter.includeFx(printCharFx)
+            BranchLink(printCharFx.label)
+        }
+        case S_INT => {
+            aarch64_formatter.includeFx(printIntFx)
+            BranchLink(printIntFx.label)
+        }
+        case _ => ???
     }
 }

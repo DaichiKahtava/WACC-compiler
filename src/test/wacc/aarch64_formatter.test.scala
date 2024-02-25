@@ -17,21 +17,22 @@ class aarch64FormTest extends AnyFlatSpec {
         aarch64_formatter.generateAssembly(List(AddI(ImmNum(1), RegisterX(2)))) shouldBe ".align 4\n.text\n.global main\nadd\tX2, X2, #1\n"
     }
 
-    it should "add error checking for division" in {
-        aarch64_formatter.generateAssembly(List(DivI(ImmNum(0), RegisterX(2)))) shouldBe 
-        ".align 4\n.text\n.global main\ncmp\tXZR, #0\nb.eq\t_errDivZero\nsdiv\tX2, X2, #0\n" + """
-// Division by zero error handler as seen in the ref. compiler
-// length of .L._errDivZero_str0
-	.word 40
-.L._errDivZero_str0:
-	.asciz "fatal error: division or modulo by zero\n"
-.align 4
-_errDivZero:
-	adr x0, .L._errDivZero_str0
-	bl _prints
-	mov w0, #-1
-	bl exit
-"""
-    } 
+    // No longer part of the formatter
+//     it should "add error checking for division" in {
+//         aarch64_formatter.generateAssembly(List(DivI(ImmNum(0), RegisterX(2)))) shouldBe 
+//         ".align 4\n.text\n.global main\ncmp\tXZR, #0\nb.eq\t_errDivZero\nsdiv\tX2, X2, #0\n" +
+// """// Division by zero error handler as seen in the ref. compiler
+// 	.word 40
+// .L._errDivZero_str0:
+// 	.asciz "fatal error: division or modulo by zero\n"
+// .align 4
+// _errDivZero:
+// adrp	X0, .L._errDivZero_str0
+// add	X0, X0, :lo12:.L._errDivZero_str0
+// bl	_prints
+// mov	W0, #-1
+// bl	exit
+// """
+//     } 
 
 }

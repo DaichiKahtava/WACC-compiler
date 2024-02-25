@@ -21,26 +21,26 @@ object Main {
         val input = scala.io.Source.fromFile(inputFile).mkString
         val parseResult = parser.parse(input)
         val sem = new Semantics(args(0)) // [tm1722] Should we change it to Semantics(input) ?
-        val tw = new TreeWalker(sem.curSymTable) // Passes the global symbol table to the treeWalker
         
-
+        
         parseResult match {
             case Failure(_) =>
                 println("Parsing failed.")
                 System.exit(100)
-            case Success(ast) =>
-                if (!sem.isSemCorrect(ast)) {
-                    println("Semantic check failed.")
-                    System.exit(200)
-                } else {
-                    println("Parsed successfully")
-                    // TODO BACKEND LATER.
-                    val treeWalker = new TreeWalker(sem.curSymTable)
-                    val writer = new FileWriter(FilenameUtils.getBaseName(inputFile.getName()) + ".s")
-                    val str = aarch64_formatter.generateAssembly(treeWalker.translate(ast))
-                    print(str)
-                    writer.append(str)
-                    writer.flush()
+                case Success(ast) =>
+                    if (!sem.isSemCorrect(ast)) {
+                        println("Semantic check failed.")
+                        System.exit(200)
+                    } else {
+                        println("Parsed successfully")
+                        println(ast)
+                        // Passes the global symbol table and semantic data to the treeWalker
+                        val tw = new TreeWalker(sem)
+                        val writer = new FileWriter(FilenameUtils.getBaseName(inputFile.getName()) + ".s")
+                        val str = aarch64_formatter.generateAssembly(tw.translate(ast))
+                        print(str)
+                        writer.append(str)
+                        writer.flush()
                 }   
         }
     }
