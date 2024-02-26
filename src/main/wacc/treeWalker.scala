@@ -15,6 +15,8 @@ class TreeWalker(var sem: Semantics) {
     val dst = 0 // TODO: Might be a seperate destination for system call?
     val nxt = 1
 
+    var labelNum = 0
+
 
     // Conventions for translate: 
     //  regs contains a list of all available general purpose registers
@@ -90,10 +92,16 @@ class TreeWalker(var sem: Semantics) {
             translate(y, regs.tail) ++ 
             List(Compare(RegisterX(regs(dst)), RegisterX(regs(nxt))), SetCond(RegisterXR, NeI))
             
-        case And(x, y) => 
+        case And(x, y) =>
+            val curLabel = s".L${labelNum}"
+            labelNum += 1
             translate(x, regs) ++ 
             translate(y, regs.tail) ++ 
-            List(Compare(RegisterX(regs(dst)), ImmNum(1)))
+            List(Compare(RegisterX(regs(dst)), ImmNum(1)),
+            BranchCond(curLabel, NeI),
+            Compare(RegisterX(regs(nxt)), ImmNum(1)),
+            Label(curLabel),
+            SetCond(RegisterX(regs(dst)), EqI))
 
         case Or(x, y) => 
             translate(x, regs) ++ 

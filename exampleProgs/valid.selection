@@ -24,7 +24,7 @@
 'exampleProgs/valid/array/stringFromArray.wacc
 'exampleProgs/valid/expressions/andExpr.wacc
 'exampleProgs/valid/expressions/andOverOrExpr.wacc
-'exampleProgs/valid/expressions/boolCalc.wacc
+exampleProgs/valid/expressions/boolCalc.wacc
 'exampleProgs/valid/expressions/boolExpr1.wacc
 'exampleProgs/valid/expressions/charComparisonExpr.wacc
 'exampleProgs/valid/expressions/divExpr.wacc
