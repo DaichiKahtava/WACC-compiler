@@ -218,7 +218,16 @@ class TreeWalker(var sem: Semantics) {
         case Cond(x, s1, s2) => ???
         case Loop(x, s) => ???
         case Body(s) => ???
-        case Delimit(s1, s2) => translate(s1, regs) ++ translate(s2, regs.tail) 
+
+        case Delimit(s1, s2) => 
+            val res = translate(s1, regs)
+            sem.curSymTable.varDict.values.map(_.pos).foreach{ // Maybe move this somewhere else to a general function when needed
+                case InRegister(r) => availRegs.remove(r)
+                case _ => () // Do nothing otherwise
+            }
+            res ++ 
+            List(Break) ++ 
+            translate(s2, availRegs.toList)
         // TODO (for delimit): Weighting? and register allocation
     }
 
