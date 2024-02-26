@@ -292,7 +292,7 @@ class TreeWalker(var sem: Semantics) {
             List(r1, r2) <- regsInUse.grouped(2).toList
         } yield (Push(RegisterX(r1), RegisterX(r2), PreIndxA(RegisterSP, -16)))) ++ 
         // This can probably be compacted into above but idk how
-        (if (regsInUse.size % 2 != 0) List(Push(RegisterX(regsInUse.last), RegisterXZR, PreIndxA(RegisterSP, 16))) else Nil)
+        (if (regsInUse.size % 2 != 0) List(Push(RegisterX(regsInUse.last), RegisterXZR, PreIndxA(RegisterSP, -16))) else Nil)
     }
 
     def restoreRegs(regsNotInUse: List[Int]): List[Instruction] = {
@@ -301,6 +301,6 @@ class TreeWalker(var sem: Semantics) {
             List(r1, r2) <- regsInUse.grouped(2).toList.reverse
         } yield (Pop(PstIndxIA(RegisterSP, 16), RegisterX(r1), RegisterX(r2)))) ++
         // This can probably be compacted into above but idk how
-        (if (regsInUse.size % 2 != 0) List(Push(RegisterX(regsInUse.last), RegisterXZR, PreIndxA(RegisterSP, 16))) else Nil)
+        (if (regsInUse.size % 2 != 0) List(Pop(PstIndxIA(RegisterSP, 16), RegisterX(regsInUse.head), RegisterXZR)) else Nil)
     }
 }
