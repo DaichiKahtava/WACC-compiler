@@ -22,7 +22,6 @@ test_execute () {
     expOut=$(grep -PA $fileLen "# Output:" $1 | grep -PB $fileLen "#$")
     input=$(grep -PA 1 "# Input:" $1)
     input="${input:9}" 
-    expOut="${expOut//# /}"
     IFS=$'\n' expectA=($expOut)
 
     expectL=$((${#expectA[@]}-1))
@@ -87,6 +86,7 @@ test_execute () {
           do
             gLine=${outputA[i - 1]}
             eLine=${expectA[i]}
+            eLine="${eLine/[#] /}"
             if [ "$eLine" != "$gLine" ] 
             then
               if [ "$eLine" != "#" ] && [ "$gLine" != "" ] 
