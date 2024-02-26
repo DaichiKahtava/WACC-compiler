@@ -242,9 +242,7 @@ class TreeWalker(var sem: Semantics) {
                     if (availRegs.contains(r)) availRegs.remove(availRegs.indexOf(r))
                 case _ => () // Do nothing otherwise
             }
-            res ++ 
-            List(Break) ++ 
-            translate(s2, availRegs.toList)
+            res ++ translate(s2, availRegs.toList)
         // TODO (for delimit): Weighting? and register allocation
     }
 
