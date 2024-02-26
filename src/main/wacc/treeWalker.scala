@@ -205,8 +205,10 @@ class TreeWalker(var sem: Semantics) {
             aarch64_formatter.includeFx(printLineFx)
             List(Comment("Translating expression for println")) ++
             translate(x, regs) ++
-            List(Comment("Translating println"), Move(RegisterX(regs(dst)), RegisterXR),
-            Move(RegisterX(availRegs(dst)), RegisterXR), // TODO:<Same as upwards!>
+            List(Comment("Translating println"), 
+            Move(RegisterX(regs(dst)), RegisterXR),
+            Move(RegisterXR, outputRegister), // [dk2722] Don't understand why it gets overridden immediately
+            // Move(RegisterX(availRegs(dst)), RegisterXR), // TODO:<Same as upwards!>
             // Caller saves must go here
             // Caller resotre must go here
             determinePrintBr(x),
