@@ -22,12 +22,12 @@
 'exampleProgs/valid/array/modifyString.wacc
 'exampleProgs/valid/array/printRef.wacc
 'exampleProgs/valid/array/stringFromArray.wacc
-'exampleProgs/valid/expressions/andExpr.wacc
+exampleProgs/valid/expressions/andExpr.wacc
 'exampleProgs/valid/expressions/andOverOrExpr.wacc
 exampleProgs/valid/expressions/boolCalc.wacc
 'exampleProgs/valid/expressions/boolExpr1.wacc
 'exampleProgs/valid/expressions/charComparisonExpr.wacc
-'exampleProgs/valid/expressions/divExpr.wacc
+exampleProgs/valid/expressions/divExpr.wacc
 'exampleProgs/valid/expressions/equalsExpr.wacc
 'exampleProgs/valid/expressions/equalsOverAnd.wacc
 'exampleProgs/valid/expressions/equalsOverBool.wacc
@@ -61,7 +61,7 @@ exampleProgs/valid/expressions/minusPlusExpr.wacc
 'exampleProgs/valid/expressions/notequalsExpr.wacc
 'exampleProgs/valid/expressions/notExpr.wacc
 'exampleProgs/valid/expressions/ordAndchrExpr.wacc
-'exampleProgs/valid/expressions/orExpr.wacc
+exampleProgs/valid/expressions/orExpr.wacc
 exampleProgs/valid/expressions/plusExpr.wacc
 exampleProgs/valid/expressions/plusMinusExpr.wacc
 exampleProgs/valid/expressions/plusNoWhitespaceExpr.wacc

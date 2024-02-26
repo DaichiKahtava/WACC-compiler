@@ -104,9 +104,15 @@ class TreeWalker(var sem: Semantics) {
             SetCond(RegisterX(regs(dst)), EqI))
 
         case Or(x, y) => 
+            val curLabel = s".L${labelNum}"
+            labelNum += 1
             translate(x, regs) ++ 
             translate(y, regs.tail) ++ 
-            List(Compare(RegisterX(regs(dst)), ImmNum(1)))
+            List(Compare(RegisterX(regs(dst)), ImmNum(1)),
+            BranchCond(curLabel, EqI),
+            Compare(RegisterX(regs(nxt)), ImmNum(1)),
+            Label(curLabel),
+            SetCond(RegisterX(regs(dst)), EqI))
 
         // Atom expressions.
 
@@ -211,29 +217,33 @@ class TreeWalker(var sem: Semantics) {
         case Println(x) => {
             aarch64_formatter.includeFx(printStringFx)
             aarch64_formatter.includeFx(printLineFx)
+            // Caller saves goes here??
+            saveRegs(regs) ++
             List(Comment("Translating expression for println")) ++
             translate(x, regs) ++
             List(Comment("Translating println"), 
             Move(RegisterX(regs(dst)), RegisterXR),
             Move(RegisterXR, outputRegister), // [dk2722] Don't understand why it gets overridden immediately
             // Move(RegisterX(availRegs(dst)), RegisterXR), // TODO:<Same as upwards!>
-            // Caller saves must go here
-            // Caller resotre must go here
             determinePrintBr(x),
-            BranchLink(printLineFx.label),
-            Move(ImmNum(0), RegisterX(availRegs(dst))))
+            BranchLink(printLineFx.label)) ++
+            // Caller restore must go here
+            restoreRegs(regs) ++
+            List(Move(ImmNum(0), RegisterX(availRegs(dst))))
         }
         case Cond(x, s1, s2) => ???
         case Loop(x, s) => ???
         case Body(s) => ???
 
-        case Delimit(s1, s2) => 
+        case Delimit(s1, s2) =>
             val res = translate(s1, regs)
             sem.curSymTable.varDict.values.map(_.pos).foreach{ // Maybe move this somewhere else to a general function when needed
-                case InRegister(r) => availRegs.remove(r)
+                case InRegister(r) =>
+                    if (availRegs.contains(r)) availRegs.remove(availRegs.indexOf(r))
                 case _ => () // Do nothing otherwise
             }
             res ++ 
+            List(Break) ++ 
             translate(s2, availRegs.toList)
         // TODO (for delimit): Weighting? and register allocation
     }
