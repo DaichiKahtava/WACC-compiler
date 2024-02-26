@@ -33,12 +33,12 @@ object Main {
                         System.exit(200)
                     } else {
                         println("Parsed successfully")
-                        println(ast)
+                        // println(ast)
                         // Passes the global symbol table and semantic data to the treeWalker
                         val tw = new TreeWalker(sem)
                         val writer = new FileWriter(FilenameUtils.getBaseName(inputFile.getName()) + ".s")
                         val str = aarch64_formatter.generateAssembly(tw.translate(ast))
-                        print(str)
+                        //print(str)
                         writer.append(str)
                         writer.flush()
                 }   
