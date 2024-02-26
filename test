@@ -20,6 +20,8 @@ test_execute () {
   if [ -f $fnameAss ]
   then
     expOut=$(grep -PA $fileLen "# Output:" $1 | grep -PB $fileLen "#$")
+    input=$(grep -PA 1 "# Input:" $1)
+    input="${input:9}" 
     expOut="${expOut//# /}"
     IFS=$'\n' expectA=($expOut)
 
@@ -52,10 +54,10 @@ test_execute () {
 
       # Executing the program
       # output="$(qemu-aarch64 -L /usr/aarch64-linux-gnu/ $fname)" # Review
-      qemu-aarch64 -L /usr/aarch64-linux-gnu/ $fname > test.out
+      qemu-aarch64 -L /usr/aarch64-linux-gnu/ $fname > test.out <<< $input #Review
       exitCode=$?
       IFS= read -rd '' output < test.out
-      printf "$output"
+      echo "$output"
 
 
       # Checking the failour
