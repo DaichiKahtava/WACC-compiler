@@ -209,28 +209,24 @@ class TreeWalker(var sem: Semantics) {
             Move(ImmNum(0), RegisterX(availRegs(dst)))) 
         case Print(x) => {
             translate(x, regs) ++
-            List(Move(RegisterX(regs(dst)), RegisterXR),
-            Move(RegisterX(availRegs(dst)), RegisterXR), // TODO:<Same as upwards!>
-            // Caller saves must go here
-            // Caller resotre must go here
-            determinePrintBr(x),
-            Move(ImmNum(0), RegisterX(availRegs(dst))))
+            saveRegs(regs) ++ // Caller saves
+            List(Move(RegisterX(regs.head), RegisterX(0)),
+            determinePrintBr(x)) ++
+            restoreRegs(regs) ++ // Caller restore
+            List(Move(ImmNum(0), RegisterX(availRegs(dst))))
         }
         case Println(x) => {
             aarch64_formatter.includeFx(printStringFx)
             aarch64_formatter.includeFx(printLineFx)
             // Caller saves goes here??
-            saveRegs(regs) ++
             List(Comment("Translating expression for println")) ++
             translate(x, regs) ++
+            saveRegs(regs) ++ // Caller saves
             List(Comment("Translating println"), 
-            Move(RegisterX(regs(dst)), RegisterXR),
-            Move(RegisterXR, outputRegister), // [dk2722] Don't understand why it gets overridden immediately
-            // Move(RegisterX(availRegs(dst)), RegisterXR), // TODO:<Same as upwards!>
+            Move(RegisterX(regs.head), RegisterX(0)),
             determinePrintBr(x),
             BranchLink(printLineFx.label)) ++
-            // Caller restore must go here
-            restoreRegs(regs) ++
+            restoreRegs(regs) ++ // Caller restore
             List(Move(ImmNum(0), RegisterX(availRegs(dst))))
         }
         case Cond(x, s1, s2) => ???
@@ -294,7 +290,8 @@ class TreeWalker(var sem: Semantics) {
             List(r1, r2) <- regsInUse.grouped(2).toList
         } yield (Push(RegisterX(r1), RegisterX(r2), PreIndxA(RegisterSP, -16)))) ++ 
         // This can probably be compacted into above but idk how
-        (if (regsInUse.size % 2 != 0) List(Push(RegisterX(regsInUse.last), RegisterXZR, PreIndxA(RegisterSP, -16))) else Nil)
+        (if (regsInUse.size % 2 != 0) List(Push(RegisterX(regsInUse.last), RegisterXZR, PreIndxA(RegisterSP, -16))) else Nil) ++
+        List(Comment("Restoring registers END"))
     }
 
     def restoreRegs(regsNotInUse: List[Int]): List[Instruction] = {
@@ -303,7 +300,7 @@ class TreeWalker(var sem: Semantics) {
         (if (regsInUse.size % 2 != 0) List(Pop(PstIndxIA(RegisterSP, 16), RegisterX(regsInUse.last), RegisterXZR)) else Nil) ++ 
         (for {
             List(r1, r2) <- regsInUse.grouped(2).toList.reverse
-        } yield (Pop(PstIndxIA(RegisterSP, 16), RegisterX(r1), RegisterX(r2))))
+        } yield (Pop(PstIndxIA(RegisterSP, 16), RegisterX(r1), RegisterX(r2)))) ++ List(Comment("Restoring registers END"))
         // This can probably be compacted into above but idk how
     }
 }
