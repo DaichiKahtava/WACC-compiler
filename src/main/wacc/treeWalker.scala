@@ -26,7 +26,9 @@ class TreeWalker(var sem: Semantics) {
     def translate(e: Expr, regs: List[Int]): List[Instruction] = e match {
 
         // UnOp expressions.
-        case Not(x) => translate(x, regs.tail) ++ List(Compare(RegisterX(regs(regs.head)), ImmNum(1)), SetCond(RegisterXR, NeI))
+        case Not(x) => translate(x, regs) ++ 
+            List(Compare(RegisterX(regs(dst)), ImmNum(1)), 
+            SetCond(RegisterX(regs(dst)), NeI))
 
         case Neg(x) => translate(x, regs.tail) ++
             List(Move(ImmNum(0), RegisterX(regs.head)), 
