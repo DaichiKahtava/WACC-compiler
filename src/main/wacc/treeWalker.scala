@@ -65,32 +65,32 @@ class TreeWalker(var sem: Semantics) {
         case GrT(x, y) => 
             translate(x, regs) ++ 
             translate(y, regs.tail) ++ 
-            List(Compare(RegisterX(regs(dst)), RegisterX(regs(nxt))), SetCond(RegisterXR, GtI))
+            List(Compare(RegisterX(regs(dst)), RegisterX(regs(nxt))), SetCond(RegisterX(regs(dst)), GtI))
 
         case GrEqT(x, y) =>
             translate(x, regs) ++ 
             translate(y, regs.tail) ++ 
-            List(Compare(RegisterX(regs(dst)), RegisterX(regs(nxt))), SetCond(RegisterXR, GeI))
+            List(Compare(RegisterX(regs(dst)), RegisterX(regs(nxt))), SetCond(RegisterX(regs(dst)), GeI))
 
         case LsT(x, y) =>
             translate(x, regs) ++ 
             translate(y, regs.tail) ++ 
-            List(Compare(RegisterX(regs(dst)), RegisterX(regs(nxt))), SetCond(RegisterXR, LtI))
+            List(Compare(RegisterX(regs(dst)), RegisterX(regs(nxt))), SetCond(RegisterX(regs(dst)), LtI))
 
         case LsEqT(x, y) =>
             translate(x, regs) ++ 
             translate(y, regs.tail) ++ 
-            List(Compare(RegisterX(regs(dst)), RegisterX(regs(nxt))), SetCond(RegisterXR, LeI))
+            List(Compare(RegisterX(regs(dst)), RegisterX(regs(nxt))), SetCond(RegisterX(regs(dst)), LeI))
 
         case Eq(x, y) =>
             translate(x, regs) ++ 
             translate(y, regs.tail) ++ 
-            List(Compare(RegisterX(regs(dst)), RegisterX(regs(nxt))), SetCond(RegisterXR, EqI))
+            List(Compare(RegisterX(regs(dst)), RegisterX(regs(nxt))), SetCond(RegisterX(regs(dst)), EqI))
 
         case NEq(x, y) =>
             translate(x, regs) ++ 
             translate(y, regs.tail) ++ 
-            List(Compare(RegisterX(regs(dst)), RegisterX(regs(nxt))), SetCond(RegisterXR, NeI))
+            List(Compare(RegisterX(regs(dst)), RegisterX(regs(nxt))), SetCond(RegisterX(regs(dst)), NeI))
             
         case And(x, y) =>
             val curLabel = s".L${labelNum}"
@@ -297,10 +297,11 @@ class TreeWalker(var sem: Semantics) {
 
     def restoreRegs(regsNotInUse: List[Int]): List[Instruction] = {
         val regsInUse = gpRegs.diff(regsNotInUse).toList
-        Comment("Restoring registers") :: (for {
+        Comment("Restoring registers") :: 
+        (if (regsInUse.size % 2 != 0) List(Pop(PstIndxIA(RegisterSP, 16), RegisterX(regsInUse.last), RegisterXZR)) else Nil) ++ 
+        (for {
             List(r1, r2) <- regsInUse.grouped(2).toList.reverse
-        } yield (Pop(PstIndxIA(RegisterSP, 16), RegisterX(r1), RegisterX(r2)))) ++
+        } yield (Pop(PstIndxIA(RegisterSP, 16), RegisterX(r1), RegisterX(r2))))
         // This can probably be compacted into above but idk how
-        (if (regsInUse.size % 2 != 0) List(Pop(PstIndxIA(RegisterSP, 16), RegisterX(regsInUse.head), RegisterXZR)) else Nil)
     }
 }
