@@ -6,12 +6,16 @@ import org.scalatest.BeforeAndAfterEach
 
 class treeWalkerTest extends AnyFlatSpec with BeforeAndAfterEach
 {
-    // val test_tree_walker = new TreeWalker(new SymTable(None, None))
+    val sem = new Semantics("foo.txt")
+    val tw = new TreeWalker(sem)
+    val testGpRegsList = tw.gpRegs.toList
+    val testRegisterX = RegisterX(0)
 
-    // "A tree-walker" should "generate the correct assembly code for begin end" in {
-    //     val test_ast = Program(List(),Exit(Neg(IntL(1))))(0,0)
-    //     val expected = List()
-    //     val result = test_tree_walker.generateInstructionList(test_ast)
-    //     result should be (expected)
-    // }
+    "translate method" should "generate the correct instruction list for simple expressions" in {
+        tw.translate(IntL(0)(0,0), testGpRegsList) shouldBe List(Move(ImmNum(0), testRegisterX))
+        tw.translate(IntL(100)(0,0), testGpRegsList) shouldBe List(Move(ImmNum(100), testRegisterX))
+        tw.translate(BoolL(true)(0,0), testGpRegsList) shouldBe List(Move(ImmNum(1), testRegisterX))
+        tw.translate(BoolL(false)(0,0), testGpRegsList) shouldBe List(Move(ImmNum(0), testRegisterX))
+        tw.translate(CharL('k')(0,0), testGpRegsList) shouldBe List(Move(ImmNum(107), testRegisterX))
+    }
 }
