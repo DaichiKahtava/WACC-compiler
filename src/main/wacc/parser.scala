@@ -86,7 +86,7 @@ object parser {
     }
 
     protected [wacc] lazy val stmt: Parsley[Stmt] = 
-        chain.left1(
+        chain.right1(
             (pos <~ "skip").map(Skip()(_))
             | Decl(typep, ident, "=" ~> rvalue)
             | Asgn(atomic(lvalue <~ "="), rvalue)
