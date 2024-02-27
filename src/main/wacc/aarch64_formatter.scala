@@ -38,9 +38,7 @@ object aarch64_formatter {
         instructions.map(generateAssembly(_)).foreach(full_assembly.addAll(_))
         
         // Helper functions (taken from the reference compiler). 
-        // TODO: Abstract them using Instruction
         
-
         internalFxs.foreach(f => f.instructions.map(generateAssembly(_)).foreach(full_assembly.addAll(_)))
 
         return full_assembly.result()
@@ -52,8 +50,9 @@ object aarch64_formatter {
         return stringLabel + String.valueOf(stringLabelCounter)
     }
 
-    def includeFx(f: InternalFunction) = {
+    def includeFx(f: InternalFunction): Unit = {
         internalFxs.add(f)
+        f.dependencies.foreach(includeFx) // TODO: Provision for cycles in dependencies.
     }
 
     def generateAssembly(instr: Instruction): String = instr match {

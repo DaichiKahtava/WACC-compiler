@@ -199,35 +199,12 @@ class TreeWalker(var sem: Semantics) {
         case Read(lv) => ???
         case Free(x) => ???
         case Return(x) => ???
-        case Exit(x) => 
-            translate(x, regs) ++
-            List(Move(RegisterX(regs(dst)), RegisterXR),
-            Move(RegisterX(availRegs(dst)), RegisterXR), // TODO: designate argument registers before calling functions
-            // Caller saves must go here
-            BranchLink("exit"),
-            // Caller resotre must go here
-            Move(ImmNum(0), RegisterX(availRegs(dst)))) 
-        case Print(x) => {
-            translate(x, regs) ++
-            saveRegs(regs) ++ // Caller saves
-            List(Move(RegisterX(regs.head), RegisterX(0)),
-            determinePrintBr(x)) ++
-            restoreRegs(regs) ++ // Caller restore
-            List(Move(ImmNum(0), RegisterX(availRegs(dst))))
-        }
+        case Exit(x) => callFx("exit", regs, List(x), List(S_INT))
+        case Print(x) => callFx(determinePrint(x), regs, List(x), List(S_ANY))
         case Println(x) => {
-            aarch64_formatter.includeFx(printStringFx)
             aarch64_formatter.includeFx(printLineFx)
-            // Caller saves goes here??
-            List(Comment("Translating expression for println")) ++
-            translate(x, regs) ++
-            saveRegs(regs) ++ // Caller saves
-            List(Comment("Translating println"), 
-            Move(RegisterX(regs.head), RegisterX(0)),
-            determinePrintBr(x),
-            BranchLink(printLineFx.label)) ++
-            restoreRegs(regs) ++ // Caller restore
-            List(Move(ImmNum(0), RegisterX(availRegs(dst))))
+            callFx(determinePrint(x), regs, List(x), List(S_ANY)) ++
+            callFx(printLineFx.label, regs, List(), List())
         }
         case Cond(x, s1, s2) => ???
         case Loop(x, s) => ???
@@ -263,23 +240,24 @@ class TreeWalker(var sem: Semantics) {
         case Second(lv) => ???
     }
 
-    // Gives the correct print branch for the expression
-    def determinePrintBr(x: Expr): Instruction = sem.getType(x) match {
+    // Gives the correct print label for the expression
+    // And adds the required dependencies
+    def determinePrint(x: Expr): String = sem.getType(x) match {
         case S_STRING => {
             aarch64_formatter.includeFx(printStringFx)
-            BranchLink(printStringFx.label)
+            printStringFx.label
         }
         case S_BOOL => {
             aarch64_formatter.includeFx(printBoolFx)
-            BranchLink(printBoolFx.label)
+            printBoolFx.label
         }
         case S_CHAR => {
             aarch64_formatter.includeFx(printCharFx)
-            BranchLink(printCharFx.label)
+            printCharFx.label
         }
         case S_INT => {
             aarch64_formatter.includeFx(printIntFx)
-            BranchLink(printIntFx.label)
+            printIntFx.label
         }
         case _ => ???
     }
