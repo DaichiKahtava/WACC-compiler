@@ -65,23 +65,26 @@ class Semantics(fileName: String) {
     }
 
     // RValue type and check
-    def getType(rv: RValue): S_TYPE = rv match {
-        case RExpr(e) => getType(e)
-        case ArrL(elements) => 
-            elements match {
-              case Nil => S_EMPTYARR // If the array is empty, return S_ARRAY(S_ANY).
-              case es => // Otherwise, return the type of the first element.
-                // getType(head) match {
-                //   case S_CHAR => {S_STRING} // The string weakening rule. TODO: REVIEW!
-                //   case elementType => S_ARRAY(elementType)
-                // }
-                S_ARRAY(getLowestCommonAncestor(elements.map(getType(_))))
+    def getType(rv: RValue): S_TYPE = {
+        rv.tp = rv match {
+            case RExpr(e) => getType(e)
+            case ArrL(elements) =>
+                elements match {
+                case Nil => S_EMPTYARR // If the array is empty, return S_ARRAY(S_ANY).
+                case es => // Otherwise, return the type of the first element.
+                    // getType(head) match {
+                    //   case S_CHAR => {S_STRING} // The string weakening rule. TODO: REVIEW!
+                    //   case elementType => S_ARRAY(elementType)
+                    // }
+                    S_ARRAY(getLowestCommonAncestor(elements.map(getType(_))))
+                }
+            case NewPair(e1, e2) => S_PAIR(getType(e1), getType(e2))
+            case pe: PairElem => getType(pe)
+            case Call(id, _) => curSymTable.findFunGlobal(id).get match {
+                case FUNCTION(tp) => tp
             }
-        case NewPair(e1, e2) => S_PAIR(getType(e1), getType(e2))
-        case pe: PairElem => getType(pe)
-        case Call(id, _) => curSymTable.findFunGlobal(id).get match {
-            case FUNCTION(tp) => tp
         }
+        rv.tp
     }
 
     // Type converter for arrays

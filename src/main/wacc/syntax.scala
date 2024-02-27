@@ -87,7 +87,9 @@ sealed trait LValue {
 case class LIdent(id: String)(val pos: (Int, Int)) extends LValue
 case class LArrElem(id: String, xs: List[Expr])(val pos: (Int, Int)) extends LValue
 
-sealed trait RValue
+sealed trait RValue {
+    var tp: S_TYPE = S_ANY
+}
 case class RExpr(x: Expr)(val pos: (Int, Int)) extends RValue
 case class ArrL(xs: List[Expr])/*(val pos: (Int, Int))*/ extends RValue // Could use the position of the first value!
 case class NewPair(x1: Expr, x2: Expr)(val pos: (Int, Int)) extends RValue
