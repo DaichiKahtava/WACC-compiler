@@ -37,5 +37,12 @@ class treeWalkerTest extends AnyFlatSpec with BeforeAndAfterEach
         tw.translate(Neg(IntL(100)(0,0))(0,0), testGpRegsList) shouldBe List(Move(ImmNum(100),RegisterX(1)), Move(ImmNum(0),RegisterX(0)), SubI(RegisterX(1),RegisterX(0)))
         // TODO: Len(x), Ord(x), Chr(x)
     }
+
+    it should "generate the correct instruction list for BinOp expressions" in {
+        tw.translate(Add(IntL(100)(0,0), IntL(100)(0,0))(0,0), testGpRegsList) shouldBe List(Move(ImmNum(100),RegisterX(0)), Move(ImmNum(100),RegisterX(1)), AddI(RegisterX(1),RegisterX(0)))
+        tw.translate(Minus(IntL(100)(0,0), IntL(100)(0,0))(0,0), testGpRegsList) shouldBe List(Move(ImmNum(100),RegisterX(0)), Move(ImmNum(100),RegisterX(1)), SubI(RegisterX(1),RegisterX(0)))
+        tw.translate(Mul(IntL(100)(0,0), IntL(100)(0,0))(0,0), testGpRegsList) shouldBe List(Move(ImmNum(100),RegisterX(0)), Move(ImmNum(100),RegisterX(1)), MulI(RegisterX(1),RegisterX(0)))
+        tw.translate(Div(IntL(100)(0,0), IntL(100)(0,0))(0,0), testGpRegsList) shouldBe List(Move(ImmNum(100), RegisterX(0)), Move(ImmNum(100), RegisterX(1)), Compare(RegisterXZR, RegisterX(1)), BranchCond("_errDivZero", EqI), DivI(RegisterX(1), RegisterX(0)))
+    }
     
 }
