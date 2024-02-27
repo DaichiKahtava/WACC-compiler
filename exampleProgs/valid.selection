@@ -43,7 +43,7 @@ exampleProgs/valid/expressions/longExpr2.wacc
 exampleProgs/valid/expressions/longExpr3.wacc
 exampleProgs/valid/expressions/longExpr.wacc
 exampleProgs/valid/expressions/longSplitExpr2.wacc
-'exampleProgs/valid/expressions/longSplitExpr.wacc
+exampleProgs/valid/expressions/longSplitExpr.wacc
 exampleProgs/valid/expressions/minusExpr.wacc
 exampleProgs/valid/expressions/minusMinusExpr.wacc
 exampleProgs/valid/expressions/minusNoWhitespaceExpr.wacc
