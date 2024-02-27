@@ -135,7 +135,7 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
         
         case StrL(s) => {
             val label = formatter.includeString(s)
-            return List(Address(label, RegisterX(availRegs(dst))))
+            return List(Address(label, RegisterX(regs.head)))
         }
 
         case PairL() => 
