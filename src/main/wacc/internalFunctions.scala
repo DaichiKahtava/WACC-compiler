@@ -126,3 +126,34 @@ object printLineFx extends InternalFunction {
     )
     val dependencies: List[InternalFunction] = List(printStringFx)
 }
+
+object mallocFx extends InternalFunction {
+    val label: String = "_malloc"
+    val instructions: List[Instruction] = List (
+        Comment("Allocating memory"),
+        Label(label),
+        Push(RegisterLR, RegisterXZR, PreIndxA(RegisterSP, -16)),
+        BranchLink("malloc"),
+
+        // Instead of CBZ, should do the same thing
+        Compare(RegisterX(0), ImmNum(0)), 
+        BranchCond("_errOutOfMemory", EqI),
+
+        Pop(PstIndxIA(RegisterSP, 16), RegisterLR, RegisterXZR),
+        ReturnI
+    )
+    val dependencies: List[InternalFunction] = List(errorOutOfMemoryFx)
+}
+
+object errorOutOfMemoryFx extends InternalFunction {
+    val label: String = "_errOutOfMemory"
+    val instructions: List[Instruction] = List (
+        Data("fatal error: out of memory\n", ".L._errOutOfMemory_str0"),
+        AlignInstr(),
+        Address(".L._errOutOfMemory_str0", RegisterX(0)),
+        BranchLink("_prints"),
+        Move(ImmNum(-1), RegisterX(0)),
+        BranchLink("exit")
+    )
+    val dependencies: List[InternalFunction] = List(printStringFx)
+}
