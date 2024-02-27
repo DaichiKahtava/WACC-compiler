@@ -284,6 +284,7 @@ class TreeWalker(var sem: Semantics) {
         case _ => ???
     }
 
+    // TODO: Need to change the positions of variables if necessary?
     def saveRegs(regsNotInUse: List[Int]): List[Instruction] = {
         val regsInUse = gpRegs.diff(regsNotInUse).toList
         Comment("Saving registers") :: (for {
@@ -302,5 +303,74 @@ class TreeWalker(var sem: Semantics) {
             List(r1, r2) <- regsInUse.grouped(2).toList.reverse
         } yield (Pop(PstIndxIA(RegisterSP, 16), RegisterX(r1), RegisterX(r2)))) ++ List(Comment("Restoring registers END"))
         // This can probably be compacted into above but idk how
+    }
+
+    def callFx(label: String, regs: List[Int], args: List[Expr], parTypes:List[S_TYPE]): List[Instruction] = {
+        // It is expected that will all arguments will be translated and stored in the register
+        // or on the stack with an offset relative to the frame pointer. 
+        val instrs = ListBuffer.empty[Instruction]
+
+        instrs.addAll(saveRegs(regs))
+        // This will save everything
+        // So now everything should be in the stack
+
+        // To avoid accidentally overwriting registers, we put everything in stack and
+        // Then load everything from the stack        
+        for (i <- 0 to Math.min(7, args.length - 1)) {
+            // TODO: Something like RegisterXR ++ availRegs might be more desirable below
+            // <Magin number!> see below!
+            instrs.addAll(translate(args(i), 8::gpRegs.toList)) 
+            instrs.addOne(Move(RegisterXR, RegisterX(i)))
+        }
+
+        if (args.length >= 8) {
+            val extraElems = args.length - 8
+            
+            var totalSize = 0
+            // We know that args.length == parTypes.length from semantic checks
+            for (i <- 8 to (args.length - 1)) {
+                totalSize += getSize(parTypes(i))
+            }
+
+            instrs.addAll(List(
+                Comment("Allocating stack for more than 8 arguments"),
+                SubI(ImmNum(((totalSize / 16) + 1) * 16), RegisterSP)
+                // May waste a memory location of the stack but can be fixed
+                // during optimisation stage
+            ))
+
+            var ofs = 0
+            for (i <- 8 to (args.length - 1)) {
+                instrs.addAll(translate(args(i), 8::gpRegs.toList)) 
+                var size = getSize(parTypes(i)) // Recalculation
+                size match {
+                    case 1 => instrs.addOne(StoreByte(RegisterXR, BaseOfsIA(RegisterSP, ofs)))
+                    case 4 => instrs.addOne(StoreWord(RegisterXR, BaseOfsIA(RegisterSP, ofs)))
+                    case 8 => instrs.addOne(Store(RegisterXR, BaseOfsIA(RegisterSP, ofs)))
+                }
+               ofs += size
+            }
+        }
+
+        instrs.addOne(BranchLink(label))
+        // The result will be saved on the x8.
+        instrs.addOne(Move(RegisterX(0), RegisterXR))
+        instrs.addAll(restoreRegs(regs))
+
+        instrs.toList
+    }
+
+    def getSize(t: S_TYPE) = t match {
+        // Returns number of bytes
+        // <Addresses have 8 bytes>
+        case S_INT => 4
+        case S_BOOL => 1
+        case S_STRING => 8
+        case S_CHAR => 1
+        case S_ARRAY(tp) => 8
+        case S_PAIR(tp1, tp2) => 8
+        case S_ERASED => 8
+        case S_ANY => 8
+        case S_EMPTYARR => 8
     }
 }
