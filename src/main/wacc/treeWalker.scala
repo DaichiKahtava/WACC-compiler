@@ -5,8 +5,11 @@ import scala.collection.mutable.ListBuffer
 class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
     // GLOBAL POINTER TO THE FINAL (NOT-FORMATTED) ASSEMBLY CODE
     var instructionList = List[Instruction]()
-    var gpRegs = ListBuffer.empty[Int]
-    for (n <- 0 to 28) if (n != 8 || n < 15 || n > 19) gpRegs.addOne(n)
+    var callerRegs = (0 to 7).toList ++ (9 to 15).toList
+    var calleeRegs = (19 to 28).toList
+    var gpRegs = callerRegs ++ calleeRegs
+    val funcLabel = "wacc_user_"
+
 
     var availRegs = ListBuffer.empty[Int]
     availRegs.addAll(gpRegs)
@@ -157,24 +160,29 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
     }
 
     def translate(program: Program): List[Instruction] = {
-        var instructionList = List.empty[Instruction]
+        val instructionList = ListBuffer.empty[Instruction]
         program.funcs.foreach((f) => {
             // TODO: More idiomatic way of accessing the symbol table?
             sem.curSymTable = sem.curSymTable.findFunGlobal(f.id).get.st // We are in the local symbolTable.
-            instructionList ++= translate(f)
+            instructionList.addAll(translate(f))
             sem.curSymTable = sem.curSymTable.parent().get // We are in the parent/global symbolTable.
         })
         // TODO: Use blocks of sorts...
-        instructionList ++= List(Label("main"), Push(RegisterFP, RegisterLR, PreIndxA(RegisterSP, -16)))
+        instructionList.addAll(List(Label("main"), Push(RegisterFP, RegisterLR, PreIndxA(RegisterSP, -16))))
         instructionList ++= translate(program.s, gpRegs.toList)
-        return instructionList ++ List(Move(ImmNum(0), outputRegister), Pop(PstIndxIA(RegisterSP, 16), RegisterFP, RegisterLR), ReturnI)
-        // return instructionList // A bit redundant here? Can just return the generated List
+        instructionList.addAll(List(Pop(PstIndxIA(RegisterSP, 16), RegisterFP, RegisterLR), ReturnI))
+        instructionList.toList
     }
 
-    def translate(func: Func): List[Instruction] = 
+    def translate(func: Func): List[Instruction] = {
         // Callee saves and callee restore must go here.
         // Labels must be ensured unique
-        Label(func.id) :: translate(func.s, gpRegs.toList) ++ List(ReturnI)
+        val instructionList = ListBuffer.empty[Instruction]
+        instructionList.addOne(Label(funcLabel + func.id))
+        instructionList.addAll(translate(func.s, gpRegs.toList))
+        instructionList.addOne(ReturnI)
+        instructionList.toList
+    } 
 
     def translate(stmt: Stmt, regs: List[Int]): List[Instruction] = stmt match {
         case Skip() => Nil
@@ -263,8 +271,8 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
     }
 
     // TODO: Need to change the positions of variables if necessary?
-    def saveRegs(regsNotInUse: List[Int]): List[Instruction] = {
-        val regsInUse = gpRegs.diff(regsNotInUse).toList
+    def saveRegs(regsNotInUse: List[Int], subset: List[Int]): List[Instruction] = {
+        val regsInUse = subset.diff(regsNotInUse).toList
         Comment("Saving registers") :: (for {
             List(r1, r2) <- regsInUse.grouped(2).toList // [em422]
         } yield (Push(RegisterX(r1), RegisterX(r2), PreIndxA(RegisterSP, -16)))) ++ 
@@ -273,8 +281,8 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
         List(Comment("Saving registers END"))
     }
 
-    def restoreRegs(regsNotInUse: List[Int]): List[Instruction] = {
-        val regsInUse = gpRegs.diff(regsNotInUse).toList
+    def restoreRegs(regsNotInUse: List[Int], subset: List[Int]): List[Instruction] = {
+        val regsInUse = subset.diff(regsNotInUse).toList
         Comment("Restoring registers") :: 
         (if (regsInUse.size % 2 != 0) List(Pop(PstIndxIA(RegisterSP, 16), RegisterX(regsInUse.last), RegisterXZR)) else Nil) ++ 
         (for {
@@ -288,7 +296,7 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
         // or on the stack with an offset relative to the frame pointer. 
         val instrs = ListBuffer.empty[Instruction]
 
-        instrs.addAll(saveRegs(regs))
+        instrs.addAll(callerSave(regs))
         // This will save everything
         // So now everything should be in the stack
 
@@ -333,9 +341,25 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
         instrs.addOne(BranchLink(label))
         // The result will be saved on the x8.
         instrs.addOne(Move(RegisterX(0), RegisterXR))
-        instrs.addAll(restoreRegs(regs))
+        instrs.addAll(callerRestore(regs))
 
         instrs.toList
+    }
+
+
+    // calle functions save/restore registers, the frame pointer as well as the link register
+
+    // KEY OPTIMISATION POINT: Callee saves now saves everything! There is a possibility to analyse the bedy of the function
+    //                         to save only what we need!
+    def callerSave(regsNotInUse: List[Int]): List[Instruction] = saveRegs(regsNotInUse, callerRegs)
+    def calleeSave(regsNotInUse: List[Int]): List[Instruction] = {
+        Push(RegisterFP, RegisterLR, PreIndxA(RegisterSP, -16)) ::
+        saveRegs(List(), calleeRegs)
+    }
+    def callerRestore(regsNotInUse: List[Int]): List[Instruction] = restoreRegs(regsNotInUse, callerRegs)
+    def calleeRestore(regsNotInUse: List[Int]): List[Instruction] = {
+        restoreRegs(List(), calleeRegs) ++
+        List(Pop(PstIndxIA(RegisterSP, 16), RegisterFP, RegisterLR))
     }
 
     def getSize(t: S_TYPE) = t match {
