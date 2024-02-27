@@ -18,7 +18,7 @@ object errorDivZeroFx extends InternalFunction {
         Move(ImmNum(-1), RegisterW(0)),
         BranchLink("exit")
     )
-    val dependencies: List[InternalFunction] = List.empty
+    val dependencies: List[InternalFunction] = List(printStringFx)
 }
 
 object printStringFx extends InternalFunction {
