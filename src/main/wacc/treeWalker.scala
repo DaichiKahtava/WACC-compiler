@@ -2,7 +2,7 @@ package wacc
 
 import scala.collection.mutable.ListBuffer
 
-class TreeWalker(var sem: Semantics) {
+class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
     // GLOBAL POINTER TO THE FINAL (NOT-FORMATTED) ASSEMBLY CODE
     var instructionList = List[Instruction]()
     var gpRegs = ListBuffer.empty[Int]
@@ -56,7 +56,7 @@ class TreeWalker(var sem: Semantics) {
             translate(x, regs) ++ translate(y, regs.tail) ++ List(MulI(RegisterX(regs(nxt)), RegisterX(regs(dst))))
 
         case Div(x, y) => {
-            aarch64_formatter.includeFx(errorDivZeroFx)
+            formatter.includeFx(errorDivZeroFx)
             return translate(x, regs) ++ translate(y, regs.tail) ++ List(
                     Compare(RegisterXZR, RegisterX(regs(nxt))),
                     BranchCond(errorDivZeroFx.label, EqI),
@@ -134,7 +134,7 @@ class TreeWalker(var sem: Semantics) {
         case CharL(c) => List(Move(ImmNum(c.toInt), RegisterX(regs(dst))))
         
         case StrL(s) => {
-            val label = aarch64_formatter.includeString(s)
+            val label = formatter.includeString(s)
             return List(Address(label, RegisterX(availRegs(dst))))
         }
 
@@ -202,7 +202,7 @@ class TreeWalker(var sem: Semantics) {
         case Exit(x) => callFx("exit", regs, List(x), List(S_INT))
         case Print(x) => callFx(determinePrint(x), regs, List(x), List(S_ANY))
         case Println(x) => {
-            aarch64_formatter.includeFx(printLineFx)
+            formatter.includeFx(printLineFx)
             callFx(determinePrint(x), regs, List(x), List(S_ANY)) ++
             callFx(printLineFx.label, regs, List(), List())
         }
@@ -244,19 +244,19 @@ class TreeWalker(var sem: Semantics) {
     // And adds the required dependencies
     def determinePrint(x: Expr): String = sem.getType(x) match {
         case S_STRING => {
-            aarch64_formatter.includeFx(printStringFx)
+            formatter.includeFx(printStringFx)
             printStringFx.label
         }
         case S_BOOL => {
-            aarch64_formatter.includeFx(printBoolFx)
+            formatter.includeFx(printBoolFx)
             printBoolFx.label
         }
         case S_CHAR => {
-            aarch64_formatter.includeFx(printCharFx)
+            formatter.includeFx(printCharFx)
             printCharFx.label
         }
         case S_INT => {
-            aarch64_formatter.includeFx(printIntFx)
+            formatter.includeFx(printIntFx)
             printIntFx.label
         }
         case _ => ???

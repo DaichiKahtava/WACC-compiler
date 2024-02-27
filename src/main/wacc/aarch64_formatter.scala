@@ -3,7 +3,7 @@ package wacc
 import java.util.stream.Collectors
 import scala.collection.mutable.ListBuffer
 
-object aarch64_formatter {
+class Aarch64_formatter() {
 
     var errorDivZero = false
     var printString = false
