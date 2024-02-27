@@ -21,6 +21,19 @@ object errorDivZeroFx extends InternalFunction {
     val dependencies: List[InternalFunction] = List(printStringFx)
 }
 
+object errorOutOfMemoryFx extends InternalFunction {
+    val label: String = "_errOutOfMemory"
+    val instructions: List[Instruction] = List (
+        Data("fatal error: out of memory\n", ".L._errOutOfMemory_str0"),
+        AlignInstr(),
+        Address(".L._errOutOfMemory_str0", RegisterX(0)),
+        BranchLink("_prints"),
+        Move(ImmNum(-1), RegisterX(0)),
+        BranchLink("exit")
+    )
+    val dependencies: List[InternalFunction] = List(printStringFx)
+}
+
 object printStringFx extends InternalFunction {
     val label: String = "_prints"
     val instructions: List[Instruction] = List (
@@ -145,15 +158,19 @@ object mallocFx extends InternalFunction {
     val dependencies: List[InternalFunction] = List(errorOutOfMemoryFx)
 }
 
-object errorOutOfMemoryFx extends InternalFunction {
-    val label: String = "_errOutOfMemory"
+object readIntFx extends InternalFunction {
+    val label: String = "_readi"
     val instructions: List[Instruction] = List (
-        Data("fatal error: out of memory\n", ".L._errOutOfMemory_str0"),
+        Comment("Read int as in the reference compiler"),
+        Data("%d\n", ".L._readi_str0"),
         AlignInstr(),
-        Address(".L._errOutOfMemory_str0", RegisterX(0)),
-        BranchLink("_prints"),
-        Move(ImmNum(-1), RegisterX(0)),
-        BranchLink("exit")
+        Label(label),
+        Push(RegisterX(0), RegisterLR, PreIndxA(RegisterSP, -16)),
+        Move(RegisterX(1), RegisterSP),
+        Address(".L._readi_str0", RegisterX(0)),
+        BranchLink("scanf"),
+        Pop(PstIndxIA(RegisterSP, 16), RegisterX(0), RegisterLR),
+        ReturnI
     )
-    val dependencies: List[InternalFunction] = List(printStringFx)
+    val dependencies: List[InternalFunction] = List.empty
 }
