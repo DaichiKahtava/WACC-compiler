@@ -287,11 +287,11 @@ class TreeWalker(var sem: Semantics) {
     def saveRegs(regsNotInUse: List[Int]): List[Instruction] = {
         val regsInUse = gpRegs.diff(regsNotInUse).toList
         Comment("Saving registers") :: (for {
-            List(r1, r2) <- regsInUse.grouped(2).toList
+            List(r1, r2) <- regsInUse.grouped(2).toList // [em422]
         } yield (Push(RegisterX(r1), RegisterX(r2), PreIndxA(RegisterSP, -16)))) ++ 
         // This can probably be compacted into above but idk how
         (if (regsInUse.size % 2 != 0) List(Push(RegisterX(regsInUse.last), RegisterXZR, PreIndxA(RegisterSP, -16))) else Nil) ++
-        List(Comment("Restoring registers END"))
+        List(Comment("Saving registers END"))
     }
 
     def restoreRegs(regsNotInUse: List[Int]): List[Instruction] = {
