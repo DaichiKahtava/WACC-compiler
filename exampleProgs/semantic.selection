@@ -1,13 +1,13 @@
 exampleProgs/invalid/semanticErr/array/arrayIndexComplexNotInt.wacc
 exampleProgs/invalid/semanticErr/array/arrayIndexNotInt.wacc
-exampleProgs/invalid/semanticErr/array/arrayMultipleIndexError.wacc
-exampleProgs/invalid/semanticErr/array/badIndex.wacc
+'exampleProgs/invalid/semanticErr/array/arrayMultipleIndexError.wacc
+'exampleProgs/invalid/semanticErr/array/badIndex.wacc
 exampleProgs/invalid/semanticErr/array/indexUndefIdent.wacc
 exampleProgs/invalid/semanticErr/array/mixingTypesInArrays.wacc
 exampleProgs/invalid/semanticErr/array/noArrayCovariance.wacc
 exampleProgs/invalid/semanticErr/array/nonMatchingArrays.wacc
 exampleProgs/invalid/semanticErr/array/noStringIndex.wacc
-exampleProgs/invalid/semanticErr/array/wrongArrayDimension.wacc
+'exampleProgs/invalid/semanticErr/array/wrongArrayDimension.wacc
 exampleProgs/invalid/semanticErr/array/wrongArrayType.wacc
 exampleProgs/invalid/semanticErr/exit/badCharExit.wacc
 exampleProgs/invalid/semanticErr/exit/exitNonInt.wacc
