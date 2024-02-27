@@ -32,9 +32,9 @@ class TreeWalker(var sem: Semantics) {
             List(Move(ImmNum(0), RegisterX(regs.head)), 
             SubI(RegisterX(regs(nxt)), RegisterX(regs.head)))
 
-        case Len(x) => translate(x, regs) // TODO
-        case Ord(x) => translate(x, regs) // TODO
-        case Chr(x) => translate(x, regs) // TODO
+        case Len(x) => translate(x, regs) 
+        case Ord(x) => translate(x, regs) 
+        case Chr(x) => translate(x, regs) 
 
         // BinOp expressions.
         case Mod(x, y) =>
@@ -191,14 +191,13 @@ class TreeWalker(var sem: Semantics) {
         case Read(lv) => ???
         case Free(x) => ???
         case Return(x) => ???
-        case Exit(x) => 
+        case Exit(x) => {
             translate(x, regs) ++
-            List(Move(RegisterX(regs(dst)), RegisterXR),
-            Move(RegisterX(availRegs(dst)), RegisterXR), // TODO: designate argument registers before calling functions
-            // Caller saves must go here
+            List(Move(RegisterX(regs.head), RegisterX(0)),
+            // Move(RegisterX(availRegs(dst)), RegisterXR), // TODO: designate argument registers before calling functions
             BranchLink("exit"),
-            // Caller resotre must go here
             Move(ImmNum(0), RegisterX(availRegs(dst)))) 
+        }
         case Print(x) => {
             translate(x, regs) ++
             List(Move(RegisterX(regs(dst)), RegisterXR),
