@@ -33,6 +33,10 @@ case class LoadByte(src: AdrMode, dst: Register, signed: Boolean) extends Instru
 case class LoadHalf(src: AdrMode, dst: Register, signed: Boolean) extends Instruction
 // Load and store pair are used for push and pop only.
 case class Store(src: Register, dst: AdrMode) extends Instruction
+case class StoreWord(src: Register, dst: AdrMode) extends Instruction
+case class StoreByte(src: Register, dst: AdrMode) extends Instruction
+case class StoreHalf(src: Register, dst: AdrMode) extends Instruction
+
 
 // May want to have the two operands and the destination as separate arguments
 // case class Add(op1, op2, dst)

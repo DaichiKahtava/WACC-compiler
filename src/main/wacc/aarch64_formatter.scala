@@ -82,7 +82,10 @@ object aarch64_formatter {
             generateRegister(dst2) + ", " + generateAddress(src) + "\n"
             // TODO: do we need pair loading?
 
-        case Store(src, dst) => "str\t" + generateRegister(src) + ", " + generateAddress(dst) + "\n" 
+        case Store(src, dst) => "str\t" + generateRegister(src) + ", " + generateAddress(dst) + "\n"
+        case StoreByte(src, dst) => "strb\t" + generateRegister(src) + ", " + generateAddress(dst) + "\n"
+        case StoreHalf(src, dst) => "strh\t" + generateRegister(src) + ", " + generateAddress(dst) + "\n"
+        case StoreWord(src, dst) => "strw\t" + generateRegister(src) + ", " + generateAddress(dst) + "\n"
         case Push(src1, src2, dst) => "stp\t" + generateRegister(src1) + ", " +
             generateRegister(src2) + ", " + generateAddress(dst) + "\n" // TODO: Generalise offsets
 
