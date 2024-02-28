@@ -6,8 +6,9 @@ import scala.collection.mutable.LinkedHashMap
 
 // Symbol table class inspired from week 4 Compiler's lectures
 class SymTable(parentTable: Option[SymTable], returnType: Option[S_TYPE]) {
-    val varDict = Map.empty[String, VARIABLE]
-    val parDict = LinkedHashMap.empty[String, VARIABLE] // Preserves insersion order
+    // LinkedHashMap used to preserve insersion order
+    val varDict = LinkedHashMap.empty[String, VARIABLE] 
+    val parDict = LinkedHashMap.empty[String, VARIABLE] 
     val funDict = Map.empty[String, FUNCTION]
     val childScopes = ListBuffer.empty[SymTable]
 
@@ -134,11 +135,13 @@ class SymTable(parentTable: Option[SymTable], returnType: Option[S_TYPE]) {
             }
         })
 
+
+        var varRegIndx = 0
         varDict.foreach(e => {
-            if (argRegsIndx < formatter.regConf.variabRegs.length) {
+            if (varRegIndx < formatter.regConf.variabRegs.length) {
                 // Variables assigned to positions R19-R28
-                e._2.pos = InRegister(formatter.regConf.argRegs(argRegsIndx))
-                argRegsIndx += 1
+                e._2.pos = InRegister(formatter.regConf.variabRegs(varRegIndx))
+                varRegIndx += 1
             } else {
                 // Variables assigned to stack  
                 e._2.pos = OnStack(offset)
