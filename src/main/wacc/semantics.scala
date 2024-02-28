@@ -15,7 +15,7 @@ class Semantics(fileName: String) {
             case StrL(_) => S_STRING
             case PairL() => S_ERASED
             case Ident(id) => curSymTable.findVarGlobal(id).get match {
-                case VARIABLE(tp, _) => tp
+                case VARIABLE(tp) => tp
             }
 
             case Not(_) => S_BOOL
@@ -43,7 +43,7 @@ class Semantics(fileName: String) {
 
             // This works for now but breaks the assumption that the variable must exist when getType is invoked
             case ArrElem(id, _)  => curSymTable.findVarGlobal(id) match {
-                case Some(VARIABLE(S_ARRAY(tp), _)) => tp
+                case Some(VARIABLE(S_ARRAY(tp))) => tp
                 case _ => {
                     errorRep.addError("Variable \""+id+"\" is not an array!", e.pos)
                     S_ANY
@@ -58,7 +58,7 @@ class Semantics(fileName: String) {
         // This assumes that lv has been semantically checked first.
         // So the idenftifiers should be in the current symbolTable
         case LIdent(id) => curSymTable.findVarGlobal(id).get match { // id always a variable
-            case VARIABLE(tp, _) => tp
+            case VARIABLE(tp) => tp
         }
         case LArrElem(id, _) => curSymTable.findVarGlobal(id).get.tp.asInstanceOf[S_ARRAY].tp
         case pe: PairElem => getType(pe)
@@ -304,7 +304,7 @@ class Semantics(fileName: String) {
                 } else {
                     val fSynT = new SymTable(Some(curSymTable), Some(fType))
                     f.params.foreach((p) => {
-                        if (!fSynT.addParam(p.id, VARIABLE(toSemanticType(p.tp), Undefined))) {
+                        if (!fSynT.addParam(p.id, VARIABLE(toSemanticType(p.tp)))) {
                             errorRep.addError("Parameter \""+p.id+"\" is already defined!", p.pos)
                         }
                     })                
@@ -341,10 +341,10 @@ class Semantics(fileName: String) {
     def isSemCorrect(stmt: Stmt): Boolean = stmt match {
         case Skip() => true
         case d@Decl(tp, id, rv) => {
-            if (!curSymTable.addSymbol(id, VARIABLE(toSemanticType(tp), Undefined))) {
+            if (!curSymTable.addSymbol(id, VARIABLE(toSemanticType(tp)))) {
                 errorRep.addError("Variable \""+id+"\" is already defined previously!\n" +
                     "(Subsequent checks will assume an arbitrary type for "+id+")", d.pos)
-                curSymTable.redefineSymbol(id, VARIABLE(S_ANY, Undefined))
+                curSymTable.redefineSymbol(id, VARIABLE(S_ANY))
                 isSemCorrect(rv)
                 return false 
             }
@@ -463,8 +463,8 @@ class Semantics(fileName: String) {
             }        
         }
         case l@LArrElem(id, xs) => isSemCorrect(xs) && (curSymTable.findVarGlobal(id) match {
-            case Some(VARIABLE(S_ARRAY(_), _)) => true 
-            case Some(VARIABLE(_, _)) => {
+            case Some(VARIABLE(S_ARRAY(_))) => true 
+            case Some(VARIABLE(_)) => {
                 errorRep.addError("Not an array: \"" + id + "\"", l.pos)
                 false
             }
@@ -511,26 +511,26 @@ class Semantics(fileName: String) {
     // PairElem check
     def isSemCorrect(pe: PairElem): Boolean = pe match {
         case First(lv: LIdent) => curSymTable.findVarGlobal(lv.id) match {
-            case Some(VARIABLE(tp, _)) => tp.isInstanceOf[S_PAIR]
+            case Some(VARIABLE(tp)) => tp.isInstanceOf[S_PAIR]
             case _ => false
         }
         case First(lv: LArrElem) => {
             isSemCorrect(lv) && 
             getType(lv).isInstanceOf[S_PAIR] && 
             (curSymTable.findVarGlobal(lv.id) match {
-                case Some(VARIABLE(tp, _)) => tp.isInstanceOf[S_ARRAY] && tp.asInstanceOf[S_ARRAY].tp.isInstanceOf[S_PAIR]
+                case Some(VARIABLE(tp)) => tp.isInstanceOf[S_ARRAY] && tp.asInstanceOf[S_ARRAY].tp.isInstanceOf[S_PAIR]
                 case _ => false
             })
         }
         case First(lv: PairElem) => isSemCorrect(lv)
 
         case Second(lv: LIdent) => curSymTable.findVarGlobal(lv.id) match {
-            case Some(VARIABLE(tp, _)) => tp.isInstanceOf[S_PAIR]
+            case Some(VARIABLE(tp)) => tp.isInstanceOf[S_PAIR]
             case _ => false
         }
         case Second(lv: LArrElem) => isSemCorrect(lv) && getType(lv.xs).isInstanceOf[S_PAIR] && 
             (curSymTable.findVarGlobal(lv.id) match {
-                case Some(VARIABLE(tp, _)) => tp.isInstanceOf[S_ARRAY] && tp.asInstanceOf[S_ARRAY].tp.isInstanceOf[S_PAIR]
+                case Some(VARIABLE(tp)) => tp.isInstanceOf[S_ARRAY] && tp.asInstanceOf[S_ARRAY].tp.isInstanceOf[S_PAIR]
                 case _ => false
             })
         case Second(lv: PairElem) => isSemCorrect(lv)

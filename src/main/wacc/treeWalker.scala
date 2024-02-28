@@ -221,9 +221,9 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
             v.pos match {
             case InRegister(r) => translate(rv, r :: regs)
             case OnStack(offset) => ???
-            case Undefined =>
-                sem.curSymTable.redefineSymbol(id, VARIABLE(v.tp, InRegister(regs.head)))
-                translate(rv, regs)
+            case Undefined => ???
+                // sem.curSymTable.redefineSymbol(id, VARIABLE(v.tp, InRegister(regs.head)))
+                // translate(rv, regs)
         }
 
         case Asgn(LIdent(id), rv) => sem.curSymTable.findVarGlobal(id).get.pos match {
@@ -248,7 +248,7 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
         case Loop(x, s) => ???
         case Body(s) => ???
 
-        case Delimit(s1, s2) => translate(s1, regs) ++ translate(s2, regs) // Stet
+        case Delimit(s1, s2) => translate(s1, regs) ++ translate(s2, regs)
             // val res = translate(s1, regs)
             // sem.curSymTable.varDict.values.map(_.pos).foreach{ // Maybe move this somewhere else to a general function when needed
             //     case InRegister(r) =>
@@ -345,7 +345,7 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
             var totalSize = 0
             // We know that args.length == parTypes.length from semantic checks
             for (i <- 8 to (args.length - 1)) {
-                totalSize += getSize(parTypes(i))
+                totalSize += formatter.getSize(parTypes(i))
             }
 
             instrs.addAll(List(
@@ -358,7 +358,7 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
             var ofs = 0
             for (i <- 8 to (args.length - 1)) {
                 instrs.addAll(translate(args(i), formatter.regConf.scratchRegs)) 
-                var size = getSize(parTypes(i)) // Recalculation
+                var size = formatter.getSize(parTypes(i)) // Recalculation
                 size match {
                     case 1 => instrs.addOne(StoreByte(RegisterXR, BaseOfsIA(RegisterSP, ofs)))
                     case 4 => instrs.addOne(StoreWord(RegisterXR, BaseOfsIA(RegisterSP, ofs)))
@@ -392,17 +392,4 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
         List(Pop(PstIndxIA(RegisterSP, 16), RegisterFP, RegisterLR))
     }
 
-    def getSize(t: S_TYPE) = t match {
-        // Returns number of bytes
-        // <Addresses have 8 bytes>
-        case S_INT => 4
-        case S_BOOL => 1
-        case S_STRING => 8
-        case S_CHAR => 1
-        case S_ARRAY(tp) => 8
-        case S_PAIR(tp1, tp2) => 8
-        case S_ERASED => 8
-        case S_ANY => 8
-        case S_EMPTYARR => 8
-    }
 }

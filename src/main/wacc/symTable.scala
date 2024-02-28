@@ -115,10 +115,10 @@ class SymTable(parentTable: Option[SymTable], returnType: Option[S_TYPE]) {
     def getReturnType(): Option[S_TYPE] = {
         return returnType
     }
-}
- 
 
-case class VARIABLE(tp: S_TYPE, pos: Position)
+case class VARIABLE(tp: S_TYPE) {
+    var pos: Position = Undefined
+}
 case class FUNCTION(tp: S_TYPE)(val st: SymTable)
 
 sealed trait Position

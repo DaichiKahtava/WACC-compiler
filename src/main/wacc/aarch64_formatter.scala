@@ -193,4 +193,18 @@ class Aarch64_formatter() {
         case '\\' => "\\\\"
         case c: Char => String.valueOf(c)
     }
+
+    def getSize(t: S_TYPE) = t match {
+        // Returns number of bytes
+        // <Addresses have 8 bytes>
+        case S_INT => 4
+        case S_BOOL => 1
+        case S_STRING => 8
+        case S_CHAR => 1
+        case S_ARRAY(tp) => 8
+        case S_PAIR(tp1, tp2) => 8
+        case S_ERASED => 8
+        case S_ANY => 8
+        case S_EMPTYARR => 8
+    }
 }
