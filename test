@@ -32,7 +32,8 @@ test_execute () {
     
     if [ ${#expExt[@]} -le 1 ]
     then
-      extCheck=0
+      # extCheck=0 # This would skip the exit checks
+      expExt=0 # This sets the default exit code to 0
     fi
 
     if [ $expectL -le 1 ]

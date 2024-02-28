@@ -170,7 +170,11 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
         // TODO: Use blocks of sorts...
         instructionList.addAll(List(Label("main"), Push(RegisterFP, RegisterLR, PreIndxA(RegisterSP, -16))))
         instructionList ++= translate(program.s, gpRegs.toList)
-        instructionList.addAll(List(Pop(PstIndxIA(RegisterSP, 16), RegisterFP, RegisterLR), ReturnI))
+        instructionList.addAll(List(
+            Pop(PstIndxIA(RegisterSP, 16), RegisterFP, RegisterLR),
+            Move(ImmNum(0), RegisterX(0)),
+            ReturnI
+        ))
         instructionList.toList
     }
 
