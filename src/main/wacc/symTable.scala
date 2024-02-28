@@ -116,6 +116,41 @@ class SymTable(parentTable: Option[SymTable], returnType: Option[S_TYPE]) {
         return returnType
     }
 
+    // Assigns the location where each variable and parameter is stored and returns
+    // the offset that needs to be applied for the stack
+    def assignPositions(formatter: Aarch64_formatter): Int = {
+        var offset = 0
+        var argRegsIndx = 0 
+        
+        parDict.foreach(e => {
+            if (argRegsIndx < formatter.regConf.argRegs.length) {
+                // Parameters asigned to positions R0-R7
+                e._2.pos = InRegister(formatter.regConf.argRegs(argRegsIndx))
+                argRegsIndx += 1
+            } else {
+                // Parameters assigned to stack
+                e._2.pos = OnStack(offset)
+                offset += formatter.getSize(e._2.tp)
+            }
+        })
+
+        varDict.foreach(e => {
+            if (argRegsIndx < formatter.regConf.variabRegs.length) {
+                // Variables assigned to positions R19-R28
+                e._2.pos = InRegister(formatter.regConf.argRegs(argRegsIndx))
+                argRegsIndx += 1
+            } else {
+                // Variables assigned to stack  
+                e._2.pos = OnStack(offset)
+                offset += formatter.getSize(e._2.tp)
+            }
+        })
+
+        return ((offset / 16) + 1) * 16
+    }
+}
+ 
+
 case class VARIABLE(tp: S_TYPE) {
     var pos: Position = Undefined
 }
