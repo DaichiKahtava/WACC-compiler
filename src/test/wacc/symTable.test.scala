@@ -153,7 +153,7 @@ class symTableTest extends AnyFlatSpec with BeforeAndAfterEach {
         symTable.addParam("par13", VARIABLE(S_INT))
         symTable.addParam("par14", VARIABLE(S_INT))
 
-        symTable.assignPositions(new Aarch64_formatter) // shouldBe we will see!
+        symTable.assignPositions(new Aarch64_formatter) shouldBe 48
 
         symTable.findVarGlobal("par1").get.pos shouldBe InRegister(0)
         symTable.findVarGlobal("par2").get.pos shouldBe InRegister(1)
@@ -217,7 +217,7 @@ class symTableTest extends AnyFlatSpec with BeforeAndAfterEach {
         symTable.addParam("par13", VARIABLE(S_CHAR))
         symTable.addParam("par14", VARIABLE(S_INT))
 
-        symTable.assignPositions(new Aarch64_formatter) // shouldBe we will see!
+        symTable.assignPositions(new Aarch64_formatter) shouldBe 32
 
         symTable.findVarGlobal("par1").get.pos shouldBe InRegister(0)
         symTable.findVarGlobal("par2").get.pos shouldBe InRegister(1)
