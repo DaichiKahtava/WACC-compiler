@@ -4,10 +4,11 @@ package wacc
     Conventions for register use:
     - All variables should be stored in the calleSaves registers and stack
     - The assignment of the variables to their location is done before hand on the symbol table
-    - scratchReg1 and scratchReg2 are used for simple operations
-    - after each simple operation the result is stored on scratchReg1
+    - scratchRegs are to be used for immediate operations and are not expected to persist (volatile!)
+    - after each simple operation the result is stored on the simple element of scratchRegs
     - Array construction is done with pointerReg
     - argRegs are only used for passing arguments, resultRegister stores the result from a function
+    - offsetReg *might* be used to store offsets when using pointers
 */
 
 trait registerConfig {
