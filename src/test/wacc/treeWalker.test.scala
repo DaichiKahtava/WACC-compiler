@@ -17,7 +17,7 @@ class treeWalkerTest extends AnyFlatSpec with BeforeAndAfterEach
         frm = new Aarch64_formatter()
         sem.curSymTable = new SymTable(None, None)
         tw = new TreeWalker(sem, frm)
-        testGpRegsList = tw.gpRegs.toList
+        testGpRegsList = frm.regConf.gpRegs.toList
         testRegisterX = RegisterX(0)
     }
 

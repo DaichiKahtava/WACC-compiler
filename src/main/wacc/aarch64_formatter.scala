@@ -10,6 +10,20 @@ class Aarch64_formatter() {
 
     val internalFxs = collection.mutable.Set.empty[InternalFunction]
 
+    // Register configuration 
+    val regConf = new registerConfig{
+        val callerRegs = (0 to 7).toList ++ (9 to 15).toList
+        val argRegs = (0 to 7).toList
+        val scratchRegs = (8 to 15).toList
+        val calleeRegs = (19 to 28).toList
+        val variabRegs = calleeRegs
+        val gpRegs = callerRegs ++ calleeRegs
+        val funcLabel = "wacc_user_"
+        val resultRegister = 0
+        val pointerReg = 16
+        val offsetReg = 17
+    }
+
     // Global data for program. Note that data for internal programs are
     // Included in the internal programs themselves
     var stringLabelCounter = -1 // -1 means no string

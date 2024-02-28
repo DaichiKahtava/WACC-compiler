@@ -5,19 +5,6 @@ import scala.collection.mutable.ListBuffer
 class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
     // GLOBAL POINTER TO THE FINAL (NOT-FORMATTED) ASSEMBLY CODE
     var instructionList = List[Instruction]()
-    var callerRegs = (0 to 7).toList ++ (9 to 15).toList
-    var calleeRegs = (19 to 28).toList
-    var gpRegs = callerRegs ++ calleeRegs
-    val funcLabel = "wacc_user_"
-
-
-    var availRegs = ListBuffer.empty[Int]
-    availRegs.addAll(gpRegs)
-    
-    val outputRegister = RegisterX(0)
-    val dst = 0 // TODO: Might be a seperate destination for system call?
-    val nxt = 1
-
     var labelNum = 0
 
 
@@ -26,132 +13,171 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
     //  and the first register is used as the `return` register for the
     //  specific instruction
 
-    def translate(e: Expr, regs: List[Int]): List[Instruction] = e match {
+    def translate(e: Expr, regs: List[Int]): List[Instruction] = {
+        // Convention: the result after each expression `translate` will be in regs(0)
+        //             that is the primary scratch 
 
-        // UnOp expressions.
-        case Not(x) => translate(x, regs) ++ 
-            List(Compare(RegisterX(regs(dst)), ImmNum(1)), 
-            SetCond(RegisterX(regs(dst)), NeI))
+        // regs should be the scratchRegs from the formatter (at least 3!)
+        // Although we have registers 8 to 15, we will be using just two 
+        // (8 <primary> and 9 <secondary>) 
+        // [Potential point of optimisation]
 
-        case Neg(x) => translate(x, regs.tail) ++
-            List(Move(ImmNum(0), RegisterX(regs.head)), 
-            SubI(RegisterX(regs(nxt)), RegisterX(regs.head)))
+        // KEY CONSIDERATION:
+        // With the current arrangment the regs args is not strictly necessary, but is left
+        // here for extension purposes.
 
-        case Len(x) => translate(x, regs) 
-        case Ord(x) => translate(x, regs) 
-        case Chr(x) => translate(x, regs) 
+        val primary   = regs(0)
+        val secondary = regs(1)
+        val tertiary = regs(2)
 
-        // BinOp expressions.
-        case Mod(x, y) =>
-            translate(x, regs) ++ translate(y, regs.tail) ++ 
-            List(Move(RegisterX(regs(dst)), RegisterX(regs(nxt + 1))), // Store x into another register.
-                DivI(RegisterX(regs(nxt)), RegisterX(regs(nxt + 1))), // Divide x by y.
-                MulI(RegisterX(regs(nxt)), RegisterX(regs(nxt + 1))), // Multiply (y * quotient).
-                SubI(RegisterX(regs(nxt + 1)), RegisterX(regs(dst))))  // Calculate remainder.
+        e match {
 
-        case Add(x, y) => 
-            translate(x, regs) ++ translate(y, regs.tail) ++ List(AddI(RegisterX(regs(nxt)), RegisterX(regs(dst))))
-        
-        case Minus(x, y) => 
-            translate(x, regs) ++ translate(y, regs.tail) ++ List(SubI(RegisterX(regs(nxt)), RegisterX(regs(dst))))
+            // UnOp expressions.
+            case Not(x) => translate(x, regs) ++ 
+                List(Compare(RegisterX(primary), ImmNum(1)), 
+                SetCond(RegisterX(primary), NeI))
 
-        case Mul(x, y) =>
-            translate(x, regs) ++ translate(y, regs.tail) ++ List(MulI(RegisterX(regs(nxt)), RegisterX(regs(dst))))
-
-        case Div(x, y) => {
-            formatter.includeFx(errorDivZeroFx)
-            return translate(x, regs) ++ translate(y, regs.tail) ++ List(
-                    Compare(RegisterXZR, RegisterX(regs(nxt))),
-                    BranchCond(errorDivZeroFx.label, EqI),
-                    DivI(RegisterX(regs(nxt)), RegisterX(regs(dst)))
+            case Neg(x) => translate(x, regs) ++
+                List(
+                    Move(RegisterX(primary), RegisterX(secondary)),
+                    Move(ImmNum(0), RegisterX(primary)), 
+                    SubI(RegisterX(secondary), RegisterX(primary))
                 )
-        }
 
-        case GrT(x, y) => 
-            translate(x, regs) ++ 
-            translate(y, regs.tail) ++ 
-            List(Compare(RegisterX(regs(dst)), RegisterX(regs(nxt))), SetCond(RegisterX(regs(dst)), GtI))
+            case Len(x) => ??? // translate(x, regs) 
+            case Ord(x) => ??? // translate(x, regs) 
+            case Chr(x) => ??? // translate(x, regs) 
 
-        case GrEqT(x, y) =>
-            translate(x, regs) ++ 
-            translate(y, regs.tail) ++ 
-            List(Compare(RegisterX(regs(dst)), RegisterX(regs(nxt))), SetCond(RegisterX(regs(dst)), GeI))
+            // BinOp expressions.
+            case Mod(x, y) =>
+                translateTwoExpr(x, y, regs) ++
+                List(
+                    Move(RegisterX(primary), RegisterX(tertiary)),  // Store x into another register.
+                    DivI(RegisterX(secondary), RegisterX(tertiary)),  // Divide x by y.
+                    MulI(RegisterX(secondary), RegisterX(tertiary)),  // Multiply (y * quotient).
+                    SubI(RegisterX(tertiary), RegisterX(primary))   // Calculate remainder.
+                )
 
-        case LsT(x, y) =>
-            translate(x, regs) ++ 
-            translate(y, regs.tail) ++ 
-            List(Compare(RegisterX(regs(dst)), RegisterX(regs(nxt))), SetCond(RegisterX(regs(dst)), LtI))
 
-        case LsEqT(x, y) =>
-            translate(x, regs) ++ 
-            translate(y, regs.tail) ++ 
-            List(Compare(RegisterX(regs(dst)), RegisterX(regs(nxt))), SetCond(RegisterX(regs(dst)), LeI))
-
-        case Eq(x, y) =>
-            translate(x, regs) ++ 
-            translate(y, regs.tail) ++ 
-            List(Compare(RegisterX(regs(dst)), RegisterX(regs(nxt))), SetCond(RegisterX(regs(dst)), EqI))
-
-        case NEq(x, y) =>
-            translate(x, regs) ++ 
-            translate(y, regs.tail) ++ 
-            List(Compare(RegisterX(regs(dst)), RegisterX(regs(nxt))), SetCond(RegisterX(regs(dst)), NeI))
+            // TODO: Add over/underflow checks for add and mul
+            // TODO: Duplicate code --> Abstraction of biinary operators
+            case Add(x, y) => 
+                translateTwoExpr(x, y, regs) ++
+                List(AddI(RegisterX(secondary), RegisterX(primary)))
             
-        case And(x, y) =>
-            val curLabel = s".L${labelNum}"
-            labelNum += 1
-            translate(x, regs) ++ 
-            translate(y, regs.tail) ++ 
-            List(Compare(RegisterX(regs(dst)), ImmNum(1)),
-            BranchCond(curLabel, NeI),
-            Compare(RegisterX(regs(nxt)), ImmNum(1)),
-            Label(curLabel),
-            SetCond(RegisterX(regs(dst)), EqI))
+            case Minus(x, y) =>
+                translateTwoExpr(x, y, regs) ++
+                List(SubI(RegisterX(secondary), RegisterX(primary)))
+            
+            case Mul(x, y) =>
+                translateTwoExpr(x, y, regs) ++
+                List(MulI(RegisterX(secondary), RegisterX(primary)))
 
-        case Or(x, y) => 
-            val curLabel = s".L${labelNum}"
-            labelNum += 1
-            translate(x, regs) ++ 
-            translate(y, regs.tail) ++ 
-            List(Compare(RegisterX(regs(dst)), ImmNum(1)),
-            BranchCond(curLabel, EqI),
-            Compare(RegisterX(regs(nxt)), ImmNum(1)),
-            Label(curLabel),
-            SetCond(RegisterX(regs(dst)), EqI))
-
-        // Atom expressions.
-
-        // Load the integer directly.
-        case IntL(n) => List(Move(ImmNum(n), RegisterX(regs(dst))))
-
-        // Load the boolean value using integers.
-        case BoolL(b) => {
-            val value = b match {
-                case true  => 1
-                case false => 0 
+            case Div(x, y) => {
+                formatter.includeFx(errorDivZeroFx)
+                return translateTwoExpr(x, y, regs) ++
+                List(
+                    Compare(RegisterXZR, RegisterX(secondary)),
+                    BranchCond(errorDivZeroFx.label, EqI),
+                    DivI(RegisterX(secondary), RegisterX(primary))
+                )
             }
-            List(Move(ImmNum(value), RegisterX(regs(dst))))
+
+            case GrT(x, y) => 
+                translateTwoExpr(x, y, regs) ++
+                List(Compare(RegisterX(primary), RegisterX(secondary)), SetCond(RegisterX(primary), GtI))
+
+            case GrEqT(x, y) =>
+                translateTwoExpr(x, y, regs) ++
+                List(Compare(RegisterX(primary), RegisterX(secondary)), SetCond(RegisterX(primary), GeI))
+
+            case LsT(x, y) =>
+                translateTwoExpr(x, y, regs) ++
+                List(Compare(RegisterX(primary), RegisterX(secondary)), SetCond(RegisterX(primary), LtI))
+
+            case LsEqT(x, y) =>
+                translateTwoExpr(x, y, regs) ++
+                List(Compare(RegisterX(primary), RegisterX(secondary)), SetCond(RegisterX(primary), LeI))
+
+            case Eq(x, y) =>
+                translateTwoExpr(x, y, regs) ++
+                List(Compare(RegisterX(primary), RegisterX(secondary)), SetCond(RegisterX(primary), EqI))
+
+            case NEq(x, y) =>
+                translateTwoExpr(x, y, regs) ++
+                List(Compare(RegisterX(primary), RegisterX(secondary)), SetCond(RegisterX(primary), NeI))
+                
+            case And(x, y) =>
+                val curLabel = s".L${labelNum}"
+                labelNum += 1
+                translateTwoExpr(x, y, regs) ++
+                // TODO: ImmNum magic number for true!
+                List(Compare(RegisterX(primary), ImmNum(1)),
+                BranchCond(curLabel, NeI),
+                Compare(RegisterX(secondary), ImmNum(1)),
+                Label(curLabel),
+                SetCond(RegisterX(primary), EqI))
+
+            case Or(x, y) => 
+                val curLabel = s".L${labelNum}"
+                labelNum += 1
+                translateTwoExpr(x, y, regs) ++
+                List(Compare(RegisterX(primary), ImmNum(1)),
+                BranchCond(curLabel, EqI),
+                Compare(RegisterX(secondary), ImmNum(1)),
+                Label(curLabel),
+                SetCond(RegisterX(primary), EqI))
+
+            // Atom expressions.
+
+            // Load the integer directly.
+            case IntL(n) => List(Move(ImmNum(n), RegisterX(primary)))
+
+            // Load the boolean value using integers.
+            case BoolL(b) => {
+                val value = b match {
+                    case true  => 1
+                    case false => 0 
+                }
+                List(Move(ImmNum(value), RegisterX(primary)))
+            }
+
+            // Obtain the integer value of a character.
+            case CharL(c) => List(Move(ImmNum(c.toInt), RegisterX(primary)))
+            
+            case StrL(s) => {
+                val label = formatter.includeString(s)
+                return List(Address(label, RegisterX(regs.head)))
+            }
+
+            case PairL() => 
+                List(Move(ImmNum(0), RegisterX(primary))) // Treat as null pointer?
+
+            // Pattern match for the identifier.
+            case Ident(id) => sem.curSymTable.findVarGlobal(id).get.pos match {
+                case InRegister(r) => List(Move(RegisterX(r), RegisterX(primary)))
+                case OnStack(offset) => ???
+                case Undefined => ??? // Should not get here
+            }
+
+            case ArrElem(id, xs) => List()
         }
+    }
 
-        // Obtain the integer value of a character.
-        case CharL(c) => List(Move(ImmNum(c.toInt), RegisterX(regs(dst))))
-        
-        case StrL(s) => {
-            val label = formatter.includeString(s)
-            return List(Address(label, RegisterX(regs.head)))
-        }
-
-        case PairL() => 
-            List(Move(ImmNum(0), RegisterX(regs(dst)))) // Treat as null pointer?
-
-        // Pattern match for the identifier.
-        case Ident(id) => sem.curSymTable.findVarGlobal(id).get.pos match {
-            case InRegister(r) => List(Move(RegisterX(r), RegisterX(regs(dst))))
-            case OnStack(offset) => ???
-            case Undefined => ??? // Should not get here
-        }
-
-        case ArrElem(id, xs) => List()
+    // Translates y pushes the value of y into the stack, then translates x and pops
+    // the value of y to the secodary scrarch register
+    // regs are the scrach registers in similar fashion to translate(e: Expr)
+    // The primary regs(0) and secondary regs(1) will store the results. 
+    def translateTwoExpr(x: Expr, y: Expr, regs: List[Int]): List[Instruction] = {
+        val primary   = regs(0)
+        val secondary = regs(1)
+        // Note that the second value is calculated first so that it is poped to the secondary
+        // while the first value is calculated directly to the primary value
+        translate(y, regs) ++ 
+        // TODO: Function for pushing and poping
+        List(Push(RegisterX(primary), RegisterXZR, PreIndxA(RegisterSP, -16))) ++
+        translate(x, regs) ++
+        List(Pop(PreIndxA(RegisterSP, 16), RegisterX(secondary), RegisterXZR))
     }
 
     def translate(list: List[Any], regs: List[Int]): List[Instruction] = list match {
@@ -169,7 +195,7 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
         })
         // TODO: Use blocks of sorts...
         instructionList.addAll(List(Label("main"), Push(RegisterFP, RegisterLR, PreIndxA(RegisterSP, -16))))
-        instructionList ++= translate(program.s, gpRegs.toList)
+        instructionList ++= translate(program.s, formatter.regConf.scratchRegs)
         instructionList.addAll(List(
             Pop(PstIndxIA(RegisterSP, 16), RegisterFP, RegisterLR),
             Move(ImmNum(0), RegisterX(0)),
@@ -182,8 +208,8 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
         // Callee saves and callee restore must go here.
         // Labels must be ensured unique
         val instructionList = ListBuffer.empty[Instruction]
-        instructionList.addOne(Label(funcLabel + func.id))
-        instructionList.addAll(translate(func.s, gpRegs.toList))
+        instructionList.addOne(Label(formatter.regConf.funcLabel + func.id))
+        instructionList.addAll(translate(func.s, formatter.regConf.scratchRegs))
         instructionList.addOne(ReturnI)
         instructionList.toList
     } 
@@ -222,14 +248,14 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
         case Loop(x, s) => ???
         case Body(s) => ???
 
-        case Delimit(s1, s2) =>
-            val res = translate(s1, regs)
-            sem.curSymTable.varDict.values.map(_.pos).foreach{ // Maybe move this somewhere else to a general function when needed
-                case InRegister(r) =>
-                    if (availRegs.contains(r)) availRegs.remove(availRegs.indexOf(r))
-                case _ => () // Do nothing otherwise
-            }
-            res ++ translate(s2, availRegs.toList)
+        case Delimit(s1, s2) => translate(s1, regs) ++ translate(s2, regs) // Stet
+            // val res = translate(s1, regs)
+            // sem.curSymTable.varDict.values.map(_.pos).foreach{ // Maybe move this somewhere else to a general function when needed
+            //     case InRegister(r) =>
+            //         if (availRegs.contains(r)) availRegs.remove(availRegs.indexOf(r))
+            //     case _ => () // Do nothing otherwise
+            // }
+            // res ++ translate(s2, availRegs.toList)
         // TODO (for delimit): Weighting? and register allocation
     }
 
@@ -309,7 +335,7 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
         for (i <- 0 to Math.min(7, args.length - 1)) {
             // TODO: Something like RegisterXR ++ availRegs might be more desirable below
             // <Magin number!> see below!
-            instrs.addAll(translate(args(i), 8::gpRegs.toList)) 
+            instrs.addAll(translate(args(i), formatter.regConf.scratchRegs)) 
             instrs.addOne(Move(RegisterXR, RegisterX(i)))
         }
 
@@ -331,7 +357,7 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
 
             var ofs = 0
             for (i <- 8 to (args.length - 1)) {
-                instrs.addAll(translate(args(i), 8::gpRegs.toList)) 
+                instrs.addAll(translate(args(i), formatter.regConf.scratchRegs)) 
                 var size = getSize(parTypes(i)) // Recalculation
                 size match {
                     case 1 => instrs.addOne(StoreByte(RegisterXR, BaseOfsIA(RegisterSP, ofs)))
@@ -355,14 +381,14 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
 
     // KEY OPTIMISATION POINT: Callee saves now saves everything! There is a possibility to analyse the bedy of the function
     //                         to save only what we need!
-    def callerSave(regsNotInUse: List[Int]): List[Instruction] = saveRegs(regsNotInUse, callerRegs)
+    def callerSave(regsNotInUse: List[Int]): List[Instruction] = saveRegs(regsNotInUse, formatter.regConf.callerRegs)
     def calleeSave(regsNotInUse: List[Int]): List[Instruction] = {
         Push(RegisterFP, RegisterLR, PreIndxA(RegisterSP, -16)) ::
-        saveRegs(List(), calleeRegs)
+        saveRegs(List(), formatter.regConf.calleeRegs)
     }
-    def callerRestore(regsNotInUse: List[Int]): List[Instruction] = restoreRegs(regsNotInUse, callerRegs)
+    def callerRestore(regsNotInUse: List[Int]): List[Instruction] = restoreRegs(regsNotInUse, formatter.regConf.callerRegs)
     def calleeRestore(regsNotInUse: List[Int]): List[Instruction] = {
-        restoreRegs(List(), calleeRegs) ++
+        restoreRegs(List(), formatter.regConf.calleeRegs) ++
         List(Pop(PstIndxIA(RegisterSP, 16), RegisterFP, RegisterLR))
     }
 
