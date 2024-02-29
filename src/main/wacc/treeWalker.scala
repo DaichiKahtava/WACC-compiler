@@ -198,7 +198,7 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
             case Undefined =>
                 sem.curSymTable.redefineSymbol(id, VARIABLE(v.tp, InRegister(regs.head)))
                 translate(rv, regs)
-        }
+            }
 
         case Asgn(LIdent(id), rv) => sem.curSymTable.findVarGlobal(id).get.pos match {
             case InRegister(r) => translate(rv, r :: regs)
@@ -240,7 +240,29 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
     }
 
     def translate(rv: RValue, regs: List[Int]): List[Instruction] = rv match {
-        case ArrL(xs) => ???
+        case ArrL(xs) => {
+            formatter.includeFx(mallocFx)
+            val arrLen = xs.length
+            val elemSize = if (arrLen > 0) getSize(rv.tp.asInstanceOf[S_ARRAY].tp) else 0
+            val arrSize = arrLen * elemSize
+            var elems = ListBuffer.empty[Instruction]
+            var arrHead = -4
+            for (x <- xs) {
+                elems.addAll(translate(x, 8::regs))
+                elems.addOne(Store(RegisterW(8), BaseOfsIA(RegisterX(16), arrHead + elemSize)))
+                arrHead += elemSize
+            }
+            // Will clean this up later but functionality is fine
+            List(
+                Comment(s"$arrLen element array"),
+                Move(ImmNum(arrSize + 4), RegisterW(0)),
+                BranchLink("_malloc"),
+                Move(RegisterX(0), RegisterX(16)),
+                AddI(ImmNum(4), RegisterX(16)),
+                Move(ImmNum(xs.length), RegisterXR),
+                Store(RegisterW(8), BaseOfsIA(RegisterX(16), -4))
+            ) ++ elems.toList ++ List(Move(RegisterX(16), RegisterX(regs.head)))
+        }
         case Call(id, xs) => ???
         case RExpr(e) => translate(e, regs)
         case NewPair(e1, e2) => ???
