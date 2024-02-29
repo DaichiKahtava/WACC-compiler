@@ -245,14 +245,7 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
             val arrLen = xs.length
             val elemSize = if (arrLen > 0) getSize(rv.tp.asInstanceOf[S_ARRAY].tp) else 0
             val arrSize = arrLen * elemSize
-            var elems = ListBuffer.empty[Instruction]
-            var arrHead = -4
-            for (x <- xs) {
-                elems.addAll(translate(x, 8::regs))
-                elems.addOne(Store(RegisterW(8), BaseOfsIA(RegisterX(16), arrHead + elemSize)))
-                arrHead += elemSize
-            }
-            // Will clean this up later but functionality is fine
+            var arrHead = 0
             List(
                 Comment(s"$arrLen element array"),
                 Move(ImmNum(arrSize + 4), RegisterW(0)),
@@ -261,7 +254,11 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                 AddI(ImmNum(4), RegisterX(16)),
                 Move(ImmNum(xs.length), RegisterXR),
                 Store(RegisterW(8), BaseOfsIA(RegisterX(16), -4))
-            ) ++ elems.toList ++ List(Move(RegisterX(16), RegisterX(regs.head)))
+            ) ++ (for (x <- xs) yield {
+                val res = translate(x, 8::regs) ++ List(Store(RegisterW(8), BaseOfsIA(RegisterX(16), arrHead)))
+                arrHead += elemSize
+                res
+            }).flatten ++ List(Move(RegisterX(16), RegisterX(regs.head)))
         }
         case Call(id, xs) => ???
         case RExpr(e) => translate(e, regs)
