@@ -130,7 +130,7 @@ exampleProgs/valid/variables/charDeclaration.wacc
 exampleProgs/valid/variables/emptyStringDeclaration.wacc
 exampleProgs/valid/variables/intDeclaration.wacc
 exampleProgs/valid/variables/longVarNames.wacc
-'exampleProgs/valid/variables/manyVariables.wacc
+exampleProgs/valid/variables/manyVariables.wacc
 exampleProgs/valid/variables/negIntDeclaration.wacc
 exampleProgs/valid/variables/puncCharDeclaration.wacc
 exampleProgs/valid/variables/stringCarriageReturn.wacc

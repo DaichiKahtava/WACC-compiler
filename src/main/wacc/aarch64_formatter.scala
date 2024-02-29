@@ -22,7 +22,7 @@ class Aarch64_formatter() {
         val resultRegister = 0
         val pointerReg = 16
         val offsetReg = 17
-        val framePReg = 30
+        val framePReg = 29
     }
 
     // Global data for program. Note that data for internal programs are
