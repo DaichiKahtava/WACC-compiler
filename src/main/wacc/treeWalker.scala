@@ -44,9 +44,9 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                     SubI(RegisterX(secondary), RegisterX(primary))
                 )
 
-            case Len(x) => ??? // translate(x, regs) 
-            case Ord(x) => ??? // translate(x, regs) 
-            case Chr(x) => ??? // translate(x, regs) 
+            case Len(x) => translate(x, regs) 
+            case Ord(x) => translate(x, regs) 
+            case Chr(x) => translate(x, regs) 
 
             // BinOp expressions.
             case Mod(x, y) =>
