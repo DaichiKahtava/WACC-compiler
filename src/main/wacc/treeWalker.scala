@@ -466,7 +466,7 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
     def calleeSave(): List[Instruction] = {
         //Note that this uses the current symbol table for the variables to be saved
         val regs = ListBuffer.empty[Int] 
-        sem.curSymTable.parDict.values.foreach((v) => {
+        sem.curSymTable.varDict.values.foreach((v) => {
             v.pos match {
                 case InRegister(r) => regs.addOne(r)
                 case OnStack(offset) => {} //Nothing :)
@@ -479,7 +479,7 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
     def calleeRestore(): List[Instruction] = {
         //Note that this uses the current symbol table for the variables to be saved
         val regs = ListBuffer.empty[Int] 
-        sem.curSymTable.parDict.values.foreach((v) => {
+        sem.curSymTable.varDict.values.foreach((v) => {
             v.pos match {
                 case InRegister(r) => regs.addOne(r)
                 case OnStack(offset) => {} //Nothing :)
