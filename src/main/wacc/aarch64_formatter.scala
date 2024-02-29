@@ -154,7 +154,6 @@ class Aarch64_formatter() {
 
     def generateAddress(a: AdrMode): String = a match {
         case BaseA(base) => "[" + generateRegister(base) + "]"
-        case BaseOfsIA(base, ofs) => "[" + generateRegister(base) + ", #" + ofs + "]"
         case BaseOfsRA(base, ofsReg) => "[" + generateRegister(base) + ", " +
             generateRegister(ofsReg) + "]"
         case PreIndxA(base, ofs) => "[" + generateRegister(base) + ", #" + ofs + "]!"

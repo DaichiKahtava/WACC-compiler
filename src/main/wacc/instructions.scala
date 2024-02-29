@@ -76,15 +76,17 @@ sealed trait AdrMode
 // [base]
 case class BaseA(base: RegisterXorSP) extends AdrMode 
 // [base, #imm]
-case class BaseOfsIA(base: RegisterXorSP, ofs: Int) extends AdrMode 
+// case class BaseOfsIA(base: RegisterXorSP, ofs: Int) extends AdrMode 
+
 // [base, Xm]
+// Used to replicate [base, #imm] as per the immediate values' convention
 case class BaseOfsRA(base: RegisterXorSP, ofsReg: RegisterX) extends AdrMode 
 // [base #imm]!
 case class PreIndxA(base: RegisterXorSP, ofs: Int) extends AdrMode 
 // [base], #imm
 case class PstIndxIA(base: RegisterXorSP, ofs: Int) extends AdrMode 
 // [base], Xm
-// Probably not needed as we are not doing SIMD instructions
+// used to replicate: [base], #imm
 case class PstIndxRA(base: RegisterXorSP, ofsReg: RegisterX) extends AdrMode 
 // label
 case class LiteralA(l: String) extends AdrMode 

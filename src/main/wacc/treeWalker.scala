@@ -165,7 +165,10 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
             // Pattern match for the identifier.
             case Ident(id) => sem.curSymTable.findVarGlobal(id).get.pos match {
                 case InRegister(r) => List(Move(RegisterX(r), RegisterX(primary)))
-                case OnTempStack(r) => List(Load(BaseOfsIA(RegisterX(r), formatter.getSize(S_ANY) * r), RegisterX(primary)))
+                case OnTempStack(r) => List(
+                        Move(ImmNum(formatter.getSize(S_ANY) * r), RegisterX(secondary)),
+                        Load(BaseOfsRA(RegisterX(r), RegisterX(secondary)), RegisterX(primary))
+                    )
                 case OnStack(offset) => ???
                 case Undefined => ??? // Should not get here
             }
@@ -228,16 +231,22 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
 
     def translate(stmt: Stmt): List[Instruction] = {
         val scratchRegs = formatter.regConf.scratchRegs
-        val primary = scratchRegs.head
+        val primary = scratchRegs(0)
+        val secondary = scratchRegs(1)
             stmt match {
             case Skip() => Nil
             case Decl(_, id, rv) => {
                 val v = sem.curSymTable.findVarGlobal(id).get
                 val destInstr = v.pos match {
                 case InRegister(r) => List(Move(RegisterX(primary), RegisterX(r)))
-                case OnTempStack(r) => List(Store(RegisterX(primary), BaseOfsIA(RegisterX(formatter.regConf.pointerReg), r)))
-                case OnStack(offset) => List(Store(RegisterX(primary), BaseOfsIA(RegisterX(formatter.regConf.framePReg), offset)))
-                case Undefined => ???
+                    case OnTempStack(r) => List(
+                            Move(ImmNum(r), RegisterX(secondary)),
+                            Store(RegisterX(primary), BaseOfsRA(RegisterX(formatter.regConf.pointerReg), RegisterX(secondary)))
+                        )
+                    case OnStack(offset) => List(
+                            Move(ImmNum(offset), RegisterX(secondary)),
+                            Store(RegisterX(primary), BaseOfsRA(RegisterX(formatter.regConf.framePReg), RegisterX(secondary)))
+                        )                case Undefined => ???
                     // sem.curSymTable.redefineSymbol(id, VARIABLE(v.tp, InRegister(regs.head)))
                     // translate(rv, regs)
                 }
@@ -248,8 +257,14 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                 val destInstr = sem.curSymTable.findVarGlobal(id).get.pos match {
                     // TODO: Abstract!
                     case InRegister(r) => List(Move(RegisterX(primary), RegisterX(r)))
-                    case OnTempStack(r) => List(Store(RegisterX(primary), BaseOfsIA(RegisterX(formatter.regConf.pointerReg), r)))
-                    case OnStack(offset) => List(Store(RegisterX(primary), BaseOfsIA(RegisterX(formatter.regConf.framePReg), offset)))
+                    case OnTempStack(r) => List(
+                            Move(ImmNum(r), RegisterX(secondary)),
+                            Store(RegisterX(primary), BaseOfsRA(RegisterX(formatter.regConf.pointerReg), RegisterX(secondary)))
+                        )
+                    case OnStack(offset) => List(
+                            Move(ImmNum(offset), RegisterX(secondary)),
+                            Store(RegisterX(primary), BaseOfsRA(RegisterX(formatter.regConf.framePReg), RegisterX(secondary)))
+                        )
                     case Undefined => ??? // Should not come here
                 }
                 translate(rv, scratchRegs) ++ destInstr
@@ -386,11 +401,12 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
             var ofs = 0
             for (i <- 8 to (args.length - 1)) {
                 instrs.addAll(translate(args(i), formatter.regConf.scratchRegs)) 
+                instrs.addOne(Move(ImmNum(ofs), RegisterX(secondary)))
                 var size = formatter.getSize(parTypes(i)) // Recalculation
                 size match {
-                    case 1 => instrs.addOne(StoreByte(RegisterXR, BaseOfsIA(RegisterSP, ofs)))
-                    case 4 => instrs.addOne(StoreWord(RegisterXR, BaseOfsIA(RegisterSP, ofs)))
-                    case 8 => instrs.addOne(Store(RegisterXR, BaseOfsIA(RegisterSP, ofs)))
+                    case 1 => instrs.addOne(StoreByte(RegisterXR, BaseOfsRA(RegisterSP, RegisterX(secondary))))
+                    case 4 => instrs.addOne(StoreWord(RegisterXR, BaseOfsRA(RegisterSP, RegisterX(secondary))))
+                    case 8 => instrs.addOne(Store(RegisterXR, BaseOfsRA(RegisterSP, RegisterX(secondary))))
                 }
                ofs += size
             }
