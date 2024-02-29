@@ -35,11 +35,12 @@ class Aarch64_formatter() {
         // Write the pre-amble for instructions.
         writer.write(".align 4\n.text\n.global main\n")
         
-        // Iterate over the instructions and generate assembly code for each one.
-        instructions.foreach(instr => writer.write(generateAssembly(instr))) 
+        // Convert the list of instructions to a LazyList, generate assembly code for each instruction, and write it to the file.
+        // LazyList chosen over Stream due to deprecation of Streams.
+        instructions.to(LazyList).map(generateAssembly).foreach(writer.write)
         
         // Generate assembly code for internal functions
-        internalFxs.foreach(f => f.instructions.foreach(instr => writer.write(generateAssembly(instr))))
+        internalFxs.to(LazyList).flatMap(f => f.instructions.map(generateAssembly)).foreach(writer.write)
 
         // Close the PrintWriter to ensure all output is written and resources are released.
         writer.close()
