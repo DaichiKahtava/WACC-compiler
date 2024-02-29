@@ -11,6 +11,21 @@ class Aarch64_formatter() {
 
     val internalFxs = collection.mutable.Set.empty[InternalFunction]
 
+    // Register configuration 
+    val regConf = new registerConfig{
+        val callerRegs = (0 to 7).toList ++ (9 to 15).toList
+        val argRegs = (0 to 7).toList
+        val scratchRegs = (8 to 15).toList
+        val calleeRegs = (19 to 28).toList
+        val variabRegs = calleeRegs
+        val gpRegs = callerRegs ++ calleeRegs
+        val funcLabel = "wacc_user_"
+        val resultRegister = 0
+        val pointerReg = 16
+        val offsetReg = 17
+        val framePReg = 29
+    }
+
     // Global data for program. Note that data for internal programs are
     // Included in the internal programs themselves
     var stringLabelCounter = -1 // -1 means no string
@@ -79,16 +94,15 @@ class Aarch64_formatter() {
             case true  => "ldrsh\t" + generateRegister(dst) + ", " + generateAddress(src) + "\n"
         }
         case LoadWord(src, dst) => "ldrsw\t" + generateRegister(dst) + ", " + generateAddress(src) + "\n"
-        case Pop(src, dst1, dst2) => "ldp\t" + generateRegister(dst1) + ", " +
-            generateRegister(dst2) + ", " + generateAddress(src) + "\n"
-            // TODO: do we need pair loading?
+        case Pop(dst1, dst2) => "ldp\t" + generateRegister(dst1) + ", " +
+            generateRegister(dst2) + ", [" + generateRegister(RegisterSP) + "], #" + (getSize(S_ANY) * 2) + "\n"
 
         case Store(src, dst) => "str\t" + generateRegister(src) + ", " + generateAddress(dst) + "\n"
         case StoreByte(src, dst) => "strb\t" + generateRegister(src) + ", " + generateAddress(dst) + "\n"
         case StoreHalf(src, dst) => "strh\t" + generateRegister(src) + ", " + generateAddress(dst) + "\n"
         case StoreWord(src, dst) => "strw\t" + generateRegister(src) + ", " + generateAddress(dst) + "\n"
-        case Push(src1, src2, dst) => "stp\t" + generateRegister(src1) + ", " +
-            generateRegister(src2) + ", " + generateAddress(dst) + "\n" // TODO: Generalise offsets
+        case Push(src1, src2) => "stp\t" + generateRegister(src1) + ", " +
+            generateRegister(src2) + ", [" + generateRegister(RegisterSP) + ", #" + (getSize(S_ANY) * -2) + "]!\n" 
 
         case SignExWord(src, dst) => "sxtw\t" + generateRegister(dst) + ", " + generateRegister(src) + "\n"
 
@@ -146,13 +160,11 @@ class Aarch64_formatter() {
 
     def generateAddress(a: AdrMode): String = a match {
         case BaseA(base) => "[" + generateRegister(base) + "]"
-        case BaseOfsIA(base, ofs) => "[" + generateRegister(base) + ", #" + ofs + "]"
-        case BaseOfsRA(base, ofsReg, shift) => "[" + generateRegister(base) + ", " +
+        case BaseOfsRA(base, ofsReg) => "[" + generateRegister(base) + ", " +
             generateRegister(ofsReg) + "]"
-        case BaseOfsExtendShift(base, ofsReg, extend, shift) => 
+        case BaseOfsExtendShift(base, ofsReg, extend, shift) => // TO REMOVE
             "[" + generateRegister(base) + ", " + generateRegister(ofsReg) + ", " + 
             generateAddress(extend) + " #" + shift.get + "]"
-        case PreIndxA(base, ofs) => "[" + generateRegister(base) + ", #" + ofs + "]!"
         case PstIndxIA(base, ofs) => "[" + generateRegister(base) + "], #" + ofs
         case PstIndxRA(base, ofsReg) => "[" + generateRegister(base) + "], " + generateRegister(ofsReg)
         case LiteralA(l) => l
@@ -188,5 +200,19 @@ class Aarch64_formatter() {
         case '\'' => "\\\'"
         case '\\' => "\\\\"
         case c: Char => String.valueOf(c)
+    }
+
+    def getSize(t: S_TYPE) = t match {
+        // Returns number of bytes
+        // <Addresses have 8 bytes -  the size of a register>
+        case S_INT => 4
+        case S_BOOL => 1
+        case S_STRING => 8
+        case S_CHAR => 1
+        case S_ARRAY(tp) => 8
+        case S_PAIR(tp1, tp2) => 8
+        case S_ERASED => 8
+        case S_ANY => 8 // size of a register.
+        case S_EMPTYARR => 8
     }
 }
