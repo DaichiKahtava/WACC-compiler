@@ -2,6 +2,7 @@ package wacc
 
 import java.util.stream.Collectors
 import scala.collection.mutable.ListBuffer
+import java.io._
 
 class Aarch64_formatter() {
 
@@ -16,32 +17,45 @@ class Aarch64_formatter() {
     val stringLabel = ".L.str"
     val data = ListBuffer.empty[String]
 
-    def generateAssembly(instructions: List[Instruction]): String = {
-        val full_assembly = new StringBuilder
+    def generateAssembly(instructions: List[Instruction], filename: String): Unit = {
+        // Create a new PrintWriter instance for the output file.
+        val writer = new PrintWriter(new File(filename))
 
-        // String literal data
+        // String literal data.
 
+        // Check if there are any string labels to be written.
         if (stringLabelCounter != -1) {
-            full_assembly.addAll(".data\n")
+            writer.write(".data\n")
             for (i <- 0 to (data.length - 1)) {
                 val str = data(i)
-                full_assembly.addAll("\t.word " + str.length + "\n" + stringLabel + i +":\n\t.asciz \"" + deescapeString(str) + "\"\n")
+                writer.write("\t.word " + str.length + "\n" + stringLabel + i +":\n\t.asciz \"" + deescapeString(str) + "\"\n")
             }
         }
 
-        // Pre-amble for instructions
+        // Write the pre-amble for instructions.
 
-        full_assembly.addAll(".align 4\n.text\n.global main\n")
+        writer.write(".align 4\n.text\n.global main\n")
 
         // Instruction list
         
-        instructions.map(generateAssembly(_)).foreach(full_assembly.addAll(_))
+        // Iterate over the instructions and generate assembly code for each one.
+        instructions.foreach { instr =>
+            val assemblyCode = generateAssembly(instr)
+            writer.write(assemblyCode)
+        }
         
         // Helper functions (taken from the reference compiler). 
         
-        internalFxs.foreach(f => f.instructions.map(generateAssembly(_)).foreach(full_assembly.addAll(_)))
+        // Generate assembly code for internal functions
+        internalFxs.foreach { f =>
+            f.instructions.foreach { instr =>
+                val assemblyCode = generateAssembly(instr)
+                writer.write(assemblyCode)
+            }
+        }
 
-        return full_assembly.result()
+        // Close the PrintWriter to ensure all output is written and resources are released.
+        writer.close()
     }
 
     def includeString(s: String): String = {
