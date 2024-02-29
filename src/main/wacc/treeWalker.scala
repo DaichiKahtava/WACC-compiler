@@ -262,7 +262,18 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
         }
         case Call(id, xs) => ???
         case RExpr(e) => translate(e, regs)
-        case NewPair(e1, e2) => ???
+        case NewPair(e1, e2) => {
+            formatter.includeFx(mallocFx)
+            List(
+                Move(ImmNum(16), RegisterW(0)),
+                BranchLink("_malloc"),
+                Move(RegisterX(0), RegisterX(16))
+            ) ++ 
+            translate(e1, 8::regs) ++ List(Store(RegisterW(8), BaseOfsIA(RegisterX(16), 0))) ++
+            translate(e2, 8::regs) ++ List(Store(RegisterW(8), BaseOfsIA(RegisterX(16), 8))) ++ 
+            List(Move(RegisterX(16), RegisterX(regs.head)))
+
+        }
         case pe: PairElem => translate(pe, regs.tail)
     }
 
