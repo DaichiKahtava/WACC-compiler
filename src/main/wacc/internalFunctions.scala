@@ -105,7 +105,9 @@ object printBoolFx extends InternalFunction {
         Label(label), // TODO: Possibly abstract common patterns (e.g. label after align and push/pop)?
         Push(RegisterLR, RegisterXZR, PreIndxA(RegisterSP, -16)),
 
-        Compare(RegisterW(0), ImmNum(0)),
+
+        
+        Compare(RegisterW(0), RegisterWZR),
         BranchCond(".L_printb0", NeI),
         Address(".L._printb_str0", RegisterX(0)),
         Branch(".L_printb1"),
@@ -149,7 +151,7 @@ object mallocFx extends InternalFunction {
         BranchLink("malloc"),
 
         // Instead of CBZ, should do the same thing
-        Compare(RegisterX(0), ImmNum(0)), 
+        Compare(RegisterX(0), RegisterWZR), 
         BranchCond("_errOutOfMemory", EqI),
 
         Pop(PstIndxIA(RegisterSP, 16), RegisterLR, RegisterXZR),

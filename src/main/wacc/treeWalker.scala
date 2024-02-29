@@ -34,8 +34,11 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
 
             // UnOp expressions.
             case Not(x) => translate(x, regs) ++ 
-                List(Compare(RegisterX(primary), ImmNum(1)), 
-                SetCond(RegisterX(primary), NeI))
+                List(
+                    Move(ImmNum(1), RegisterX(secondary)),
+                    Compare(RegisterX(primary), RegisterX(secondary)), 
+                    SetCond(RegisterX(primary), NeI)
+                )
 
             case Neg(x) => translate(x, regs) ++
                 List(
@@ -112,21 +115,27 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                 labelNum += 1
                 translateTwoExpr(x, y, regs) ++
                 // TODO: ImmNum magic number for true!
-                List(Compare(RegisterX(primary), ImmNum(1)),
-                BranchCond(curLabel, NeI),
-                Compare(RegisterX(secondary), ImmNum(1)),
-                Label(curLabel),
-                SetCond(RegisterX(primary), EqI))
+                List(
+                    Move(ImmNum(1), RegisterX(tertiary)),
+                    Compare(RegisterX(primary), RegisterX(tertiary)),
+                    BranchCond(curLabel, NeI),
+                    Compare(RegisterX(secondary), RegisterX(tertiary)),
+                    Label(curLabel),
+                    SetCond(RegisterX(primary), EqI)
+                )
 
             case Or(x, y) => 
                 val curLabel = s".L${labelNum}"
                 labelNum += 1
                 translateTwoExpr(x, y, regs) ++
-                List(Compare(RegisterX(primary), ImmNum(1)),
-                BranchCond(curLabel, EqI),
-                Compare(RegisterX(secondary), ImmNum(1)),
-                Label(curLabel),
-                SetCond(RegisterX(primary), EqI))
+                List(
+                    Move(ImmNum(1), RegisterX(tertiary)),
+                    Compare(RegisterX(primary), RegisterX(tertiary)),
+                    BranchCond(curLabel, EqI),
+                    Compare(RegisterX(secondary), RegisterX(tertiary)),
+                    Label(curLabel),
+                    SetCond(RegisterX(primary), EqI)
+                )
 
             // Atom expressions.
 
@@ -251,12 +260,12 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
             case Read(lv) => ???
             case Free(x) => ???
             case Return(x) => ???
-            case Exit(x) => callFx("exit", List(x), List(S_INT))
-            case Print(x) => callFx(determinePrint(x), List(x), List(S_ANY))
+            case Exit(x) => callFx("exit", formatter.regConf.scratchRegs, List(x), List(S_INT))
+            case Print(x) => callFx(determinePrint(x), formatter.regConf.scratchRegs, List(x), List(S_ANY))
             case Println(x) => {
                 formatter.includeFx(printLineFx)
-                callFx(determinePrint(x),List(x), List(S_ANY)) ++
-                callFx(printLineFx.label, List(), List())
+                callFx(determinePrint(x), formatter.regConf.scratchRegs, List(x), List(S_ANY)) ++
+                callFx(printLineFx.label, formatter.regConf.scratchRegs, List(), List())
             }
             case Cond(x, s1, s2) => ???
             case Loop(x, s) => ???
@@ -334,10 +343,13 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
         // This can probably be compacted into above but idk how
     }
 
-    def callFx(label: String, args: List[Expr], parTypes:List[S_TYPE]): List[Instruction] = {
+    def callFx(label: String, regs: List[Int], args: List[Expr], parTypes:List[S_TYPE]): List[Instruction] = {
         // It is expected that will all arguments will be translated and stored in the register
         // or on the stack with an offset relative to the frame pointer. 
         val instrs = ListBuffer.empty[Instruction]
+
+        val primary = regs(0)
+        val secondary = regs(1)
 
         instrs.addOne(Move(RegisterSP, RegisterX(formatter.regConf.pointerReg)))
         instrs.addAll(callerSave())
@@ -365,7 +377,8 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
 
             instrs.addAll(List(
                 Comment("Allocating stack for more than 8 arguments"),
-                SubI(ImmNum(((totalSize / 16) + 1) * 16), RegisterSP)
+                Move(ImmNum(((totalSize / 16) + 1) * 16), RegisterX(secondary)),
+                SubI(RegisterX(secondary), RegisterSP)
                 // May waste a memory location of the stack but can be fixed
                 // during optimisation stage TODO: UNDO IT!
             ))
@@ -387,10 +400,13 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
             BranchLink(label),
             // The result will be saved on the x8.
             // TODO: use scratch regs...
-            Move(RegisterX(0), RegisterXR)
+            Move(RegisterX(0), RegisterX(primary))
         ))
         if (args.length >= 8) {
-            instrs.addOne(AddI(ImmNum(((totalSize / 16) + 1) * 16), RegisterSP))
+            instrs.addAll(List(
+                Move(ImmNum(((totalSize / 16) + 1) * 16), RegisterX(secondary)),
+                AddI(RegisterX(secondary), RegisterSP)
+            ))
         }
         instrs.addAll(callerRestore())
 

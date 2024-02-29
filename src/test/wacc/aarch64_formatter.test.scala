@@ -21,7 +21,7 @@ class aarch64FormTest extends AnyFlatSpec with BeforeAndAfterEach {
     }
 
     it should "process an add" in {
-        frm.generateAssembly(List(AddI(ImmNum(1), RegisterX(2)))) shouldBe ".align 4\n.text\n.global main\nadd\tX2, X2, #1\n"
+        frm.generateAssembly(List(AddI(RegisterX(1), RegisterX(2)))) shouldBe ".align 4\n.text\n.global main\nadd\tX2, X2, X1\n"
     }
 
     // No longer part of the formatter
