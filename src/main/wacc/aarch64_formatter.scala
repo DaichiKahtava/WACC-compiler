@@ -88,6 +88,8 @@ class Aarch64_formatter() {
         case Push(src1, src2, dst) => "stp\t" + generateRegister(src1) + ", " +
             generateRegister(src2) + ", " + generateAddress(dst) + "\n" // TODO: Generalise offsets
 
+        case SignExWord(src, dst) => "sxtw\t" + generateRegister(dst) + ", " + generateRegister(src) + "\n"
+
         case Branch(label) => "b\t" + label + "\n"
         case BranchCond(label, cond) => "b." + generateCondition(cond) + "\t" + label + "\n"
         case BranchLink(label) => "bl\t" + label + "\n"
@@ -105,6 +107,9 @@ class Aarch64_formatter() {
         
         case Compare(r1, r2) => "cmp\t" + generateOperand(r1) + ", " + generateOperand(r2) + "\n" + ""
         case SetCond(r, cond) => "cset\t" + generateOperand(r) + ", " + generateCondition(cond) + "\n"
+        case CondSelect(src1, src2, dst, cond) => 
+            "csel\t" + generateRegister(dst) + ", " + generateRegister(src1) + ", " + 
+            generateRegister(src2) + ", " + generateCondition(cond) + "\n"
     }
 
     def generateOperand(op: Operand): String = op match {
