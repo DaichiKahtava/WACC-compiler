@@ -35,6 +35,21 @@ object errorOutOfMemoryFx extends InternalFunction {
     val dependencies: List[InternalFunction] = List(printStringFx)
 }
 
+object errorOutOfBoundsFx extends InternalFunction {
+    val label: String = "_errOutOfBounds"
+    val instructions: List[Instruction] = List(
+        AlignInstr(),
+        Label(label),
+        Address(".L._errOutOfBounds_str0", RegisterX(0)),
+        BranchLink("printf"),
+        Move(ImmNum(0), RegisterX(0)), 
+        BranchLink("fflush"),
+        Move(ImmNum(-1), RegisterW(0)),
+        BranchLink("exit")
+    )
+    val dependencies: List[InternalFunction] = List.empty
+}
+
 object printStringFx extends InternalFunction {
     val label: String = "_prints"
     val instructions: List[Instruction] = List (
@@ -174,4 +189,47 @@ object readIntFx extends InternalFunction {
         ReturnI
     )
     val dependencies: List[InternalFunction] = List.empty
+}
+
+// TODO fill in commented instructrions
+object ArrayStoreFx extends InternalFunction {
+    val label: String = "_arrStore4:"
+    val instructions: List[Instruction] = List(
+        Label(label),
+        Comment("Special calling convention: array ptr passed in X7, index in X17, value to store in X8,LR (W30) is used as general register"),
+        Push(RegisterLR, RegisterXZR, PreIndxA(RegisterSP, -16)),
+        SignExWord(RegisterW(17), RegisterX(17)),
+        Compare(RegisterW(17), ImmNum(0)),
+        CondSelect(RegisterX(17), RegisterX(1), RegisterX(1), LtI),
+        BranchCond(errorOutOfBoundsFx.label, LtI),
+        LoadRegSignedWord(BaseOfsIA(RegisterX(7), -4), RegisterLR), // ldrsw lr, [x7, #-4]
+        Compare(RegisterW(17), RegisterW(30)),
+        CondSelect(RegisterX(17), RegisterX(1), RegisterX(1), GeI),
+        BranchCond(errorOutOfBoundsFx.label, GeI),
+        Store(RegisterW(8), BaseOfsExtendShift(RegisterX(7), RegisterX(17), LiteralA("lsl"), Some(2))), // str w8, [x7, x17, lsl #2]
+        Pop(PstIndxIA(RegisterSP, 16), RegisterLR, RegisterXZR),
+        ReturnI
+    )
+    val dependencies: List[InternalFunction] = List(errorOutOfBoundsFx)
+}
+
+object ArrayLoadFx extends InternalFunction {
+    val label: String = "_arrLoad4:"
+    val instructions: List[Instruction] = List(
+        Label(label),
+        Comment("Special calling convention: array ptr passed in X7, index in X17, LR (W30) is used as general register, and return into X7"),
+        Push(RegisterLR, RegisterXZR, PreIndxA(RegisterSP, -16)),
+        SignExWord(RegisterW(17), RegisterX(17)),
+        Compare(RegisterW(17), ImmNum(0)),
+        CondSelect(RegisterX(17), RegisterX(1), RegisterX(1), LtI),
+        BranchCond(errorOutOfBoundsFx.label, LtI),
+        LoadRegSignedWord(BaseOfsIA(RegisterX(7), -4), RegisterLR), // ldrsw lr, [x7, #-4]
+        Compare(RegisterW(17), RegisterW(30)),
+        CondSelect(RegisterX(17), RegisterX(1), RegisterX(1), GeI),
+        BranchCond(errorOutOfBoundsFx.label, GeI),
+        LoadRegSignedWord(BaseOfsExtendShift(RegisterX(7), RegisterX(17), LiteralA("lsl"), Some(2)), RegisterX(7)), // ldrsw x7, [x7, x17, lsl #2]
+        Pop(PstIndxIA(RegisterSP, 16), RegisterLR, RegisterXZR),
+        ReturnI
+    )
+    val dependencies: List[InternalFunction] = List(errorOutOfBoundsFx)
 }
