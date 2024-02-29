@@ -41,6 +41,7 @@ object errorOutOfBoundsFx extends InternalFunction {
     val label: String = "_errOutOfBounds"
     val instructions: List[Instruction] = List(
         // Assumes that X1 stores the index
+        Data("fatal error: array index %d out of bounds", ".L._errOutOfBounds_str0"),
         AlignInstr(),
         Label(label),
         Address(".L._errOutOfBounds_str0", RegisterX(0)),
