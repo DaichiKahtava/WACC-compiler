@@ -156,6 +156,7 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
             // Pattern match for the identifier.
             case Ident(id) => sem.curSymTable.findVarGlobal(id).get.pos match {
                 case InRegister(r) => List(Move(RegisterX(r), RegisterX(primary)))
+                case OnTempStack(r) => List(Load(BaseOfsIA(RegisterX(r), formatter.getSize(S_ANY) * r), RegisterX(primary)))
                 case OnStack(offset) => ???
                 case Undefined => ??? // Should not get here
             }
@@ -190,12 +191,14 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
         program.funcs.foreach((f) => {
             // TODO: More idiomatic way of accessing the symbol table?
             sem.curSymTable = sem.curSymTable.findFunGlobal(f.id).get.st // We are in the local symbolTable.
+            sem.curSymTable.assignPositions(formatter)
             instructionList.addAll(translate(f))
             sem.curSymTable = sem.curSymTable.parent().get // We are in the parent/global symbolTable.
         })
         // TODO: Use blocks of sorts...
+        sem.curSymTable.assignPositions(formatter)
         instructionList.addAll(List(Label("main"), Push(RegisterFP, RegisterLR, PreIndxA(RegisterSP, -16))))
-        instructionList ++= translate(program.s, formatter.regConf.scratchRegs)
+        instructionList ++= translate(program.s)
         instructionList.addAll(List(
             Pop(PstIndxIA(RegisterSP, 16), RegisterFP, RegisterLR),
             Move(ImmNum(0), RegisterX(0)),
@@ -209,54 +212,66 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
         // Labels must be ensured unique
         val instructionList = ListBuffer.empty[Instruction]
         instructionList.addOne(Label(formatter.regConf.funcLabel + func.id))
-        instructionList.addAll(translate(func.s, formatter.regConf.scratchRegs))
+        instructionList.addAll(translate(func.s))
         instructionList.addOne(ReturnI)
         instructionList.toList
     } 
 
-    def translate(stmt: Stmt, regs: List[Int]): List[Instruction] = stmt match {
-        case Skip() => Nil
-        case Decl(_, id, rv) => 
-            val v = sem.curSymTable.findVarGlobal(id).get
-            v.pos match {
-            case InRegister(r) => translate(rv, r :: regs)
-            case OnStack(offset) => ???
-            case Undefined => ???
-                // sem.curSymTable.redefineSymbol(id, VARIABLE(v.tp, InRegister(regs.head)))
-                // translate(rv, regs)
-        }
+    def translate(stmt: Stmt): List[Instruction] = {
+        val scratchRegs = formatter.regConf.scratchRegs
+        val primary = scratchRegs.head
+            stmt match {
+            case Skip() => Nil
+            case Decl(_, id, rv) => {
+                val v = sem.curSymTable.findVarGlobal(id).get
+                val destInstr = v.pos match {
+                case InRegister(r) => List(Move(RegisterX(primary), RegisterX(r)))
+                case OnTempStack(r) => List(Store(RegisterX(primary), BaseOfsIA(RegisterX(formatter.regConf.pointerReg), r)))
+                case OnStack(offset) => List(Store(RegisterX(primary), BaseOfsIA(RegisterX(formatter.regConf.framePReg), offset)))
+                case Undefined => ???
+                    // sem.curSymTable.redefineSymbol(id, VARIABLE(v.tp, InRegister(regs.head)))
+                    // translate(rv, regs)
+                }
+                translate(rv, formatter.regConf.scratchRegs) ++ destInstr
+            }
 
-        case Asgn(LIdent(id), rv) => sem.curSymTable.findVarGlobal(id).get.pos match {
-            case InRegister(r) => translate(rv, r :: regs)
-            case OnStack(offset) => ???
-            case Undefined => ??? // Should not come here
-        }
-        // LArrElem and Pairs
-        case Asgn(lv, rv) => ???
+            case Asgn(LIdent(id), rv) => {
+                val destInstr = sem.curSymTable.findVarGlobal(id).get.pos match {
+                    // TODO: Abstract!
+                    case InRegister(r) => List(Move(RegisterX(primary), RegisterX(r)))
+                    case OnTempStack(r) => List(Store(RegisterX(primary), BaseOfsIA(RegisterX(formatter.regConf.pointerReg), r)))
+                    case OnStack(offset) => List(Store(RegisterX(primary), BaseOfsIA(RegisterX(formatter.regConf.framePReg), offset)))
+                    case Undefined => ??? // Should not come here
+                }
+                translate(rv, scratchRegs) ++ destInstr
+            }
+            // LArrElem and Pairs
+            case Asgn(lv, rv) => ???
 
-        case Read(lv) => ???
-        case Free(x) => ???
-        case Return(x) => ???
-        case Exit(x) => callFx("exit", regs, List(x), List(S_INT))
-        case Print(x) => callFx(determinePrint(x), regs, List(x), List(S_ANY))
-        case Println(x) => {
-            formatter.includeFx(printLineFx)
-            callFx(determinePrint(x), regs, List(x), List(S_ANY)) ++
-            callFx(printLineFx.label, regs, List(), List())
-        }
-        case Cond(x, s1, s2) => ???
-        case Loop(x, s) => ???
-        case Body(s) => ???
+            case Read(lv) => ???
+            case Free(x) => ???
+            case Return(x) => ???
+            case Exit(x) => callFx("exit", List(x), List(S_INT))
+            case Print(x) => callFx(determinePrint(x), List(x), List(S_ANY))
+            case Println(x) => {
+                formatter.includeFx(printLineFx)
+                callFx(determinePrint(x),List(x), List(S_ANY)) ++
+                callFx(printLineFx.label, List(), List())
+            }
+            case Cond(x, s1, s2) => ???
+            case Loop(x, s) => ???
+            case Body(s) => ???
 
-        case Delimit(s1, s2) => translate(s1, regs) ++ translate(s2, regs)
-            // val res = translate(s1, regs)
-            // sem.curSymTable.varDict.values.map(_.pos).foreach{ // Maybe move this somewhere else to a general function when needed
-            //     case InRegister(r) =>
-            //         if (availRegs.contains(r)) availRegs.remove(availRegs.indexOf(r))
-            //     case _ => () // Do nothing otherwise
-            // }
-            // res ++ translate(s2, availRegs.toList)
-        // TODO (for delimit): Weighting? and register allocation
+            case Delimit(s1, s2) => translate(s1) ++ translate(s2)
+                // val res = translate(s1, regs)
+                // sem.curSymTable.varDict.values.map(_.pos).foreach{ // Maybe move this somewhere else to a general function when needed
+                //     case InRegister(r) =>
+                //         if (availRegs.contains(r)) availRegs.remove(availRegs.indexOf(r))
+                //     case _ => () // Do nothing otherwise
+                // }
+                // res ++ translate(s2, availRegs.toList)
+            // TODO (for delimit): Weighting? and register allocation
+        }
     }
 
     def translate(lv: LValue, regs: List[Int]): List[Instruction] = lv match {
@@ -300,38 +315,37 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
         case _ => ???
     }
 
-    // TODO: Need to change the positions of variables if necessary?
-    def saveRegs(regsNotInUse: List[Int], subset: List[Int]): List[Instruction] = {
-        val regsInUse = subset.diff(regsNotInUse).toList
+    
+    def pushRegs(regs: List[Int]): List[Instruction] = {
         Comment("Saving registers") :: (for {
-            List(r1, r2) <- regsInUse.grouped(2).toList // [em422]
+            List(r1, r2) <- regs.grouped(2).toList // [em422]
         } yield (Push(RegisterX(r1), RegisterX(r2), PreIndxA(RegisterSP, -16)))) ++ 
         // This can probably be compacted into above but idk how
-        (if (regsInUse.size % 2 != 0) List(Push(RegisterX(regsInUse.last), RegisterXZR, PreIndxA(RegisterSP, -16))) else Nil) ++
+        (if (regs.size % 2 != 0) List(Push(RegisterX(regs.last), RegisterXZR, PreIndxA(RegisterSP, -16))) else Nil) ++
         List(Comment("Saving registers END"))
     }
 
-    def restoreRegs(regsNotInUse: List[Int], subset: List[Int]): List[Instruction] = {
-        val regsInUse = subset.diff(regsNotInUse).toList
+    def popRegs(regs: List[Int]): List[Instruction] = {
         Comment("Restoring registers") :: 
-        (if (regsInUse.size % 2 != 0) List(Pop(PstIndxIA(RegisterSP, 16), RegisterX(regsInUse.last), RegisterXZR)) else Nil) ++ 
+        (if (regs.size % 2 != 0) List(Pop(PstIndxIA(RegisterSP, 16), RegisterX(regs.last), RegisterXZR)) else Nil) ++ 
         (for {
-            List(r1, r2) <- regsInUse.grouped(2).toList.reverse
+            List(r1, r2) <- regs.grouped(2).toList.reverse
         } yield (Pop(PstIndxIA(RegisterSP, 16), RegisterX(r1), RegisterX(r2)))) ++ List(Comment("Restoring registers END"))
         // This can probably be compacted into above but idk how
     }
 
-    def callFx(label: String, regs: List[Int], args: List[Expr], parTypes:List[S_TYPE]): List[Instruction] = {
+    def callFx(label: String, args: List[Expr], parTypes:List[S_TYPE]): List[Instruction] = {
         // It is expected that will all arguments will be translated and stored in the register
         // or on the stack with an offset relative to the frame pointer. 
         val instrs = ListBuffer.empty[Instruction]
 
-        instrs.addAll(callerSave(regs))
-        // This will save everything
-        // So now everything should be in the stack
+        instrs.addOne(Move(RegisterSP, RegisterX(formatter.regConf.pointerReg)))
+        instrs.addAll(callerSave())
+        // This will save all arguments (if they exist)
+        
 
         // To avoid accidentally overwriting registers, we put everything in stack and
-        // Then load everything from the stack        
+        // Then load anything we need from the stack using pointerReg        
         for (i <- 0 to Math.min(7, args.length - 1)) {
             // TODO: Something like RegisterXR ++ availRegs might be more desirable below
             // <Magin number!> see below!
@@ -339,10 +353,11 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
             instrs.addOne(Move(RegisterXR, RegisterX(i)))
         }
 
+        var totalSize = 0
+
         if (args.length >= 8) {
             val extraElems = args.length - 8
             
-            var totalSize = 0
             // We know that args.length == parTypes.length from semantic checks
             for (i <- 8 to (args.length - 1)) {
                 totalSize += formatter.getSize(parTypes(i))
@@ -352,7 +367,7 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                 Comment("Allocating stack for more than 8 arguments"),
                 SubI(ImmNum(((totalSize / 16) + 1) * 16), RegisterSP)
                 // May waste a memory location of the stack but can be fixed
-                // during optimisation stage
+                // during optimisation stage TODO: UNDO IT!
             ))
 
             var ofs = 0
@@ -368,10 +383,16 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
             }
         }
 
-        instrs.addOne(BranchLink(label))
-        // The result will be saved on the x8.
-        instrs.addOne(Move(RegisterX(0), RegisterXR))
-        instrs.addAll(callerRestore(regs))
+        instrs.addAll(List(
+            BranchLink(label),
+            // The result will be saved on the x8.
+            // TODO: use scratch regs...
+            Move(RegisterX(0), RegisterXR)
+        ))
+        if (args.length >= 8) {
+            instrs.addOne(AddI(ImmNum(((totalSize / 16) + 1) * 16), RegisterSP))
+        }
+        instrs.addAll(callerRestore())
 
         instrs.toList
     }
@@ -379,17 +400,63 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
 
     // calle functions save/restore registers, the frame pointer as well as the link register
 
-    // KEY OPTIMISATION POINT: Callee saves now saves everything! There is a possibility to analyse the bedy of the function
-    //                         to save only what we need!
-    def callerSave(regsNotInUse: List[Int]): List[Instruction] = saveRegs(regsNotInUse, formatter.regConf.callerRegs)
-    def calleeSave(regsNotInUse: List[Int]): List[Instruction] = {
-        Push(RegisterFP, RegisterLR, PreIndxA(RegisterSP, -16)) ::
-        saveRegs(List(), formatter.regConf.calleeRegs)
+    def callerSave(): List[Instruction] = {
+        val regs = ListBuffer.empty[Int] 
+        sem.curSymTable.parDict.foreachEntry((s, v) => {
+            v.pos match {
+                case InRegister(r) => {
+                    regs.addOne(r)
+                    v.pos = OnTempStack(r)
+                }
+                case OnStack(offset) => {} //Nothing :)
+                case OnTempStack(r) => ??? // Invariant: No nested caller/callee saves in the same scope
+                case Undefined => ???
+            }
+        })
+        pushRegs(regs.toList) // We rely on the preservation of order for LinkedHashMap
     }
-    def callerRestore(regsNotInUse: List[Int]): List[Instruction] = restoreRegs(regsNotInUse, formatter.regConf.callerRegs)
-    def calleeRestore(regsNotInUse: List[Int]): List[Instruction] = {
-        restoreRegs(List(), formatter.regConf.calleeRegs) ++
-        List(Pop(PstIndxIA(RegisterSP, 16), RegisterFP, RegisterLR))
+    def callerRestore(): List[Instruction] = {
+        val regs = ListBuffer.empty[Int] 
+        sem.curSymTable.parDict.foreachEntry((s, v) => {
+            v.pos match {
+                case InRegister(r) => ??? // Nothing should be saved in register here!
+                case OnStack(offset) => {} //Nothing :)
+                case OnTempStack(r) => {
+                    regs.addOne(r)
+                    v.pos = InRegister(r)
+                }
+                case Undefined => ???
+            }
+        })
+        popRegs(regs.toList)
+    }
+    
+    def calleeSave(): List[Instruction] = {
+        //Note that this uses the current symbol table for the variables to be saved
+        val regs = ListBuffer.empty[Int] 
+        sem.curSymTable.parDict.values.foreach((v) => {
+            v.pos match {
+                case InRegister(r) => regs.addOne(r)
+                case OnStack(offset) => {} //Nothing :)
+                case OnTempStack(offset) => ???
+                case Undefined => ???
+            }
+        })
+        pushRegs(regs.toList)
+    }
+    def calleeRestore(): List[Instruction] = {
+        //Note that this uses the current symbol table for the variables to be saved
+        val regs = ListBuffer.empty[Int] 
+        sem.curSymTable.parDict.values.foreach((v) => {
+            v.pos match {
+                case InRegister(r) => regs.addOne(r)
+                case OnStack(offset) => {} //Nothing :)
+                case OnTempStack(offset) => ???
+                case Undefined => ???
+            }
+        })
+        popRegs(regs.toList)
+        // TODO: Can avoid recalculating registers or abstract that into the funtion translation.
     }
 
 }
