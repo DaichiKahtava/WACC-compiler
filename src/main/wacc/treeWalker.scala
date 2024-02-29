@@ -178,7 +178,7 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
         // TODO: Function for pushing and poping
         List(Push(RegisterX(primary), RegisterXZR, PreIndxA(RegisterSP, -16))) ++
         translate(x, regs) ++
-        List(Pop(PreIndxA(RegisterSP, 16), RegisterX(secondary), RegisterXZR))
+        List(Pop(PstIndxIA(RegisterSP, 16), RegisterX(secondary), RegisterXZR))
     }
 
     def translate(list: List[Any], regs: List[Int]): List[Instruction] = list match {
