@@ -191,7 +191,6 @@ object readIntFx extends InternalFunction {
     val dependencies: List[InternalFunction] = List.empty
 }
 
-// TODO fill in commented instructrions
 object ArrayStoreFx extends InternalFunction {
     val label: String = "_arrStore4:"
     val instructions: List[Instruction] = List(

@@ -147,6 +147,9 @@ class Aarch64_formatter() {
         case BaseOfsIA(base, ofs) => "[" + generateRegister(base) + ", #" + ofs + "]"
         case BaseOfsRA(base, ofsReg, shift) => "[" + generateRegister(base) + ", " +
             generateRegister(ofsReg) + "]"
+        case BaseOfsExtendShift(base, ofsReg, extend, shift) => 
+            "[" + generateRegister(base) + ", " + generateRegister(ofsReg) + ", " + 
+            generateAddress(extend) + " #" + shift.get + "]"
         case PreIndxA(base, ofs) => "[" + generateRegister(base) + ", #" + ofs + "]!"
         case PstIndxIA(base, ofs) => "[" + generateRegister(base) + "], #" + ofs
         case PstIndxRA(base, ofsReg) => "[" + generateRegister(base) + "], " + generateRegister(ofsReg)
