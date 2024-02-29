@@ -33,26 +33,13 @@ class Aarch64_formatter() {
         }
 
         // Write the pre-amble for instructions.
-
         writer.write(".align 4\n.text\n.global main\n")
-
-        // Instruction list
         
         // Iterate over the instructions and generate assembly code for each one.
-        instructions.foreach { instr =>
-            val assemblyCode = generateAssembly(instr)
-            writer.write(assemblyCode)
-        }
-        
-        // Helper functions (taken from the reference compiler). 
+        instructions.foreach(instr => writer.write(generateAssembly(instr))) 
         
         // Generate assembly code for internal functions
-        internalFxs.foreach { f =>
-            f.instructions.foreach { instr =>
-                val assemblyCode = generateAssembly(instr)
-                writer.write(assemblyCode)
-            }
-        }
+        internalFxs.foreach(f => f.instructions.foreach(instr => writer.write(generateAssembly(instr))))
 
         // Close the PrintWriter to ensure all output is written and resources are released.
         writer.close()
