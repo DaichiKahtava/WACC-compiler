@@ -301,6 +301,10 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
             formatter.includeFx(printIntFx)
             printIntFx.label
         }
+        case S_PAIR(_, _) | S_ERASED => {
+            formatter.includeFx(printPairFx)
+            printPairFx.label
+        }
         case _ => ???
     }
 
