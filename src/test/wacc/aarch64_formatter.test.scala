@@ -90,6 +90,75 @@ class aarch64FormTest extends AnyFlatSpec with BeforeAndAfterEach {
         result shouldBe ".align 4\n.text\n.global main\nb.cs\tlabel\n"
     }
 
+    it should "process a Store instruction" in {
+        frm.generateAssembly(List(Store(RegisterX(1), BaseA(RegisterX(2)))), tempFile.getAbsolutePath)
+        val result = scala.io.Source.fromFile(tempFile).mkString
+        result shouldBe ".align 4\n.text\n.global main\nstr\tX1, [X2]\n"
+    }
+
+    it should "process a StoreByte instruction" in {
+        frm.generateAssembly(List(StoreByte(RegisterX(1), BaseA(RegisterX(2)))), tempFile.getAbsolutePath)
+        val result = scala.io.Source.fromFile(tempFile).mkString
+        result shouldBe ".align 4\n.text\n.global main\nstrb\tX1, [X2]\n"
+    }
+
+    it should "process a BranchLink instruction" in {
+        frm.generateAssembly(List(BranchLink("label")), tempFile.getAbsolutePath)
+        val result = scala.io.Source.fromFile(tempFile).mkString
+        result shouldBe ".align 4\n.text\n.global main\nbl\tlabel\n"
+    }
+
+    it should "process a Compare instruction" in {
+        frm.generateAssembly(List(Compare(RegisterX(1), RegisterX(2))), tempFile.getAbsolutePath)
+        val result = scala.io.Source.fromFile(tempFile).mkString
+        result shouldBe ".align 4\n.text\n.global main\ncmp\tX1, X2\n"
+    }
+
+    it should "process a sequence of instructions with dependencies" in {
+        val instructions = List(
+            Move(ImmNum(10), RegisterX(1)),
+            AddI(RegisterX(1), RegisterX(2)),
+            SubI(ImmNum(5), RegisterX(2)),
+            Store(RegisterX(2), BaseA(RegisterX(3)))
+        )
+
+        frm.generateAssembly(instructions, tempFile.getAbsolutePath)
+        val result = scala.io.Source.fromFile(tempFile).mkString
+        val expected = ".align 4\n.text\n.global main\nmov\tX1, #10\nadd\tX2, X2, X1\nsub\tX2, X2, #5\nstr\tX2, [X3]\n"
+        
+        result shouldBe expected
+    }
+
+    it should "process a sequence of instructions with branches and conditions" in {
+        val instructions = List(
+            Compare(RegisterX(1), ImmNum(0)),
+            BranchCond("zero", EqI),
+            Move(ImmNum(1), RegisterX(1)),
+            Label("zero"),
+            Move(ImmNum(0), RegisterX(1))
+        )
+
+        frm.generateAssembly(instructions, tempFile.getAbsolutePath)
+        val result = scala.io.Source.fromFile(tempFile).mkString
+        val expected = ".align 4\n.text\n.global main\ncmp\tX1, #0\nb.eq\tzero\nmov\tX1, #1\nzero:\nmov\tX1, #0\n"
+        
+        result shouldBe expected
+    }
+
+    it should "process a sequence of instructions with function calls" in {
+        val instructions = List(
+            BranchLink("function"),
+            Move(RegisterXR, RegisterX(1)),
+            ReturnI
+        )
+
+        frm.generateAssembly(instructions, tempFile.getAbsolutePath)
+        val result = scala.io.Source.fromFile(tempFile).mkString
+        val expected = ".align 4\n.text\n.global main\nbl\tfunction\nmov\tX1, X8\nret\n"
+        
+        result shouldBe expected
+    }
+
     // No longer part of the formatter
 //     it should "add error checking for division" in {
 //         frm.generateAssembly(List(DivI(ImmNum(0), RegisterX(2)))) shouldBe 
