@@ -188,9 +188,9 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
         // while the first value is calculated directly to the primary value
         translate(y, regs) ++ 
         // TODO: Function for pushing and poping
-        List(Push(RegisterX(primary), RegisterXZR, PreIndxA(RegisterSP, -16))) ++
+        List(Push(RegisterX(primary), RegisterXZR)) ++
         translate(x, regs) ++
-        List(Pop(PstIndxIA(RegisterSP, 16), RegisterX(secondary), RegisterXZR))
+        List(Pop(RegisterX(secondary), RegisterXZR))
     }
 
     def translate(list: List[Any], regs: List[Int]): List[Instruction] = list match {
@@ -209,10 +209,10 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
         })
         // TODO: Use blocks of sorts...
         sem.curSymTable.assignPositions(formatter)
-        instructionList.addAll(List(Label("main"), Push(RegisterFP, RegisterLR, PreIndxA(RegisterSP, -16))))
+        instructionList.addAll(List(Label("main"), Push(RegisterFP, RegisterLR)))
         instructionList ++= translate(program.s)
         instructionList.addAll(List(
-            Pop(PstIndxIA(RegisterSP, 16), RegisterFP, RegisterLR),
+            Pop(RegisterFP, RegisterLR),
             Move(ImmNum(0), RegisterX(0)),
             ReturnI
         ))
@@ -343,18 +343,18 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
     def pushRegs(regs: List[Int]): List[Instruction] = {
         Comment("Saving registers") :: (for {
             List(r1, r2) <- regs.grouped(2).toList // [em422]
-        } yield (Push(RegisterX(r1), RegisterX(r2), PreIndxA(RegisterSP, -16)))) ++ 
+        } yield (Push(RegisterX(r1), RegisterX(r2)))) ++ 
         // This can probably be compacted into above but idk how
-        (if (regs.size % 2 != 0) List(Push(RegisterX(regs.last), RegisterXZR, PreIndxA(RegisterSP, -16))) else Nil) ++
+        (if (regs.size % 2 != 0) List(Push(RegisterX(regs.last), RegisterXZR)) else Nil) ++
         List(Comment("Saving registers END"))
     }
 
     def popRegs(regs: List[Int]): List[Instruction] = {
         Comment("Restoring registers") :: 
-        (if (regs.size % 2 != 0) List(Pop(PstIndxIA(RegisterSP, 16), RegisterX(regs.last), RegisterXZR)) else Nil) ++ 
+        (if (regs.size % 2 != 0) List(Pop(RegisterX(regs.last), RegisterXZR)) else Nil) ++ 
         (for {
             List(r1, r2) <- regs.grouped(2).toList.reverse
-        } yield (Pop(PstIndxIA(RegisterSP, 16), RegisterX(r1), RegisterX(r2)))) ++ List(Comment("Restoring registers END"))
+        } yield (Pop(RegisterX(r1), RegisterX(r2)))) ++ List(Comment("Restoring registers END"))
         // This can probably be compacted into above but idk how
     }
 

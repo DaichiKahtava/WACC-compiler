@@ -24,8 +24,9 @@ case class Branch(label: String) extends Instruction
 case class BranchCond(label: String, cond: CondI) extends Instruction
 case class BranchLink(label: String) extends Instruction // Calls function and stores address in the link register...
 
-case class Push(src1: Register, src2: Register, dst: AdrMode) extends Instruction
-case class Pop(src: AdrMode, dst1: Register, dst2: Register) extends Instruction
+// Pushing two registers to stack
+case class Push(src1: Register, src2: Register) extends Instruction
+case class Pop(dst1: Register, dst2: Register) extends Instruction
 
 case class Load(src: AdrMode, dst: Register) extends Instruction
 case class LoadWord(src: AdrMode, dst: Register) extends Instruction // always signed
@@ -81,8 +82,10 @@ case class BaseA(base: RegisterXorSP) extends AdrMode
 // [base, Xm]
 // Used to replicate [base, #imm] as per the immediate values' convention
 case class BaseOfsRA(base: RegisterXorSP, ofsReg: RegisterX) extends AdrMode 
+
 // [base #imm]!
-case class PreIndxA(base: RegisterXorSP, ofs: Int) extends AdrMode 
+//case class PreIndxA(base: RegisterXorSP, ofs: Int) extends AdrMode 
+
 // [base], #imm
 case class PstIndxIA(base: RegisterXorSP, ofs: Int) extends AdrMode 
 // [base], Xm

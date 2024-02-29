@@ -92,16 +92,15 @@ class Aarch64_formatter() {
             case true  => "ldrsh\t" + generateRegister(dst) + ", " + generateAddress(src) + "\n"
         }
         case LoadWord(src, dst) => "ldrsw\t" + generateRegister(dst) + ", " + generateAddress(src) + "\n"
-        case Pop(src, dst1, dst2) => "ldp\t" + generateRegister(dst1) + ", " +
-            generateRegister(dst2) + ", " + generateAddress(src) + "\n"
-            // TODO: do we need pair loading?
+        case Pop(dst1, dst2) => "ldp\t" + generateRegister(dst1) + ", " +
+            generateRegister(dst2) + ", [" + generateRegister(RegisterSP) + "], #" + (getSize(S_ANY) * 2) + "\n"
 
         case Store(src, dst) => "str\t" + generateRegister(src) + ", " + generateAddress(dst) + "\n"
         case StoreByte(src, dst) => "strb\t" + generateRegister(src) + ", " + generateAddress(dst) + "\n"
         case StoreHalf(src, dst) => "strh\t" + generateRegister(src) + ", " + generateAddress(dst) + "\n"
         case StoreWord(src, dst) => "strw\t" + generateRegister(src) + ", " + generateAddress(dst) + "\n"
-        case Push(src1, src2, dst) => "stp\t" + generateRegister(src1) + ", " +
-            generateRegister(src2) + ", " + generateAddress(dst) + "\n" // TODO: Generalise offsets
+        case Push(src1, src2) => "stp\t" + generateRegister(src1) + ", " +
+            generateRegister(src2) + ", [" + generateRegister(RegisterSP) + ", #" + (getSize(S_ANY) * -2) + "]!\n" 
 
         case Branch(label) => "b\t" + label + "\n"
         case BranchCond(label, cond) => "b." + generateCondition(cond) + "\t" + label + "\n"
@@ -156,7 +155,6 @@ class Aarch64_formatter() {
         case BaseA(base) => "[" + generateRegister(base) + "]"
         case BaseOfsRA(base, ofsReg) => "[" + generateRegister(base) + ", " +
             generateRegister(ofsReg) + "]"
-        case PreIndxA(base, ofs) => "[" + generateRegister(base) + ", #" + ofs + "]!"
         case PstIndxIA(base, ofs) => "[" + generateRegister(base) + "], #" + ofs
         case PstIndxRA(base, ofsReg) => "[" + generateRegister(base) + "], " + generateRegister(ofsReg)
         case LiteralA(l) => l

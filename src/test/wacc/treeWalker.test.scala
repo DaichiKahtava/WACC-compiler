@@ -40,13 +40,13 @@ class treeWalkerTest extends AnyFlatSpec with BeforeAndAfterEach
 
     it should "generate the correct instruction list for BinOp expressions" in {
         tw.translate(Add(IntL(100)(0,0), IntL(100)(0,0))(0,0), testGpRegsList) shouldBe 
-            List(Move(ImmNum(100), RegisterX(0)), Push(RegisterX(0), RegisterXZR, PreIndxA(RegisterSP, -16)), Move(ImmNum(100), RegisterX(0)), Pop(PstIndxIA(RegisterSP, 16), RegisterX(1), RegisterXZR), AddI(RegisterX(1), RegisterX(0)))
+            List(Move(ImmNum(100), RegisterX(0)), Push(RegisterX(0), RegisterXZR), Move(ImmNum(100), RegisterX(0)), Pop(RegisterX(1), RegisterXZR), AddI(RegisterX(1), RegisterX(0)))
         tw.translate(Minus(IntL(100)(0,0), IntL(100)(0,0))(0,0), testGpRegsList) shouldBe 
-            List(Move(ImmNum(100), RegisterX(0)), Push(RegisterX(0), RegisterXZR, PreIndxA(RegisterSP, -16)), Move(ImmNum(100), RegisterX(0)), Pop(PstIndxIA(RegisterSP, 16), RegisterX(1), RegisterXZR), SubI(RegisterX(1), RegisterX(0)))
+            List(Move(ImmNum(100), RegisterX(0)), Push(RegisterX(0), RegisterXZR), Move(ImmNum(100), RegisterX(0)), Pop(RegisterX(1), RegisterXZR), SubI(RegisterX(1), RegisterX(0)))
         tw.translate(Mul(IntL(100)(0,0), IntL(100)(0,0))(0,0), testGpRegsList) shouldBe 
-            List(Move(ImmNum(100), RegisterX(0)), Push(RegisterX(0), RegisterXZR, PreIndxA(RegisterSP, -16)), Move(ImmNum(100), RegisterX(0)), Pop(PstIndxIA(RegisterSP, 16), RegisterX(1), RegisterXZR), MulI(RegisterX(1), RegisterX(0)))
+            List(Move(ImmNum(100), RegisterX(0)), Push(RegisterX(0), RegisterXZR), Move(ImmNum(100), RegisterX(0)), Pop(RegisterX(1), RegisterXZR), MulI(RegisterX(1), RegisterX(0)))
         tw.translate(Div(IntL(100)(0,0), IntL(100)(0,0))(0,0), testGpRegsList) shouldBe 
-            List(Move(ImmNum(100), RegisterX(0)), Push(RegisterX(0), RegisterXZR, PreIndxA(RegisterSP, -16)), Move(ImmNum(100), RegisterX(0)), Pop(PstIndxIA(RegisterSP, 16), RegisterX(1), RegisterXZR), Compare(RegisterXZR, RegisterX(1)), BranchCond("_errDivZero", EqI), DivI(RegisterX(1), RegisterX(0)))
+            List(Move(ImmNum(100), RegisterX(0)), Push(RegisterX(0), RegisterXZR), Move(ImmNum(100), RegisterX(0)), Pop(RegisterX(1), RegisterXZR), Compare(RegisterXZR, RegisterX(1)), BranchCond("_errDivZero", EqI), DivI(RegisterX(1), RegisterX(0)))
     }
     
 }

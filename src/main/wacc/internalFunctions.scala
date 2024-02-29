@@ -42,7 +42,7 @@ object printStringFx extends InternalFunction {
         Data("%.*s", ".L._prints_str0"),
         AlignInstr(),
         Label(label), // TODO: Possibly abstract common patterns (e.g. label after align and push/pop)?
-        Push(RegisterLR, RegisterXZR, PreIndxA(RegisterSP, -16)),
+        Push(RegisterLR, RegisterXZR),
         Move(RegisterX(0), RegisterX(2)),
         Move(ImmNum(-4), RegisterX(3)),
         LoadWord(BaseOfsRA(RegisterX(0), RegisterX(3)), RegisterX(1)),
@@ -50,7 +50,7 @@ object printStringFx extends InternalFunction {
         BranchLink("printf"),
         Move(ImmNum(0), RegisterX(0)),
         BranchLink("fflush"),
-        Pop(PstIndxIA(RegisterSP, 16), RegisterLR, RegisterXZR),
+        Pop(RegisterLR, RegisterXZR),
         ReturnI
     ) 
     val dependencies: List[InternalFunction] = List.empty
@@ -64,13 +64,13 @@ object printCharFx extends InternalFunction {
         Data("%c", ".L._printc_str0"),
         AlignInstr(),
         Label(label), // TODO: Possibly abstract common patterns (e.g. label after align and push/pop)?
-        Push(RegisterLR, RegisterXZR, PreIndxA(RegisterSP, -16)),
+        Push(RegisterLR, RegisterXZR),
         Move(RegisterX(0), RegisterX(1)),
         Address(".L._printc_str0", RegisterX(0)),
         BranchLink("printf"),
         Move(ImmNum(0), RegisterX(0)),
         BranchLink("fflush"),
-        Pop(PstIndxIA(RegisterSP, 16), RegisterLR, RegisterXZR),
+        Pop(RegisterLR, RegisterXZR),
         ReturnI
     ) 
     val dependencies: List[InternalFunction] = List.empty
@@ -84,13 +84,13 @@ object printIntFx extends InternalFunction {
         Data("%d", ".L._printi_str0"),
         AlignInstr(),
         Label(label), // TODO: Possibly abstract common patterns (e.g. label after align and push/pop)?
-        Push(RegisterLR, RegisterXZR, PreIndxA(RegisterSP, -16)),
+        Push(RegisterLR, RegisterXZR),
         Move(RegisterX(0), RegisterX(1)),
         Address(".L._printi_str0", RegisterX(0)),
         BranchLink("printf"),
         Move(ImmNum(0), RegisterX(0)),
         BranchLink("fflush"),
-        Pop(PstIndxIA(RegisterSP, 16), RegisterLR, RegisterXZR),
+        Pop(RegisterLR, RegisterXZR),
         ReturnI
     ) 
     val dependencies: List[InternalFunction] = List.empty
@@ -104,7 +104,7 @@ object printBoolFx extends InternalFunction {
         Data("true", ".L._printb_str1"),
         AlignInstr(),
         Label(label), // TODO: Possibly abstract common patterns (e.g. label after align and push/pop)?
-        Push(RegisterLR, RegisterXZR, PreIndxA(RegisterSP, -16)),
+        Push(RegisterLR, RegisterXZR),
 
 
         
@@ -118,7 +118,7 @@ object printBoolFx extends InternalFunction {
 
         Label(".L_printb1"),
         BranchLink(printStringFx.label),
-        Pop(PstIndxIA(RegisterSP, 16), RegisterLR, RegisterXZR),
+        Pop(RegisterLR, RegisterXZR),
         ReturnI
     ) 
 
@@ -132,12 +132,12 @@ object printLineFx extends InternalFunction {
         Data("\n", ".L._println_newline"),
         AlignInstr(),
         Label(label),
-        Push(RegisterLR, RegisterXZR, PreIndxA(RegisterSP, -16)),
+        Push(RegisterLR, RegisterXZR),
 
         Address(".L._println_newline", RegisterX(0)),
         BranchLink(printStringFx.label),
 
-        Pop(PstIndxIA(RegisterSP, 16), RegisterLR, RegisterXZR),
+        Pop(RegisterLR, RegisterXZR),
         ReturnI
     )
     val dependencies: List[InternalFunction] = List(printStringFx)
@@ -148,14 +148,14 @@ object mallocFx extends InternalFunction {
     val instructions: List[Instruction] = List (
         Comment("Allocating memory"),
         Label(label),
-        Push(RegisterLR, RegisterXZR, PreIndxA(RegisterSP, -16)),
+        Push(RegisterLR, RegisterXZR),
         BranchLink("malloc"),
 
         // Instead of CBZ, should do the same thing
         Compare(RegisterX(0), RegisterWZR), 
         BranchCond("_errOutOfMemory", EqI),
 
-        Pop(PstIndxIA(RegisterSP, 16), RegisterLR, RegisterXZR),
+        Pop(RegisterLR, RegisterXZR),
         ReturnI
     )
     val dependencies: List[InternalFunction] = List(errorOutOfMemoryFx)
@@ -168,11 +168,11 @@ object readIntFx extends InternalFunction {
         Data("%d\n", ".L._readi_str0"),
         AlignInstr(),
         Label(label),
-        Push(RegisterX(0), RegisterLR, PreIndxA(RegisterSP, -16)),
+        Push(RegisterX(0), RegisterLR),
         Move(RegisterX(1), RegisterSP),
         Address(".L._readi_str0", RegisterX(0)),
         BranchLink("scanf"),
-        Pop(PstIndxIA(RegisterSP, 16), RegisterX(0), RegisterLR),
+        Pop(RegisterX(0), RegisterLR),
         ReturnI
     )
     val dependencies: List[InternalFunction] = List.empty
