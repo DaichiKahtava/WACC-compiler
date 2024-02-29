@@ -202,7 +202,7 @@ object ArrayStoreFx extends InternalFunction {
         Compare(RegisterW(17), ImmNum(0)),
         CondSelect(RegisterX(17), RegisterX(1), RegisterX(1), LtI),
         BranchCond(errorOutOfBoundsFx.label, LtI),
-        LoadRegSignedWord(BaseOfsIA(RegisterX(7), -4), RegisterLR), // ldrsw lr, [x7, #-4]
+        LoadWord(BaseOfsIA(RegisterX(7), -4), RegisterLR), // ldrsw lr, [x7, #-4]
         Compare(RegisterW(17), RegisterW(30)),
         CondSelect(RegisterX(17), RegisterX(1), RegisterX(1), GeI),
         BranchCond(errorOutOfBoundsFx.label, GeI),
@@ -223,11 +223,11 @@ object ArrayLoadFx extends InternalFunction {
         Compare(RegisterW(17), ImmNum(0)),
         CondSelect(RegisterX(17), RegisterX(1), RegisterX(1), LtI),
         BranchCond(errorOutOfBoundsFx.label, LtI),
-        LoadRegSignedWord(BaseOfsIA(RegisterX(7), -4), RegisterLR), // ldrsw lr, [x7, #-4]
+        LoadWord(BaseOfsIA(RegisterX(7), -4), RegisterLR), // ldrsw lr, [x7, #-4]
         Compare(RegisterW(17), RegisterW(30)),
         CondSelect(RegisterX(17), RegisterX(1), RegisterX(1), GeI),
         BranchCond(errorOutOfBoundsFx.label, GeI),
-        LoadRegSignedWord(BaseOfsExtendShift(RegisterX(7), RegisterX(17), LiteralA("lsl"), Some(2)), RegisterX(7)), // ldrsw x7, [x7, x17, lsl #2]
+        LoadWord(BaseOfsExtendShift(RegisterX(7), RegisterX(17), LiteralA("lsl"), Some(2)), RegisterX(7)), // ldrsw x7, [x7, x17, lsl #2]
         Pop(PstIndxIA(RegisterSP, 16), RegisterLR, RegisterXZR),
         ReturnI
     )
