@@ -3,25 +3,34 @@ package wacc
 import org.scalatest.flatspec.AnyFlatSpec
 import org.scalatest.matchers.should.Matchers._
 import org.scalatest.BeforeAndAfterEach
+import java.io.File
 
 class aarch64FormTest extends AnyFlatSpec with BeforeAndAfterEach {
 
     var frm = new Aarch64_formatter()
+    val tempFile = File.createTempFile("test", ".s") // Create a temporary file for testing.
+    tempFile.deleteOnExit() // Ensure the file is deleted when the JVM exits.
 
     override protected def beforeEach(): Unit = {
         frm = new Aarch64_formatter()
     }
 
     "The arm64 formatter" should "process a simple mov command with registers" in {
-        frm.generateAssembly(List(Move(RegisterX(1), RegisterX(2)))) shouldBe ".align 4\n.text\n.global main\nmov\tX2, X1\n"
+        frm.generateAssembly(List(Move(RegisterX(1), RegisterX(2))), tempFile.getAbsolutePath)
+        val result = scala.io.Source.fromFile(tempFile).mkString // Read the content of the file and turn it into a string.
+        result shouldBe ".align 4\n.text\n.global main\nmov\tX2, X1\n"
     }
 
     it should "process a simple mov with an immediate" in {
-        frm.generateAssembly(List(Move(ImmNum(1), RegisterX(2)))) shouldBe ".align 4\n.text\n.global main\nmov\tX2, #1\n"
+        frm.generateAssembly(List(Move(ImmNum(1), RegisterX(2))), tempFile.getAbsolutePath)
+        val result = scala.io.Source.fromFile(tempFile).mkString
+        result shouldBe ".align 4\n.text\n.global main\nmov\tX2, #1\n"
     }
 
     it should "process an add" in {
-        frm.generateAssembly(List(AddI(ImmNum(1), RegisterX(2)))) shouldBe ".align 4\n.text\n.global main\nadd\tX2, X2, #1\n"
+        frm.generateAssembly(List(AddI(ImmNum(1), RegisterX(2))), tempFile.getAbsolutePath)
+        val result = scala.io.Source.fromFile(tempFile).mkString
+        result shouldBe ".align 4\n.text\n.global main\nadd\tX2, X2, #1\n"
     }
 
     // No longer part of the formatter
