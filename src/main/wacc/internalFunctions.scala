@@ -156,6 +156,24 @@ object printLineFx extends InternalFunction {
     val dependencies: List[InternalFunction] = List(printStringFx)
 }
 
+object printPairFx extends InternalFunction {
+    val label: String = "_printp"
+    val instructions: List[Instruction] = List(
+        Data("%p", ".L._printp_str0"),
+        AlignInstr(),
+        Label(label),
+        Push(RegisterLR, RegisterXZR, PreIndxA(RegisterSP, -16)),
+        Move(RegisterX(0), RegisterX(1)),
+        Address(".L._printp_str0", RegisterX(0)),
+        BranchLink("printf"),
+        Move(ImmNum(0), RegisterX(0)),
+        BranchLink("fflush"),
+        Pop(PstIndxIA(RegisterSP, 16), RegisterLR, RegisterXZR),
+        ReturnI
+    )
+    val dependencies: List[InternalFunction] = List.empty
+}
+
 object mallocFx extends InternalFunction {
     val label: String = "_malloc"
     val instructions: List[Instruction] = List (
