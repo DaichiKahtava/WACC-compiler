@@ -33,6 +33,20 @@ class aarch64FormTest extends AnyFlatSpec with BeforeAndAfterEach {
         result shouldBe ".align 4\n.text\n.global main\nadd\tX2, X2, #1\n"
     }
 
+    it should "process a list of multiple instructions" in {
+        val instructions = List(
+            Move(RegisterX(1), RegisterX(2)),
+            AddI(ImmNum(1), RegisterX(2)),
+            SubI(ImmNum(1), RegisterX(2))
+        )
+
+        frm.generateAssembly(instructions, tempFile.getAbsolutePath)
+        val result = scala.io.Source.fromFile(tempFile).mkString
+        val expected = ".align 4\n.text\n.global main\nmov\tX2, X1\nadd\tX2, X2, #1\nsub\tX2, X2, #1\n"
+        
+        result shouldBe expected
+    }
+
     // No longer part of the formatter
 //     it should "add error checking for division" in {
 //         frm.generateAssembly(List(DivI(ImmNum(0), RegisterX(2)))) shouldBe 
