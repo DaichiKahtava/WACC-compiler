@@ -31,12 +31,14 @@ case class Load(src: AdrMode, dst: Register) extends Instruction
 case class LoadWord(src: AdrMode, dst: Register) extends Instruction // always signed
 case class LoadByte(src: AdrMode, dst: Register, signed: Boolean) extends Instruction
 case class LoadHalf(src: AdrMode, dst: Register, signed: Boolean) extends Instruction
+case class LoadRegSignedWord(src: AdrMode, dst: Register) extends Instruction
 // Load and store pair are used for push and pop only.
 case class Store(src: Register, dst: AdrMode) extends Instruction
 case class StoreWord(src: Register, dst: AdrMode) extends Instruction
 case class StoreByte(src: Register, dst: AdrMode) extends Instruction
 case class StoreHalf(src: Register, dst: AdrMode) extends Instruction
 
+case class SignExWord(src: RegisterW, dst: RegisterX) extends Instruction
 
 // May want to have the two operands and the destination as separate arguments
 // case class Add(op1, op2, dst)
@@ -49,10 +51,12 @@ case class DivI(src: Operand, dst: Register) extends Instruction
 
 case class SetCond(r: Register, cond: CondI) extends Instruction
 case class Compare(r1: Operand, r2: Operand) extends Instruction
+case class CondSelect(src1: Register, src2: Register, dst: Register, cond: CondI) extends Instruction
 
 
 // TODO: Fill in with all types of operands
 sealed trait Operand
+case class ImmNum(n: Int) extends Operand
 sealed trait Register extends Operand
 
 // Groups of registers can go here
@@ -70,7 +74,6 @@ case object RegisterXZR extends Register // Zero register
 case object RegisterWZR extends Register // Zero register
 
 
-
 sealed trait AdrMode
 // [base]
 case class BaseA(base: RegisterXorSP) extends AdrMode 
@@ -78,6 +81,8 @@ case class BaseA(base: RegisterXorSP) extends AdrMode
 case class BaseOfsIA(base: RegisterXorSP, ofs: Int) extends AdrMode 
 // [base, Xm]
 case class BaseOfsRA(base: RegisterXorSP, ofsReg: RegisterX, shift: Option[Int]) extends AdrMode 
+// [base, Xm, extend, amount]
+case class BaseOfsExtendShift(base: RegisterXorSP, ofsReg: RegisterX, extend: LiteralA, shift: Option[Int]) extends AdrMode
 // [base #imm]!
 case class PreIndxA(base: RegisterXorSP, ofs: Int) extends AdrMode 
 // [base], #imm
@@ -88,7 +93,6 @@ case class PstIndxRA(base: RegisterXorSP, ofsReg: RegisterX) extends AdrMode
 // label
 case class LiteralA(l: String) extends AdrMode 
 
-case class ImmNum(n: Int) extends Operand
 
 sealed trait CondI
 case object EqI extends CondI
