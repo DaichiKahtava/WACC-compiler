@@ -14,7 +14,21 @@ object errorDivZeroFx extends InternalFunction {
         AlignInstr(),
         Label(label),
         Address(".L._errDivZero_str0", RegisterX(0)),
-        BranchLink("_prints"),
+        BranchLink(printStringFx.label),
+        Move(ImmNum(-1), RegisterW(0)),
+        BranchLink("exit")
+    )
+    val dependencies: List[InternalFunction] = List(printStringFx)
+}
+
+object errorNullFx extends InternalFunction {
+    val label: String = "_errNull"
+    val instructions: List[Instruction] = List(
+        Data("fatal error: null pair dereferenced or freed", ".L._errNull_str0"),
+        AlignInstr(),
+        Label(label),
+        Address(".L._errNull_str0", RegisterX(0)),
+        BranchLink(printStringFx.label),
         Move(ImmNum(-1), RegisterW(0)),
         BranchLink("exit")
     )
@@ -28,7 +42,7 @@ object errorOutOfMemoryFx extends InternalFunction {
         AlignInstr(),
         Label(label),
         Address(".L._errOutOfMemory_str0", RegisterX(0)),
-        BranchLink("_prints"),
+        BranchLink(printStringFx.label),
         Move(ImmNum(-1), RegisterX(0)),
         BranchLink("exit")
     )
