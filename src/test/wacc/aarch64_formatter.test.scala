@@ -17,7 +17,8 @@ class aarch64FormTest extends AnyFlatSpec with BeforeAndAfterEach {
 
     "The arm64 formatter" should "process a simple mov command with registers" in {
         frm.generateAssembly(List(Move(RegisterX(1), RegisterX(2))), tempFile.getAbsolutePath)
-        val result = scala.io.Source.fromFile(tempFile).mkString // Read the content of the file and turn it into a string.
+        // Read the content of the file and turn it into a string, done similarly for all tests below.
+        val result = scala.io.Source.fromFile(tempFile).mkString
         result shouldBe ".align 4\n.text\n.global main\nmov\tX2, X1\n"
     }
 
@@ -45,6 +46,48 @@ class aarch64FormTest extends AnyFlatSpec with BeforeAndAfterEach {
         val expected = ".align 4\n.text\n.global main\nmov\tX2, X1\nadd\tX2, X2, #1\nsub\tX2, X2, #1\n"
         
         result shouldBe expected
+    }
+
+    it should "process a sub instruction" in {
+        frm.generateAssembly(List(SubI(ImmNum(1), RegisterX(2))), tempFile.getAbsolutePath)
+        val result = scala.io.Source.fromFile(tempFile).mkString
+        result shouldBe ".align 4\n.text\n.global main\nsub\tX2, X2, #1\n"
+    }
+
+    it should "process a Load instruction" in {
+        frm.generateAssembly(List(Load(BaseA(RegisterX(1)), RegisterX(2))), tempFile.getAbsolutePath)
+        val result = scala.io.Source.fromFile(tempFile).mkString
+        result shouldBe ".align 4\n.text\n.global main\nldr\tX2, [X1]\n"
+    }
+
+    it should "process a LoadByte instruction" in {
+        frm.generateAssembly(List(LoadByte(BaseA(RegisterX(1)), RegisterX(2), false)), tempFile.getAbsolutePath)
+        val result = scala.io.Source.fromFile(tempFile).mkString
+        result shouldBe ".align 4\n.text\n.global main\nldrb\tX2, [X1]\n"
+    }
+
+    it should "process a return instruction" in {
+        frm.generateAssembly(List(ReturnI), tempFile.getAbsolutePath)
+        val result = scala.io.Source.fromFile(tempFile).mkString
+        result shouldBe ".align 4\n.text\n.global main\nret\n"
+    }
+
+    it should "process a BranchCond instruction with EqI condition" in {
+        frm.generateAssembly(List(BranchCond("label", EqI)), tempFile.getAbsolutePath)
+        val result = scala.io.Source.fromFile(tempFile).mkString
+        result shouldBe ".align 4\n.text\n.global main\nb.eq\tlabel\n"
+    }
+
+    it should "process a BranchCond instruction with NeI condition" in {
+        frm.generateAssembly(List(BranchCond("label", NeI)), tempFile.getAbsolutePath)
+        val result = scala.io.Source.fromFile(tempFile).mkString
+        result shouldBe ".align 4\n.text\n.global main\nb.ne\tlabel\n"
+    }
+
+    it should "process a BranchCond instruction with CsI condition" in {
+        frm.generateAssembly(List(BranchCond("label", CsI)), tempFile.getAbsolutePath)
+        val result = scala.io.Source.fromFile(tempFile).mkString
+        result shouldBe ".align 4\n.text\n.global main\nb.cs\tlabel\n"
     }
 
     // No longer part of the formatter
