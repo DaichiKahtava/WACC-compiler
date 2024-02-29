@@ -26,6 +26,7 @@ object errorOutOfMemoryFx extends InternalFunction {
     val instructions: List[Instruction] = List (
         Data("fatal error: out of memory\n", ".L._errOutOfMemory_str0"),
         AlignInstr(),
+        Label(label),
         Address(".L._errOutOfMemory_str0", RegisterX(0)),
         BranchLink("_prints"),
         Move(ImmNum(-1), RegisterX(0)),
@@ -150,7 +151,7 @@ object mallocFx extends InternalFunction {
 
         // Instead of CBZ, should do the same thing
         Compare(RegisterX(0), ImmNum(0)), 
-        BranchCond("_errOutOfMemory", EqI),
+        BranchCond(errorOutOfMemoryFx.label, EqI),
 
         Pop(PstIndxIA(RegisterSP, 16), RegisterLR, RegisterXZR),
         ReturnI

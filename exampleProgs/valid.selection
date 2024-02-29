@@ -1,8 +1,8 @@
 'exampleProgs/valid/advanced/binarySortTree.wacc
 'exampleProgs/valid/advanced/hashTable.wacc
 'exampleProgs/valid/advanced/ticTacToe.wacc
-'exampleProgs/valid/array/arrayBasic.wacc
-'exampleProgs/valid/array/arrayEmpty.wacc
+exampleProgs/valid/array/arrayBasic.wacc
+exampleProgs/valid/array/arrayEmpty.wacc
 'exampleProgs/valid/array/arrayIndexMayBeArrayIndex.wacc
 'exampleProgs/valid/array/arrayLength.wacc
 'exampleProgs/valid/array/arrayLookup.wacc
