@@ -22,6 +22,7 @@ class Aarch64_formatter() {
         val resultRegister = 0
         val pointerReg = 16
         val offsetReg = 17
+        val framePReg = 30
     }
 
     // Global data for program. Note that data for internal programs are
@@ -196,7 +197,7 @@ class Aarch64_formatter() {
 
     def getSize(t: S_TYPE) = t match {
         // Returns number of bytes
-        // <Addresses have 8 bytes>
+        // <Addresses have 8 bytes -  the size of a register>
         case S_INT => 4
         case S_BOOL => 1
         case S_STRING => 8
@@ -204,7 +205,7 @@ class Aarch64_formatter() {
         case S_ARRAY(tp) => 8
         case S_PAIR(tp1, tp2) => 8
         case S_ERASED => 8
-        case S_ANY => 8
+        case S_ANY => 8 // size of a register.
         case S_EMPTYARR => 8
     }
 }

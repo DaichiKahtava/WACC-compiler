@@ -6,9 +6,17 @@ package wacc
     - The assignment of the variables to their location is done before hand on the symbol table
     - scratchRegs are to be used for immediate operations and are not expected to persist (volatile!)
     - after each simple operation the result is stored on the simple element of scratchRegs
-    - Array construction is done with pointerReg
+    - pointerReg is used for 
+        (a) array construction and 
+        (b) as a temporary stack pointer when performing caller saves and restore
+        <These cannot happen at the same time by semantics of WACC> 
     - argRegs are only used for passing arguments, resultRegister stores the result from a function
-    - offsetReg *might* be used to store offsets when using pointers
+    - offsetReg is used to store large offsets when using pointers
+    - framePReg always points to the general puspose register used as the frame pointer
+
+    Conventions for grouping:
+    - argRegs    must be a subset of callerRegs
+    - variabRegs must be a subset of calleeRegs
 */
 
 trait registerConfig {
@@ -22,4 +30,5 @@ trait registerConfig {
     val resultRegister: Int
     val pointerReg: Int
     val offsetReg: Int
+    val framePReg: Int
 }

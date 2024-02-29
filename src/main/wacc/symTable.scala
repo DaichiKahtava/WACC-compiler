@@ -164,6 +164,10 @@ case object Undefined extends Position
 case class InRegister(r: Int) extends Position
 case class OnStack(offset: Int) extends Position
 
+case class OnTempStack(regNum: Int) extends Position 
+// Temporary location for caller saved argument
+// The offset is calculated from the registerNum using the pinterReg (X16)
+
 // Nested scopes may be implemented with multiple symbol tables
 // Symbol tables 
 
