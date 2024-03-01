@@ -233,7 +233,7 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
         val scratchRegs = formatter.regConf.scratchRegs
         val primary = scratchRegs(0)
         val secondary = scratchRegs(1)
-            stmt match {
+        stmt match {
             case Skip() => Nil
             case Decl(_, id, rv) => {
                 val v = sem.curSymTable.findVarGlobal(id).get
@@ -340,23 +340,20 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                 formatter.includeFx(mallocFx)
                 val pOfs1 = 0
                 val pOfs2 = 8
-                List(
-                    Move(ImmNum(16), RegisterW(0)),
-                    BranchLink("_malloc"), // TODO: Use callFx
-                    Move(RegisterX(0), RegisterX(16))
-                ) ++ 
-                translate(e1, 8::regs) ++ 
-                List(
-                    Move(ImmNum(pOfs1), RegisterX(secondary)),
-                    Store(RegisterW(8), BaseOfsRA(RegisterX(16), RegisterX(secondary)))
-                    ) ++
-                translate(e2, 8::regs) ++ 
-                List(
-                    Move(ImmNum(pOfs2), RegisterX(secondary)),
-                    Store(RegisterW(8), BaseOfsRA(RegisterX(16), RegisterX(secondary)))
-                    ) ++ 
-                List(Move(RegisterX(16), RegisterX(regs.head)))
-
+                Move(ImmNum(16), RegisterW(0)) :: 
+                    callFx("_malloc", formatter.regConf.scratchRegs, List(), List(S_ANY)) ++ 
+                    List(Move(RegisterX(0), RegisterX(16))) ++
+                    translate(e1, 8::regs) ++ 
+                    List(
+                        Move(ImmNum(pOfs1), RegisterX(secondary)),
+                        Store(RegisterW(8), BaseOfsRA(RegisterX(16), RegisterX(secondary)))
+                        ) ++
+                    translate(e2, 8::regs) ++ 
+                    List(
+                        Move(ImmNum(pOfs2), RegisterX(secondary)),
+                        Store(RegisterW(8), BaseOfsRA(RegisterX(16), RegisterX(secondary))),
+                        Move(RegisterX(16), RegisterX(primary))
+                        )
             }
             case pe: PairElem => translate(pe, regs.tail)
         }
