@@ -338,13 +338,23 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
             case RExpr(e) => translate(e, regs)
             case NewPair(e1, e2) => {
                 formatter.includeFx(mallocFx)
+                val pOfs1 = 0
+                val pOfs2 = 8
                 List(
                     Move(ImmNum(16), RegisterW(0)),
-                    BranchLink("_malloc"),
+                    BranchLink("_malloc"), // TODO: Use callFx
                     Move(RegisterX(0), RegisterX(16))
                 ) ++ 
-                translate(e1, 8::regs) ++ List(Store(RegisterW(8), BaseOfsIA(RegisterX(16), 0))) ++
-                translate(e2, 8::regs) ++ List(Store(RegisterW(8), BaseOfsIA(RegisterX(16), 8))) ++ 
+                translate(e1, 8::regs) ++ 
+                List(
+                    Move(ImmNum(pOfs1), RegisterX(secondary)),
+                    Store(RegisterW(8), BaseOfsRA(RegisterX(16), RegisterX(secondary)))
+                    ) ++
+                translate(e2, 8::regs) ++ 
+                List(
+                    Move(ImmNum(pOfs2), RegisterX(secondary)),
+                    Store(RegisterW(8), BaseOfsRA(RegisterX(16), RegisterX(secondary)))
+                    ) ++ 
                 List(Move(RegisterX(16), RegisterX(regs.head)))
 
             }
@@ -403,7 +413,7 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
     }
 
     def callFx(label: String, regs: List[Int], args: List[Expr], parTypes:List[S_TYPE]): List[Instruction] = {
-        // It is expected that will all arguments will be translated and stored in the register
+        // It is expected that all arguments will be translated and stored in the register
         // or on the stack with an offset relative to the frame pointer. 
         val instrs = ListBuffer.empty[Instruction]
 

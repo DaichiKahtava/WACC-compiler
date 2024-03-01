@@ -183,13 +183,13 @@ object printPairFx extends InternalFunction {
         Data("%p", ".L._printp_str0"),
         AlignInstr(),
         Label(label),
-        Push(RegisterLR, RegisterXZR, PreIndxA(RegisterSP, -16)),
+        Push(RegisterLR, RegisterXZR),
         Move(RegisterX(0), RegisterX(1)),
         Address(".L._printp_str0", RegisterX(0)),
         BranchLink("printf"),
         Move(ImmNum(0), RegisterX(0)),
         BranchLink("fflush"),
-        Pop(PstIndxIA(RegisterSP, 16), RegisterLR, RegisterXZR),
+        Pop(RegisterLR, RegisterXZR),
         ReturnI
     )
     val dependencies: List[InternalFunction] = List.empty
