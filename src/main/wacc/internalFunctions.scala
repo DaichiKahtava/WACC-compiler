@@ -177,7 +177,7 @@ object printLineFx extends InternalFunction {
     val dependencies: List[InternalFunction] = List(printStringFx)
 }
 
-object printPairFx extends InternalFunction {
+object printPointerFx extends InternalFunction {
     val label: String = "_printp"
     val instructions: List[Instruction] = List(
         Data("%p", ".L._printp_str0"),

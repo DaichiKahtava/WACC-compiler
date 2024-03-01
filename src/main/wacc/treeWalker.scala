@@ -353,7 +353,7 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                         Move(ImmNum(pOfs2), RegisterX(secondary)),
                         Store(RegisterW(8), BaseOfsRA(RegisterX(16), RegisterX(secondary))),
                         Move(RegisterX(16), RegisterX(primary))
-                        )
+                    )
             }
             case pe: PairElem => translate(pe, regs.tail)
         }
@@ -384,8 +384,8 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
             printIntFx.label
         }
         case S_PAIR(_, _) | S_ERASED => {
-            formatter.includeFx(printPairFx)
-            printPairFx.label
+            formatter.includeFx(printPointerFx)
+            printPointerFx.label
         }
         case _ => ???
     }
