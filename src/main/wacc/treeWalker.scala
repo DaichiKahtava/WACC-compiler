@@ -316,9 +316,9 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                 var arrHead = 0
                 List(
                     Comment(s"$arrLen element array"),
-                    Move(ImmNum(arrSize + 4), RegisterW(0)),
-                    BranchLink("_malloc"), // TODO: Use callFx
-                    Move(RegisterX(formatter.regConf.resultRegister), RegisterX(formatter.regConf.pointerReg)),
+                    Move(ImmNum(arrSize + 4), RegisterW(0))) ++
+                    callFx("_malloc", formatter.regConf.scratchRegs, List(IntL(arrSize + 4)(1,1)), List(S_ANY)) ++
+                List(Move(RegisterX(formatter.regConf.resultRegister), RegisterX(formatter.regConf.pointerReg)),
                     Move(ImmNum(formatter.getSize(S_INT)), RegisterX(primary)),
                     AddI(RegisterX(primary), RegisterX(formatter.regConf.pointerReg)),
                     Move(ImmNum(xs.length), RegisterX(primary)),
