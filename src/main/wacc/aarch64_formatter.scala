@@ -67,9 +67,10 @@ class Aarch64_formatter() {
         return stringLabel + String.valueOf(stringLabelCounter)
     }
 
-    def includeFx(f: InternalFunction): Unit = {
+    def includeFx(f: InternalFunction): String = {
         internalFxs.add(f)
         f.dependencies.foreach(includeFx) // TODO: Provision for cycles in dependencies.
+        f.label
     }
 
     def generateAssembly(instr: Instruction): String = instr match {
