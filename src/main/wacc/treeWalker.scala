@@ -80,7 +80,7 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                 return translateTwoExpr(x, y, regs) ++
                 List(
                     Compare(RegisterXZR, RegisterX(secondary)),
-                    BranchCond(formatter.includeFx(new errorDivZeroFx(formatter.regConf.argRegs)), EqI),
+                    BranchCond(formatter.includeFx(new errorDivZeroFx(formatter)), EqI),
                     DivI(RegisterX(secondary), RegisterX(primary))
                 )
             }
@@ -279,7 +279,7 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
             case Println(x) => {
                 
                 callFx(determinePrint(x), formatter.regConf.scratchRegs, List(x), List(S_ANY)) ++
-                callFx(formatter.includeFx(new printLineFx(formatter.regConf.argRegs)), formatter.regConf.scratchRegs, List(), List())
+                callFx(formatter.includeFx(new printLineFx(formatter)), formatter.regConf.scratchRegs, List(), List())
             }
             case Cond(x, s1, s2) => ???
             case Loop(x, s) => ???
@@ -316,7 +316,7 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                 List(
                     Comment(s"$arrLen element array"),
                     Move(ImmNum(arrSize + 4), RegisterW(0)),
-                    BranchLink(formatter.includeFx(new mallocFx(formatter.regConf.argRegs))), // TODO: Use callFx
+                    BranchLink(formatter.includeFx(new mallocFx(formatter))), // TODO: Use callFx
                     Move(RegisterX(formatter.regConf.resultRegister), RegisterX(formatter.regConf.pointerReg)),
                     Move(ImmNum(formatter.getSize(S_INT)), RegisterX(primary)),
                     AddI(RegisterX(primary), RegisterX(formatter.regConf.pointerReg)),
@@ -348,10 +348,10 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
     // Gives the correct print label for the expression
     // And adds the required dependencies
     def determinePrint(x: Expr): String = sem.getType(x) match {
-        case S_STRING => formatter.includeFx(new printStringFx(formatter.regConf.argRegs))
-        case S_BOOL => formatter.includeFx(new printBoolFx(formatter.regConf.argRegs))
-        case S_CHAR => formatter.includeFx(new printCharFx(formatter.regConf.argRegs))
-        case S_INT =>  formatter.includeFx(new printIntFx(formatter.regConf.argRegs))
+        case S_STRING => formatter.includeFx(new printStringFx(formatter))
+        case S_BOOL => formatter.includeFx(new printBoolFx(formatter))
+        case S_CHAR => formatter.includeFx(new printCharFx(formatter))
+        case S_INT =>  formatter.includeFx(new printIntFx(formatter))
         case _ => ???
     }
 
