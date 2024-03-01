@@ -269,10 +269,37 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                 }
                 translate(rv, scratchRegs) ++ destInstr
             }
+
             // LArrElem and Pairs
             case Asgn(lv, rv) => ???
 
-            case Read(lv) => ???
+            case Read(lv) => lv match {
+                case LIdent(id) => {
+                    // Find the variable in the symbol table and get its position.
+                    val loadInstr = sem.curSymTable.findVarGlobal(id).get.pos match {
+                        /* If the variable is in a register, generate a move instruction to move 
+                           its value to the primary scratch register. */
+                        case InRegister(r) => List(Move(RegisterX(r), RegisterX(primary)))
+                        /* If the variable is on the temporary stack, generate instructions 
+                           to move its offset to the secondary scratch register and load 
+                           its value to the primary scratch register. */
+                        case OnTempStack(r) => List(
+                            Move(ImmNum(r), RegisterX(secondary)),
+                            Load(BaseOfsRA(RegisterX(formatter.regConf.pointerReg), RegisterX(secondary)), RegisterX(primary))
+                        )
+                        case OnStack(offset) => ??? // To be implemented.
+                        case Undefined => ??? // Should not get here.
+                    }
+
+                    formatter.includeFx(readIntFx)  // Include the readIntFx internal function in the formatter.
+
+                    /* Generate the load instructions and call the readIntFx function. 
+                       The result will be stored in the primary scratch register. */
+                    loadInstr ++ callFx("_readi", formatter.regConf.scratchRegs, List(), List())
+                }
+                case _ => ??? // Other cases to be implemented.
+            }
+
             case Free(x) => ???
             case Return(x) => ???
             case Exit(x) => callFx("exit", formatter.regConf.scratchRegs, List(x), List(S_INT))
