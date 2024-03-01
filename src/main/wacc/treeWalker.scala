@@ -111,8 +111,7 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                 List(Compare(RegisterX(primary), RegisterX(secondary)), SetCond(RegisterX(primary), NeI))
                 
             case And(x, y) =>
-                val curLabel = s".L${labelNum}"
-                labelNum += 1
+                val curLabel = generateGeneralLabel()
                 translateTwoExpr(x, y, regs) ++
                 // TODO: ImmNum magic number for true!
                 List(
@@ -125,8 +124,7 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                 )
 
             case Or(x, y) => 
-                val curLabel = s".L${labelNum}"
-                labelNum += 1
+                val curLabel = generateGeneralLabel()
                 translateTwoExpr(x, y, regs) ++
                 List(
                     Move(ImmNum(1), RegisterX(tertiary)),
@@ -283,9 +281,8 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                 callFx(printLineFx.label, formatter.regConf.scratchRegs, List(), List())
             }
             case Cond(x, s1, s2) => { // TODO: Defintely need to change that
-                val s1Label = s".L${labelNum}"
-                val s2Label = s".L${labelNum + 1}"
-                labelNum += 2
+                val s1Label = generateGeneralLabel()
+                val s2Label = generateGeneralLabel()
                 translate(x, scratchRegs) ++
                 List(
                     Compare(RegisterX(primary), RegisterXZR), // TODO: Change ResiterXZR
@@ -534,6 +531,12 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
         })
         popRegs(regs.toList)
         // TODO: Can avoid recalculating registers or abstract that into the funtion translation.
+    }
+
+    def generateGeneralLabel(): String = {
+        val curLabel = s".L${labelNum}"
+        labelNum += 1
+        return curLabel
     }
 
 }
