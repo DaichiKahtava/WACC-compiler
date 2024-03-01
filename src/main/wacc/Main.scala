@@ -37,11 +37,19 @@ object Main {
                         // Passes the global symbol table and semantic data to the treeWalker
                         val frm = new Aarch64_formatter()
                         val tw = new TreeWalker(sem, frm)
-                        val writer = new FileWriter(FilenameUtils.getBaseName(inputFile.getName()) + ".s")
-                        val str = frm.generateAssembly(tw.translate(ast))
-                        //print(str)
-                        writer.append(str)
-                        writer.flush()
+                        val instructions = tw.translate(ast)
+
+                        // Generate the filename for the output file.
+                        val filename = FilenameUtils.getBaseName(inputFile.getName()) + ".s"
+                        
+                        // Call generateAssembly with the list of instructions and the filename.
+                        frm.generateAssembly(instructions, filename)
+
+                        // val writer = new FileWriter(FilenameUtils.getBaseName(inputFile.getName()) + ".s")
+                        // val str = frm.generateAssembly(tw.translate(ast))
+                        // //print(str)
+                        // writer.append(str)
+                        // writer.flush()
                 }   
         }
     }

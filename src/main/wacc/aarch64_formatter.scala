@@ -2,6 +2,7 @@ package wacc
 
 import java.util.stream.Collectors
 import scala.collection.mutable.ListBuffer
+import java.io._
 
 class Aarch64_formatter() {
 
@@ -10,38 +11,54 @@ class Aarch64_formatter() {
 
     val internalFxs = collection.mutable.Set.empty[InternalFunction]
 
+    // Register configuration 
+    val regConf = new registerConfig{
+        val callerRegs = (0 to 7).toList ++ (9 to 15).toList
+        val argRegs = (0 to 7).toList
+        val scratchRegs = (8 to 15).toList
+        val calleeRegs = (19 to 28).toList
+        val variabRegs = calleeRegs
+        val gpRegs = callerRegs ++ calleeRegs
+        val funcLabel = "wacc_user_"
+        val resultRegister = 0
+        val pointerReg = 16
+        val offsetReg = 17
+        val framePReg = 29
+    }
+
     // Global data for program. Note that data for internal programs are
     // Included in the internal programs themselves
     var stringLabelCounter = -1 // -1 means no string
     val stringLabel = ".L.str"
     val data = ListBuffer.empty[String]
 
-    def generateAssembly(instructions: List[Instruction]): String = {
-        val full_assembly = new StringBuilder
+    def generateAssembly(instructions: List[Instruction], filename: String): Unit = {
+        // Create a new PrintWriter instance for the output file.
+        val writer = new PrintWriter(new File(filename))
 
-        // String literal data
+        // String literal data.
 
+        // Check if there are any string labels to be written.
         if (stringLabelCounter != -1) {
-            full_assembly.addAll(".data\n")
+            writer.write(".data\n")
             for (i <- 0 to (data.length - 1)) {
                 val str = data(i)
-                full_assembly.addAll("\t.word " + str.length + "\n" + stringLabel + i +":\n\t.asciz \"" + deescapeString(str) + "\"\n")
+                writer.write("\t.word " + str.length + "\n" + stringLabel + i +":\n\t.asciz \"" + deescapeString(str) + "\"\n")
             }
         }
 
-        // Pre-amble for instructions
-
-        full_assembly.addAll(".align 4\n.text\n.global main\n")
-
-        // Instruction list
+        // Write the pre-amble for instructions.
+        writer.write(".align 4\n.text\n.global main\n")
         
-        instructions.map(generateAssembly(_)).foreach(full_assembly.addAll(_))
+        // Convert the list of instructions to a LazyList, generate assembly code for each instruction, and write it to the file.
+        // LazyList chosen over Stream due to deprecation of Streams.
+        instructions.to(LazyList).map(generateAssembly).foreach(writer.write)
         
-        // Helper functions (taken from the reference compiler). 
-        
-        internalFxs.foreach(f => f.instructions.map(generateAssembly(_)).foreach(full_assembly.addAll(_)))
+        // Generate assembly code for internal functions
+        internalFxs.to(LazyList).flatMap(f => f.instructions.map(generateAssembly)).foreach(writer.write)
 
-        return full_assembly.result()
+        // Close the PrintWriter to ensure all output is written and resources are released.
+        writer.close()
     }
 
     def includeString(s: String): String = {
@@ -77,16 +94,15 @@ class Aarch64_formatter() {
             case true  => "ldrsh\t" + generateRegister(dst) + ", " + generateAddress(src) + "\n"
         }
         case LoadWord(src, dst) => "ldrsw\t" + generateRegister(dst) + ", " + generateAddress(src) + "\n"
-        case Pop(src, dst1, dst2) => "ldp\t" + generateRegister(dst1) + ", " +
-            generateRegister(dst2) + ", " + generateAddress(src) + "\n"
-            // TODO: do we need pair loading?
+        case Pop(dst1, dst2) => "ldp\t" + generateRegister(dst1) + ", " +
+            generateRegister(dst2) + ", [" + generateRegister(RegisterSP) + "], #" + (getSize(S_ANY) * 2) + "\n"
 
         case Store(src, dst) => "str\t" + generateRegister(src) + ", " + generateAddress(dst) + "\n"
         case StoreByte(src, dst) => "strb\t" + generateRegister(src) + ", " + generateAddress(dst) + "\n"
         case StoreHalf(src, dst) => "strh\t" + generateRegister(src) + ", " + generateAddress(dst) + "\n"
         case StoreWord(src, dst) => "strw\t" + generateRegister(src) + ", " + generateAddress(dst) + "\n"
-        case Push(src1, src2, dst) => "stp\t" + generateRegister(src1) + ", " +
-            generateRegister(src2) + ", " + generateAddress(dst) + "\n" // TODO: Generalise offsets
+        case Push(src1, src2) => "stp\t" + generateRegister(src1) + ", " +
+            generateRegister(src2) + ", [" + generateRegister(RegisterSP) + ", #" + (getSize(S_ANY) * -2) + "]!\n" 
 
         case SignExWord(src, dst) => "sxtw\t" + generateRegister(dst) + ", " + generateRegister(src) + "\n"
 
@@ -144,13 +160,11 @@ class Aarch64_formatter() {
 
     def generateAddress(a: AdrMode): String = a match {
         case BaseA(base) => "[" + generateRegister(base) + "]"
-        case BaseOfsIA(base, ofs) => "[" + generateRegister(base) + ", #" + ofs + "]"
-        case BaseOfsRA(base, ofsReg, shift) => "[" + generateRegister(base) + ", " +
+        case BaseOfsRA(base, ofsReg) => "[" + generateRegister(base) + ", " +
             generateRegister(ofsReg) + "]"
-        case BaseOfsExtendShift(base, ofsReg, extend, shift) => 
+        case BaseOfsExtendShift(base, ofsReg, extend, shift) => // TO REMOVE
             "[" + generateRegister(base) + ", " + generateRegister(ofsReg) + ", " + 
             generateAddress(extend) + " #" + shift.get + "]"
-        case PreIndxA(base, ofs) => "[" + generateRegister(base) + ", #" + ofs + "]!"
         case PstIndxIA(base, ofs) => "[" + generateRegister(base) + "], #" + ofs
         case PstIndxRA(base, ofsReg) => "[" + generateRegister(base) + "], " + generateRegister(ofsReg)
         case LiteralA(l) => l
@@ -186,5 +200,19 @@ class Aarch64_formatter() {
         case '\'' => "\\\'"
         case '\\' => "\\\\"
         case c: Char => String.valueOf(c)
+    }
+
+    def getSize(t: S_TYPE) = t match {
+        // Returns number of bytes
+        // <Addresses have 8 bytes -  the size of a register>
+        case S_INT => 4
+        case S_BOOL => 1
+        case S_STRING => 8
+        case S_CHAR => 1
+        case S_ARRAY(tp) => 8
+        case S_PAIR(tp1, tp2) => 8
+        case S_ERASED => 8
+        case S_ANY => 8 // size of a register.
+        case S_EMPTYARR => 8
     }
 }

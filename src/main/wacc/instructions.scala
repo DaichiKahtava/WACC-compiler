@@ -24,8 +24,9 @@ case class Branch(label: String) extends Instruction
 case class BranchCond(label: String, cond: CondI) extends Instruction
 case class BranchLink(label: String) extends Instruction // Calls function and stores address in the link register...
 
-case class Push(src1: Register, src2: Register, dst: AdrMode) extends Instruction
-case class Pop(src: AdrMode, dst1: Register, dst2: Register) extends Instruction
+// Pushing two registers to stack
+case class Push(src1: Register, src2: Register) extends Instruction
+case class Pop(dst1: Register, dst2: Register) extends Instruction
 
 case class Load(src: AdrMode, dst: Register) extends Instruction
 case class LoadWord(src: AdrMode, dst: Register) extends Instruction // always signed
@@ -43,19 +44,18 @@ case class SignExWord(src: RegisterW, dst: RegisterX) extends Instruction
 // case class Add(op1, op2, dst)
 
 // Arity 2 operations: dst := dst <op> src
-case class AddI(src: Operand, dst: Register) extends Instruction
-case class SubI(src: Operand, dst: Register) extends Instruction
-case class MulI(src: Operand, dst: Register) extends Instruction
-case class DivI(src: Operand, dst: Register) extends Instruction
+case class AddI(src: Register, dst: Register) extends Instruction
+case class SubI(src: Register, dst: Register) extends Instruction
+case class MulI(src: Register, dst: Register) extends Instruction
+case class DivI(src: Register, dst: Register) extends Instruction
 
 case class SetCond(r: Register, cond: CondI) extends Instruction
-case class Compare(r1: Operand, r2: Operand) extends Instruction
+case class Compare(r1: Register, r2: Register) extends Instruction
 case class CondSelect(src1: Register, src2: Register, dst: Register, cond: CondI) extends Instruction
 
-
 // TODO: Fill in with all types of operands
-sealed trait Operand
-case class ImmNum(n: Int) extends Operand
+sealed trait Operand 
+//Operand is either a register or an immediate (used for Move only).
 sealed trait Register extends Operand
 
 // Groups of registers can go here
@@ -77,21 +77,35 @@ sealed trait AdrMode
 // [base]
 case class BaseA(base: RegisterXorSP) extends AdrMode 
 // [base, #imm]
-case class BaseOfsIA(base: RegisterXorSP, ofs: Int) extends AdrMode 
+// case class BaseOfsIA(base: RegisterXorSP, ofs: Int) extends AdrMode 
+
 // [base, Xm]
-case class BaseOfsRA(base: RegisterXorSP, ofsReg: RegisterX, shift: Option[Int]) extends AdrMode 
-// [base, Xm, extend, amount]
+// Used to replicate [base, #imm] as per the immediate values' convention
+case class BaseOfsRA(base: RegisterXorSP, ofsReg: RegisterX) extends AdrMode 
+// [base, Xm, extend, amount] - to be removed
 case class BaseOfsExtendShift(base: RegisterXorSP, ofsReg: RegisterX, extend: LiteralA, shift: Option[Int]) extends AdrMode
+
 // [base #imm]!
-case class PreIndxA(base: RegisterXorSP, ofs: Int) extends AdrMode 
+//case class PreIndxA(base: RegisterXorSP, ofs: Int) extends AdrMode 
+
 // [base], #imm
 case class PstIndxIA(base: RegisterXorSP, ofs: Int) extends AdrMode 
 // [base], Xm
-// Probably not needed as we are not doing SIMD instructions
+// used to replicate: [base], #imm
 case class PstIndxRA(base: RegisterXorSP, ofsReg: RegisterX) extends AdrMode 
 // label
 case class LiteralA(l: String) extends AdrMode 
 
+case class ImmNum(n: Int) extends Operand
+/*
+    Convention for use of immediate values:
+    - Binary Operations & Comparisons occur only between registers
+      -> To do a binary operation with an immediate, load immediate to scratch register first 
+    - Save and Store instructions only use a register as an offset
+    - Immediate can be loaded through the Move instruction (which is the pseudocode moc in Aarch64)
+
+    This removes the need for checks for ImmNum.
+*/
 
 sealed trait CondI
 case object EqI extends CondI
