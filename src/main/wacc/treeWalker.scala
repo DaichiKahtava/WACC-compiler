@@ -282,12 +282,28 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                 callFx(determinePrint(x), formatter.regConf.scratchRegs, List(x), List(S_ANY)) ++
                 callFx(printLineFx.label, formatter.regConf.scratchRegs, List(), List())
             }
-            case Cond(x, s1, s2) => ???
+            case Cond(x, s1, s2) => { // TODO: Defintely need to change that
+                val s1Label = s".L${labelNum}"
+                val s2Label = s".L${labelNum + 1}"
+                labelNum += 2
+                translate(x, scratchRegs) ++
+                List(
+                    Compare(RegisterX(primary), RegisterXZR), // TODO: Change ResiterXZR
+                    BranchCond(s1Label, EqI),
+                    Branch(s2Label),
+                ) ++ 
+                // TODO: Make sure that s1 and s2 have access to the parent symbol table but dont have access to each other's
+                List(Label(s1Label)) ++
+                translate(s1) ++
+                List(Label(s2Label)) ++
+                translate(s2) 
+                
+            }
             case Loop(x, s) => ???
             case Body(s) => ???
 
             case Delimit(s1, s2) => translate(s1) ++ translate(s2)
-                // val res = translate(s1, regs)
+                // val res = translate(s1,   regs)
                 // sem.curSymTable.varDict.values.map(_.pos).foreach{ // Maybe move this somewhere else to a general function when needed
                 //     case InRegister(r) =>
                 //         if (availRegs.contains(r)) availRegs.remove(availRegs.indexOf(r))
