@@ -189,7 +189,7 @@ object readIntFx extends InternalFunction {
         AlignInstr(),
         Label(label),
         Push(RegisterX(0), RegisterLR),
-        Move(RegisterX(1), RegisterSP),
+        Move(RegisterSP, RegisterX(1)),
         Address(".L._readi_str0", RegisterX(0)),
         BranchLink("scanf"),
         Pop(RegisterX(0), RegisterLR),
