@@ -47,7 +47,17 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                     SubI(RegisterX(secondary), RegisterX(primary))
                 )
 
-            case Len(x) => translate(x, regs) 
+            case Len(Ident(id)) => sem.curSymTable.findVarGlobal(id).get.pos match {
+                case InRegister(r) => 
+                    List(
+                        Move(ImmNum(-4), RegisterX(secondary)),
+                        LoadWord(BaseOfsRA(RegisterX(r), RegisterX(secondary)), RegisterX(primary))
+                    )
+                case OnStack(offset) => ???
+                case OnTempStack(regNum) => ???
+                case Undefined => ??? // Should not come here
+            }
+            case Len(_) => ???
             case Ord(x) => translate(x, regs) 
             case Chr(x) => translate(x, regs) 
 
