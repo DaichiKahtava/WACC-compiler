@@ -77,11 +77,10 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                 List(MulI(RegisterX(secondary), RegisterX(primary)))
 
             case Div(x, y) => {
-                formatter.includeFx(errorDivZeroFx)
                 return translateTwoExpr(x, y, regs) ++
                 List(
                     Compare(RegisterXZR, RegisterX(secondary)),
-                    BranchCond(errorDivZeroFx.label, EqI),
+                    BranchCond(formatter.includeFx(new errorDivZeroFx(formatter)), EqI),
                     DivI(RegisterX(secondary), RegisterX(primary))
                 )
             }
@@ -278,9 +277,9 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
             case Exit(x) => callFx("exit", formatter.regConf.scratchRegs, List(x), List(S_INT))
             case Print(x) => callFx(determinePrint(x), formatter.regConf.scratchRegs, List(x), List(S_ANY))
             case Println(x) => {
-                formatter.includeFx(printLineFx)
+                
                 callFx(determinePrint(x), formatter.regConf.scratchRegs, List(x), List(S_ANY)) ++
-                callFx(printLineFx.label, formatter.regConf.scratchRegs, List(), List())
+                callFx(formatter.includeFx(new printLineFx(formatter)), formatter.regConf.scratchRegs, List(), List())
             }
             case Cond(x, s1, s2) => ???
             case Loop(x, s) => ???
@@ -309,15 +308,13 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
         val secondary = regs(1)
         rv match {
             case ArrL(xs) => {
-                formatter.includeFx(mallocFx)
+                
                 val arrLen = xs.length
                 val elemSize = if (arrLen > 0) formatter.getSize(rv.tp.asInstanceOf[S_ARRAY].tp) else 0
                 val arrSize = arrLen * elemSize
                 var arrHead = 0
-                List(
-                    Comment(s"$arrLen element array"),
-                    Move(ImmNum(arrSize + 4), RegisterW(0))) ++
-                    callFx("_malloc", formatter.regConf.scratchRegs, List(IntL(arrSize + 4)(1,1)), List(S_ANY)) ++
+                List(Comment(s"$arrLen element array")) ++
+                callFx(formatter.includeFx(new mallocFx(formatter)), formatter.regConf.scratchRegs, List(IntL(arrSize + 4)(1,1)), List(S_ANY)) ++
                 List(Move(RegisterX(formatter.regConf.resultRegister), RegisterX(formatter.regConf.pointerReg)),
                     Move(ImmNum(formatter.getSize(S_INT)), RegisterX(primary)),
                     AddI(RegisterX(primary), RegisterX(formatter.regConf.pointerReg)),
@@ -349,22 +346,10 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
     // Gives the correct print label for the expression
     // And adds the required dependencies
     def determinePrint(x: Expr): String = sem.getType(x) match {
-        case S_STRING => {
-            formatter.includeFx(printStringFx)
-            printStringFx.label
-        }
-        case S_BOOL => {
-            formatter.includeFx(printBoolFx)
-            printBoolFx.label
-        }
-        case S_CHAR => {
-            formatter.includeFx(printCharFx)
-            printCharFx.label
-        }
-        case S_INT => {
-            formatter.includeFx(printIntFx)
-            printIntFx.label
-        }
+        case S_STRING => formatter.includeFx(new printStringFx(formatter))
+        case S_BOOL => formatter.includeFx(new printBoolFx(formatter))
+        case S_CHAR => formatter.includeFx(new printCharFx(formatter))
+        case S_INT =>  formatter.includeFx(new printIntFx(formatter))
         case _ => ???
     }
 
