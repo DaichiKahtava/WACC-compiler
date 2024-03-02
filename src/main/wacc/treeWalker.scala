@@ -279,10 +279,8 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
             case Read(lv) => ???
             case Free(x) => ???
             case Return(x) => translate(x, formatter.regConf.scratchRegs) ++ 
-                List(
-                    Move(RegisterX(formatter.regConf.scratchRegs(0)), RegisterX(formatter.regConf.resultRegister)),
-                    ReturnI
-                )
+                List(Move(RegisterX(formatter.regConf.scratchRegs(0)), RegisterX(formatter.regConf.resultRegister))) ++
+                calleeRestore() ++ List(ReturnI)
             case Exit(x) => callFx("exit", formatter.regConf.scratchRegs, List(x), List(S_INT))
             case Print(x) => callFx(determinePrint(x), formatter.regConf.scratchRegs, List(x), List(S_ANY))
             case Println(x) => {
