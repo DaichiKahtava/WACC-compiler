@@ -334,7 +334,7 @@ class ArrayLoadFx(frm: Aarch64_formatter, val size: Int) extends InternalFunctio
             Comment("Special calling convention: array ptr passed in X7, index in X17, LR (W30) is used as general register, and return into X7"),
             Push(RegisterLR, RegisterXZR),
             SignExWord(RegisterW(17), RegisterX(17)),
-            Compare(RegisterW(17), RegisterXZR),
+            Compare(RegisterW(17), RegisterWZR),
             CondSelect(RegisterX(17), RegisterX(1), RegisterX(1), LtI),
             BranchCond(dependencies(0).label, LtI),
             Move(ImmNum(size), RegisterX(9)), // Temporary (-4 should come from the size of S_INT)
@@ -347,6 +347,6 @@ class ArrayLoadFx(frm: Aarch64_formatter, val size: Int) extends InternalFunctio
             ReturnI
         )
     }
-    override def equals(x: Any): Boolean = x.isInstanceOf[ArrayLoadFx] && x.asInstanceOf[ArrayStoreFx].size == size
+    override def equals(x: Any): Boolean = x.isInstanceOf[ArrayLoadFx] && x.asInstanceOf[ArrayLoadFx].size == size
     override def hashCode(): Int = 12
 }
