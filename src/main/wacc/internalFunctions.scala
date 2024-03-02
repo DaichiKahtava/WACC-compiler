@@ -261,7 +261,7 @@ class readIntFx(frm: Aarch64_formatter) extends InternalFunction {
 }
 
 class ArrayStoreFx(frm: Aarch64_formatter, val size: Int) extends InternalFunction {
-    val label: String = "_arrStore:"
+    val label: String = s"_arrStore$size"
     val dependencies: List[InternalFunction] = List(new errorOutOfBoundsFx(frm))
     val instructions: List[Instruction] = {
         List(
@@ -287,7 +287,7 @@ class ArrayStoreFx(frm: Aarch64_formatter, val size: Int) extends InternalFuncti
 }
 
 class ArrayLoadFx(frm: Aarch64_formatter, val size: Int) extends InternalFunction {
-    val label: String = "_arrLoad:"
+    val label: String = s"_arrLoad$size"
     val dependencies: List[InternalFunction] = List(new errorOutOfBoundsFx(frm))
     val instructions: List[Instruction] = {
         List(
