@@ -232,7 +232,7 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
         val scratchRegs = formatter.regConf.scratchRegs
         val primary = scratchRegs(0)
         val secondary = scratchRegs(1)
-            stmt match {
+        stmt match {
             case Skip() => Nil
             case Decl(_, id, rv) => {
                 val v = sem.curSymTable.findVarGlobal(id).get
@@ -350,6 +350,7 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
         case S_BOOL => formatter.includeFx(new printBoolFx(formatter))
         case S_CHAR => formatter.includeFx(new printCharFx(formatter))
         case S_INT =>  formatter.includeFx(new printIntFx(formatter))
+        case S_PAIR(_, _) | S_ARRAY(_) | S_ERASED => formatter.includeFx(new printPointerFx(formatter))
         case _ => ???
     }
 
@@ -373,7 +374,7 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
     }
 
     def callFx(label: String, regs: List[Int], args: List[Expr], parTypes:List[S_TYPE]): List[Instruction] = {
-        // It is expected that will all arguments will be translated and stored in the register
+        // It is expected that all arguments will be translated and stored in the register
         // or on the stack with an offset relative to the frame pointer. 
         val instrs = ListBuffer.empty[Instruction]
 

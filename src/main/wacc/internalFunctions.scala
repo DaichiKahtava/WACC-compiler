@@ -11,7 +11,7 @@ sealed trait InternalFunction {
 class errorDivZeroFx(frm: Aarch64_formatter) extends InternalFunction {
     val label: String = "_errDivZero"
     val dependencies: List[InternalFunction] = List(new printStringFx(frm))
-    val instructions = {
+    val instructions: List[Instruction] = {
         val primary = frm.regConf.argRegs(0)
         List(
             Comment("Division by zero error handler as seen in the ref. compiler"),
@@ -26,6 +26,23 @@ class errorDivZeroFx(frm: Aarch64_formatter) extends InternalFunction {
     }
     override def equals(x: Any): Boolean = x.isInstanceOf[errorDivZeroFx]
     override def hashCode(): Int = 1
+}
+
+class errorNullFx(frm: Aarch64_formatter) extends InternalFunction {
+    val label: String = "_errNull"
+    val dependencies: List[InternalFunction] = List(new printStringFx(frm))
+    val instructions: List[Instruction] = {
+        val primary = frm.regConf.argRegs(0)
+        List(
+            Data("fatal error: null pair dereferenced or freed", ".L._errNull_str0"),
+            AlignInstr(),
+            Label(label),
+            Address(".L._errNull_str0", RegisterX(primary)),
+            BranchLink("_prints"),
+            Move(ImmNum(-1), RegisterW(primary)),
+            BranchLink("exit")
+        )
+    }
 }
 
 class errorOutOfMemoryFx(frm: Aarch64_formatter) extends InternalFunction {
@@ -206,6 +223,28 @@ class printLineFx(frm: Aarch64_formatter) extends InternalFunction {
     }
     override def equals(x: Any): Boolean = x.isInstanceOf[printLineFx]
     override def hashCode(): Int = 8
+}
+
+class printPointerFx(frm: Aarch64_formatter) extends InternalFunction {
+    val label: String = "_printp"
+    val dependencies: List[InternalFunction] = List.empty
+    val instructions: List[Instruction] = {
+        // TODO: Label magic numbers like the other functions
+        List(
+            Data("%p", ".L._printp_str0"),
+            AlignInstr(),
+            Label(label),
+            Push(RegisterLR, RegisterXZR),
+            Move(RegisterX(0), RegisterX(1)),
+            Address(".L._printp_str0", RegisterX(0)),
+            BranchLink("printf"),
+            Move(ImmNum(0), RegisterX(0)),
+            BranchLink("fflush"),
+            Pop(RegisterLR, RegisterXZR),
+            ReturnI
+        )
+        
+    }
 }
 
 class mallocFx(frm: Aarch64_formatter) extends InternalFunction {
