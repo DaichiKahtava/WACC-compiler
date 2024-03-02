@@ -223,8 +223,12 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
         // Labels must be ensured unique
         val instructionList = ListBuffer.empty[Instruction]
         instructionList.addOne(Label(formatter.regConf.funcLabel + func.id))
+        instructionList.addAll(calleeSave())
         instructionList.addAll(translate(func.s))
-        instructionList.addOne(ReturnI)
+        instructionList.addAll(calleeRestore())
+        instructionList.addOne(ReturnI) 
+        // The above is not strictly necessary but
+        // useful if we want to to have proceedures (no returns...) 
         instructionList.toList
     } 
 
@@ -273,7 +277,11 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
 
             case Read(lv) => ???
             case Free(x) => ???
-            case Return(x) => ???
+            case Return(x) => translate(x, formatter.regConf.scratchRegs) ++ 
+                List(
+                    Move(RegisterX(formatter.regConf.scratchRegs(0)), RegisterX(formatter.regConf.resultRegister)),
+                    ReturnI
+                )
             case Exit(x) => callFx("exit", formatter.regConf.scratchRegs, List(x), List(S_INT))
             case Print(x) => callFx(determinePrint(x), formatter.regConf.scratchRegs, List(x), List(S_ANY))
             case Println(x) => {
@@ -331,7 +339,8 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                     res
                 }).flatten ++ List(Move(RegisterX(formatter.regConf.pointerReg), RegisterX(primary)))
             }
-            case Call(id, xs) => ???
+            case Call(id, xs) => callFx(formatter.regConf.funcLabel ++ id, formatter.regConf.scratchRegs, xs, 
+                sem.curSymTable.findFunGlobal(id).get.st.parDict.values.toList.map((v)=> v.tp))
             case RExpr(e) => translate(e, regs)
             case NewPair(e1, e2) => ???
             case pe: PairElem => translate(pe, regs.tail)
@@ -350,7 +359,7 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
         case S_BOOL => formatter.includeFx(new printBoolFx(formatter))
         case S_CHAR => formatter.includeFx(new printCharFx(formatter))
         case S_INT =>  formatter.includeFx(new printIntFx(formatter))
-        case _ => ???
+        case _ => ??? // TODO: add the pointer print!
     }
 
     

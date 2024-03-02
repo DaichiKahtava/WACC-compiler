@@ -177,14 +177,14 @@ exampleProgs/valid/basic/skip/skip.wacc
 'exampleProgs/valid/function/nested_functions/simpleRecursion.wacc
 'exampleProgs/valid/function/simple_functions/argScopeCanBeShadowed.wacc
 'exampleProgs/valid/function/simple_functions/asciiTable.wacc
-'exampleProgs/valid/function/simple_functions/functionDeclaration.wacc
-'exampleProgs/valid/function/simple_functions/functionDoubleReturn.wacc
+exampleProgs/valid/function/simple_functions/functionDeclaration.wacc
+exampleProgs/valid/function/simple_functions/functionDoubleReturn.wacc
 'exampleProgs/valid/function/simple_functions/functionIfReturns.wacc
 'exampleProgs/valid/function/simple_functions/functionManyArguments.wacc
 'exampleProgs/valid/function/simple_functions/functionMultiReturns.wacc
 'exampleProgs/valid/function/simple_functions/functionReturnPair.wacc
 'exampleProgs/valid/function/simple_functions/functionSimpleLoop.wacc
-'exampleProgs/valid/function/simple_functions/functionSimple.wacc
+exampleProgs/valid/function/simple_functions/functionSimple.wacc
 'exampleProgs/valid/function/simple_functions/functionUpdateParameter.wacc
 'exampleProgs/valid/function/simple_functions/incFunction.wacc
 'exampleProgs/valid/function/simple_functions/lotsOfLocals.wacc
