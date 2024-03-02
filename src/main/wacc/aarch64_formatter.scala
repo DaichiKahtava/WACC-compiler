@@ -24,6 +24,7 @@ class Aarch64_formatter() {
         val pointerReg = 16
         val offsetReg = 17
         val framePReg = 29
+        val stackAlign: Int = 16
     }
 
     // Global data for program. Note that data for internal programs are
