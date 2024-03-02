@@ -165,8 +165,9 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
             case Ident(id) => sem.curSymTable.findVarGlobal(id).get.pos match {
                 case InRegister(r) => List(Move(RegisterX(r), RegisterX(primary)))
                 case OnTempStack(r) => List(
+                        Comment("TEMP STACK!!!"),
                         Move(ImmNum(formatter.getSize(S_ANY) * r), RegisterX(secondary)),
-                        Load(BaseOfsRA(RegisterX(r), RegisterX(secondary)), RegisterX(primary))
+                        Load(BaseOfsRA(RegisterSP, RegisterX(secondary)), RegisterX(primary))
                     )
                 case OnStack(offset) => ???
                 case Undefined => ??? // Should not get here
@@ -400,7 +401,7 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
             // TODO: Something like RegisterXR ++ availRegs might be more desirable below
             // <Magin number!> see below!
             instrs.addAll(translate(args(i), formatter.regConf.scratchRegs)) 
-            instrs.addOne(Move(RegisterXR, RegisterX(i)))
+            instrs.addOne(Move(RegisterXR, RegisterX(i))) // TODO Why XR? <- Incomplete
         }
 
         var totalSize = 0

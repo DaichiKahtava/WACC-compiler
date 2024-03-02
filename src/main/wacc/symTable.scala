@@ -168,6 +168,9 @@ case class OnTempStack(regNum: Int) extends Position
 // Temporary location for caller saved argument
 // The offset is calculated from the registerNum using the pinterReg (X16)
 
+// Note that OnStack uses the size of the data
+// while OnTempStack always uses the register size. 
+
 // Nested scopes may be implemented with multiple symbol tables
 // Symbol tables 
 
