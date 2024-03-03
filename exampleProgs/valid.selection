@@ -168,7 +168,7 @@ exampleProgs/valid/basic/skip/commentInLine.wacc
 exampleProgs/valid/basic/skip/comment.wacc
 exampleProgs/valid/basic/skip/skip.wacc
 'exampleProgs/valid/function/nested_functions/fibonacciFullRec.wacc
-'exampleProgs/valid/function/nested_functions/fibonacciRecursive.wacc
+exampleProgs/valid/function/nested_functions/fibonacciRecursive.wacc
 'exampleProgs/valid/function/nested_functions/fixedPointRealArithmetic.wacc
 exampleProgs/valid/function/nested_functions/functionConditionalReturn.wacc
 'exampleProgs/valid/function/nested_functions/mutualRecursion.wacc

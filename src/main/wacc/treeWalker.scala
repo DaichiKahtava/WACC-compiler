@@ -469,34 +469,58 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
     // calle functions save/restore registers, the frame pointer as well as the link register
 
     def callerSave(): List[Instruction] = {
-        val regs = ListBuffer.empty[Int] 
-        sem.curSymTable.parDict.foreachEntry((s, v) => {
-            v.pos match {
-                case InRegister(r) => {
-                    regs.addOne(r)
-                    v.pos = OnTempStack(r)
+        // Anonymous functions have NO parameters BUT they
+        // need to save the parent's parameters if they have any...
+
+        if (sem.curSymTable.anonymous) {
+            var parentStuff = List.empty[Instruction] 
+            val childTable = sem.curSymTable
+            sem.curSymTable = sem.curSymTable.parent().get // Anonymous symbol tables always have parents
+            parentStuff = callerSave()
+            sem.curSymTable = childTable
+            return parentStuff
+        } else {
+            val regs = ListBuffer.empty[Int] 
+            sem.curSymTable.parDict.foreachEntry((s, v) => {
+                v.pos match {
+                    case InRegister(r) => {
+                        regs.addOne(r)
+                        v.pos = OnTempStack(r)
+                    }
+                    case OnStack(offset) => {} //Nothing :)
+                    case OnTempStack(r) => ??? // Invariant: No nested caller/callee saves in the same scope
+                    case Undefined => ???
                 }
-                case OnStack(offset) => {} //Nothing :)
-                case OnTempStack(r) => ??? // Invariant: No nested caller/callee saves in the same scope
-                case Undefined => ???
-            }
-        })
-        pushRegs(regs.toList) // We rely on the preservation of order for LinkedHashMap
+            })
+            return pushRegs(regs.toList) // We rely on the preservation of order for LinkedHashMap
+        }
     }
     def callerRestore(): List[Instruction] = {
-        val regs = ListBuffer.empty[Int] 
-        sem.curSymTable.parDict.foreachEntry((s, v) => {
-            v.pos match {
-                case InRegister(r) => ??? // Nothing should be saved in register here!
-                case OnStack(offset) => {} //Nothing :)
-                case OnTempStack(r) => {
-                    regs.addOne(r)
-                    v.pos = InRegister(r)
+        // Anonymous functions have NO parameters BUT they
+        // need to save the parent's parameters if they have any...
+
+        if (sem.curSymTable.anonymous) {
+            var parentStuff = List.empty[Instruction] 
+            val childTable = sem.curSymTable
+            sem.curSymTable = sem.curSymTable.parent().get // Anonymous symbol tables always have parents
+            parentStuff = callerRestore()
+            sem.curSymTable = childTable
+            return parentStuff
+        } else {
+            val regs = ListBuffer.empty[Int] 
+            sem.curSymTable.parDict.foreachEntry((s, v) => {
+                v.pos match {
+                    case InRegister(r) => ??? // Nothing should be saved in register here!
+                    case OnStack(offset) => {} //Nothing :)
+                    case OnTempStack(r) => {
+                        regs.addOne(r)
+                        v.pos = InRegister(r)
+                    }
+                    case Undefined => ???
                 }
-                case Undefined => ???
-            }
-        })
-        popRegs(regs.toList)
+            })
+            return popRegs(regs.toList)
+        }
     }
     
     def calleeSave(): List[Instruction] = {
