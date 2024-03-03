@@ -315,8 +315,42 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                 }
                 translate(rv, scratchRegs) ++ destInstr
             }
-            // LArrElem and Pairs
-            case Asgn(lv, rv) => ???
+            case Asgn(LArrElem(id, xs), rv) => {
+                /*
+                    - use branch link here (as an exception)
+                    - arr load/str uses variable registers with callee saves/restore
+                    - arr load/str should save result inside X8 <primary>
+                    - use the scratch to store arguments
+                    ->Considered an an extention to this code.
+                */
+
+                // Finds the pointer to the array
+                val extractPtr = sem.curSymTable.findVarGlobal(id).get.pos match {
+                    case InRegister(r) => List(Move(RegisterX(r), RegisterX(7)))
+                    case OnStack(offset) => List() // Todo
+                    case OnTempStack(regNum) => List() // Todo
+                    case Undefined => ??? // Should not come here
+                }
+
+                val elemType = rv.tp
+                val elemSize = formatter.getSize(elemType)
+                formatter.includeFx(new ArrayStoreFx(formatter, elemSize))
+
+                extractPtr ++
+                (xs match {
+                    case x :: Nil =>
+                        translate(x, scratchRegs) ++ // Index in X8
+                        List(Move(RegisterW(primary), RegisterW(17))) ++ // Index in W17
+                        translate(rv, scratchRegs) ++ // Value to store in X8
+                        List(
+                            Move(RegisterX(19), RegisterX(7)),
+                            BranchLink(s"_arrStore$elemSize")
+                        ) 
+                    case x :: xs => Nil // TODO
+                    case Nil => ??? // Should not be empty
+                })
+            }
+            case Asgn(lv, rv) => ??? 
 
             case Read(lv) => ???
             case Free(x) => 
