@@ -380,7 +380,6 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
 
     
     def pushRegs(regs: List[Int]): List[Instruction] = {
-        sem.curSymTable.parDict.foreachEntry((s, v) => println(s + " " + v.pos))
         Comment("Saving registers") :: (for {
             List(r1, r2) <- regs.grouped(2).toList // [em422]
         } yield (Push(RegisterX(r2), RegisterX(r1)))) ++ 
@@ -453,8 +452,6 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
         sem.curSymTable.parDict.foreachEntry((s, v) => {
             v.pos match {
                 case InRegister(r) => {
-                    println("getting " + r)
-                    println(sem.curSymTable.parDict)
                     regs.addOne(r)
                     v.pos = OnTempStack(r)
                 }
