@@ -34,7 +34,7 @@ class errorNullFx(frm: Aarch64_formatter) extends InternalFunction {
     val instructions: List[Instruction] = {
         val primary = frm.regConf.argRegs(0)
         List(
-            Data("fatal error: null pair dereferenced or freed", ".L._errNull_str0"),
+            Data("fatal error: null pair dereferenced or freed\n", ".L._errNull_str0"),
             AlignInstr(),
             Label(label),
             Address(".L._errNull_str0", RegisterX(primary)),
@@ -71,7 +71,7 @@ class errorOutOfBoundsFx(frm: Aarch64_formatter) extends InternalFunction {
         val primary = frm.regConf.argRegs(0)
         List(
             // Assumes that X1 stores the index
-            Data("fatal error: array index %d out of bounds", ".L._errOutOfBounds_str0"),
+            Data("fatal error: array index %d out of bounds\n", ".L._errOutOfBounds_str0"),
             AlignInstr(),
             Label(label),
             Address(".L._errOutOfBounds_str0", RegisterX(primary)),
@@ -311,7 +311,7 @@ class ArrayStoreFx(frm: Aarch64_formatter, val size: Int) extends InternalFuncti
             Compare(RegisterW(17), RegisterWZR),
             CondSelect(RegisterX(17), RegisterX(1), RegisterX(1), LtI),
             BranchCond(dependencies(0).label, LtI),
-            Move(ImmNum(size), RegisterX(9)), // Temporary (-4 should come from the size of S_INT)
+            Move(ImmNum(-size), RegisterX(9)), // Temporary (-4 should come from the size of S_INT)
             LoadWord(BaseOfsRA(RegisterX(7), RegisterX(9)), RegisterLR), // ldrsw lr, [x7, #-4]
             Compare(RegisterW(17), RegisterW(30)),
             CondSelect(RegisterX(17), RegisterX(1), RegisterX(1), GeI),
@@ -337,7 +337,7 @@ class ArrayLoadFx(frm: Aarch64_formatter, val size: Int) extends InternalFunctio
             Compare(RegisterW(17), RegisterWZR),
             CondSelect(RegisterX(17), RegisterX(1), RegisterX(1), LtI),
             BranchCond(dependencies(0).label, LtI),
-            Move(ImmNum(size), RegisterX(9)), // Temporary (-4 should come from the size of S_INT)
+            Move(ImmNum(-size), RegisterX(9)), // Temporary (-4 should come from the size of S_INT)
             LoadWord(BaseOfsRA(RegisterX(7), RegisterX(9)), RegisterLR), // ldrsw lr, [x7, #-4]
             Compare(RegisterW(17), RegisterW(30)),
             CondSelect(RegisterX(17), RegisterX(1), RegisterX(1), GeI),
