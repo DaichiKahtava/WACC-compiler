@@ -319,7 +319,14 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
             case Asgn(lv, rv) => ???
 
             case Read(lv) => ???
-            case Free(x) => ???
+            case Free(x) => 
+                translate(x, formatter.regConf.scratchRegs) ++
+                List(
+                    Move(ImmNum(formatter.getSize(S_INT)), RegisterX(secondary)),
+                    SubI(RegisterX(secondary), RegisterX(primary)),
+                    Move(RegisterX(primary), RegisterX(0)),
+                    BranchLink("free")
+                )
             case Return(x) => translate(x, formatter.regConf.scratchRegs) ++ 
                 List(
                     Move(RegisterX(formatter.regConf.scratchRegs(0)),
@@ -343,14 +350,6 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
             case Body(s) => ???
 
             case Delimit(s1, s2) => translate(s1) ++ translate(s2)
-                // val res = translate(s1, regs)
-                // sem.curSymTable.varDict.values.map(_.pos).foreach{ // Maybe move this somewhere else to a general function when needed
-                //     case InRegister(r) =>
-                //         if (availRegs.contains(r)) availRegs.remove(availRegs.indexOf(r))
-                //     case _ => () // Do nothing otherwise
-                // }
-                // res ++ translate(s2, availRegs.toList)
-            // TODO (for delimit): Weighting? and register allocation
         }
     }
 
@@ -456,7 +455,7 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
         
 
         // To avoid accidentally overwriting registers, we put everything in stack and
-        // Then load anything we need from the stack using symbolTable     
+        // Then load anything we need from the stack using symbolTable
         for (i <- 0 to Math.min(7, args.length - 1)) {
             instrs.addAll(translate(args(i), formatter.regConf.scratchRegs)) 
             instrs.addOne(Move(RegisterX(formatter.regConf.scratchRegs.head), RegisterX(i))) 
