@@ -31,4 +31,5 @@ trait registerConfig {
     val pointerReg: Int
     val offsetReg: Int
     val framePReg: Int
+    val stackAlign: Int
 }
