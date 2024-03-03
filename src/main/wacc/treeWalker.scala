@@ -305,7 +305,7 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                         case Undefined => ??? // Should not get here.
                     }
 
-                    formatter.includeFx(readIntFx)  // Include the readIntFx internal function in the formatter.
+                    formatter.includeFx(new readIntFx(formatter)) // Include the readIntFx internal function in the formatter.
 
                     /* Generate the load instructions and call the readIntFx function. 
                        The result will be stored in the primary scratch register. */

@@ -225,43 +225,8 @@ class printLineFx(frm: Aarch64_formatter) extends InternalFunction {
     override def hashCode(): Int = 8
 }
 
-<<<<<<< HEAD
-object mallocFx extends InternalFunction {
-    val label: String = "_malloc"
-    val instructions: List[Instruction] = List (
-        Comment("Allocating memory"),
-        Label(label),
-        Push(RegisterLR, RegisterXZR),
-        BranchLink("malloc"),
-
-        // Instead of CBZ, should do the same thing
-        Compare(RegisterX(0), RegisterXZR), 
-        BranchCond("_errOutOfMemory", EqI),
-
-        Pop(RegisterLR, RegisterXZR),
-        ReturnI
-    )
-    val dependencies: List[InternalFunction] = List(errorOutOfMemoryFx)
-}
-
-object readIntFx extends InternalFunction {
-    val label: String = "_readi"
-    val instructions: List[Instruction] = List (
-        Comment("Read int as in the reference compiler"),
-        Data("%d\n", ".L._readi_str0"),
-        AlignInstr(),
-        Label(label),
-        Push(RegisterX(0), RegisterLR),
-        Move(RegisterSP, RegisterX(1)),
-        Address(".L._readi_str0", RegisterX(0)),
-        BranchLink("scanf"),
-        Pop(RegisterX(0), RegisterLR),
-        ReturnI
-    )
-=======
 class printPointerFx(frm: Aarch64_formatter) extends InternalFunction {
     val label: String = "_printp"
->>>>>>> master
     val dependencies: List[InternalFunction] = List.empty
     val instructions: List[Instruction] = {
         // TODO: Label magic numbers like the other functions
