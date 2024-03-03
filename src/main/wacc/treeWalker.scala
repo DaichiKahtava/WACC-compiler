@@ -315,13 +315,20 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
             }
 
             case Free(x) => {
-                translate(x, scratchRegs) ++
+                // Include the errorNullFx internal function in the formatter.
+                formatter.includeFx(new errorNullFx(formatter))
+                translate(x, scratchRegs) ++ 
                 List(
+                    Comment("Checking for null before freeing"),
+                    Compare(RegisterX(primary), RegisterXZR),
+                    BranchCond("_errNull", EqI), // Jump to error handling if null.
+
                     Comment("Freeing memory"),
                     Move(RegisterX(0), RegisterX(primary)),
-                    BranchLink("free")
-                )
+                    BranchLink("free") // Free if it is not.
+                    )
             }
+
 
             case Return(x) => translate(x, formatter.regConf.scratchRegs) ++ 
                 List(
