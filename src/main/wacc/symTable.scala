@@ -12,6 +12,8 @@ class SymTable(parentTable: Option[SymTable], returnType: Option[S_TYPE]) {
     val funDict = Map.empty[String, FUNCTION]
     val childScopes = ListBuffer.empty[SymTable]
 
+    var stackAllocVars: Int = 0  
+
     def parent() = parentTable
 
     // Adding variables and functions
@@ -117,39 +119,58 @@ class SymTable(parentTable: Option[SymTable], returnType: Option[S_TYPE]) {
         return returnType
     }
 
-    // Assigns the location where each variable and parameter is stored and returns
-    // the offset that needs to be applied for the stack
     def assignPositions(formatter: Aarch64_formatter): Int = {
-        var offset = 0
-        var argRegsIndx = 0 
-        
-        parDict.foreach(e => {
-            if (argRegsIndx < formatter.regConf.argRegs.length) {
-                // Parameters asigned to positions R0-R7
-                e._2.pos = InRegister(formatter.regConf.argRegs(argRegsIndx))
-                argRegsIndx += 1
+        val itemsize = formatter.regConf.stackAlign.max(formatter.getSize(S_ANY))
+        return assignPositionsFrom(formatter, 0, 0, itemsize, -itemsize, itemsize)
+    }
+
+    // Assigns the location where each variable and parameter is stored and 
+    // returns the offset that needs to be applied for the stack
+    def assignPositionsFrom(formatter: Aarch64_formatter,
+        argRegsIndx: Int,
+        varRegIndx: Int,
+        argOffset: Int, // starting from 0 (the last pushed element from parent funciton)
+        varOffset: Int, // starting from the first empty stack point.
+        itemsize: Int): Int = {
+            var argRegsIndx_ = argRegsIndx
+            var varRegIndx_ = varRegIndx
+            var argOffset_ = argOffset
+            var varOffset_ = varOffset
+            parDict.foreach(e => {
+                if (argRegsIndx_ < formatter.regConf.argRegs.length) {
+                    // Parameters asigned to positions R0-R7
+                    e._2.pos = InRegister(formatter.regConf.argRegs(argRegsIndx_))
+                    argRegsIndx_ += 1
+                } else {
+                    // Parameters assigned to stack
+                    e._2.pos = OnStack(argOffset_)
+                    argOffset_ += itemsize
+                }
+            })
+            varDict.foreach(e => {
+                if (varRegIndx_ < formatter.regConf.variabRegs.length) {
+                    // Variables assigned to positions R19-R28
+                    e._2.pos = InRegister(formatter.regConf.variabRegs(varRegIndx_))
+                    varRegIndx_ += 1
+                } else {
+                    // Variables assigned to stack  
+                    e._2.pos = OnStack(varOffset_)
+                    varOffset_ -= itemsize
+                }
+            })
+
+            if (childScopes.isEmpty) {
+                stackAllocVars = varOffset_
+                return varOffset_
             } else {
-                // Parameters assigned to stack
-                e._2.pos = OnStack(offset)
-                offset += formatter.getSize(e._2.tp)
+                stackAllocVars = childScopes.map((st) => 
+                    st.assignPositionsFrom(formatter, argRegsIndx_, varRegIndx_, argOffset_, varOffset_, itemsize)
+                ).max
+                // Propagate the number of variables to the anonymous children
+                // This is for situation such as returning from an if statment
+                childScopes.foreach((st) => st.stackAllocVars = stackAllocVars)
+                return stackAllocVars
             }
-        })
-
-
-        var varRegIndx = 0
-        varDict.foreach(e => {
-            if (varRegIndx < formatter.regConf.variabRegs.length) {
-                // Variables assigned to positions R19-R28
-                e._2.pos = InRegister(formatter.regConf.variabRegs(varRegIndx))
-                varRegIndx += 1
-            } else {
-                // Variables assigned to stack  
-                e._2.pos = OnStack(offset)
-                offset += formatter.getSize(e._2.tp)
-            }
-        })
-
-        return ((offset / 16) + 1) * 16
     }
 }
  
@@ -167,6 +188,9 @@ case class OnStack(offset: Int) extends Position // Offset from the frame pointe
 case class OnTempStack(regNum: Int) extends Position 
 // Temporary location for caller saved argument
 // The offset is calculated from the registerNum using the pinterReg (X16)
+
+// Note that OnStack uses the size of the data
+// while OnTempStack always uses the register size. 
 
 // Nested scopes may be implemented with multiple symbol tables
 // Symbol tables 
