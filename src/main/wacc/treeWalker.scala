@@ -326,8 +326,36 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                 instrs.addOne(Label(s2Label))
                 instrs.toList
             }
-            case Loop(x, s) => ???
-            case Body(s) => ???
+            case Loop(x, s) => {
+                val loopLabel = generateGeneralLabel()
+                val condLabel = generateGeneralLabel()
+                val instrs = ListBuffer.empty[Instruction]
+                instrs.addAll(List(
+                    Branch(condLabel),
+                    Label(loopLabel)
+                ))
+                sem.curSymTable = sem.curSymTable.getNextChildSymbolTable()
+                instrs.addAll(calleeSave())
+                instrs.addAll(translate(s))
+                instrs.addAll(calleeRestoreLocal())
+                sem.curSymTable = sem.curSymTable.parent().get
+                instrs.addOne(Label(condLabel))
+                instrs.addAll(translate(x, scratchRegs))
+                instrs.addAll(List(
+                    Compare(RegisterX(primary), RegisterXZR), // TODO: Change ResiterXZR
+                    BranchCond(loopLabel, NeI),
+                ))
+                instrs.toList
+            }
+            case Body(s) => {
+                val instrs = ListBuffer.empty[Instruction]
+                sem.curSymTable = sem.curSymTable.getNextChildSymbolTable()
+                instrs.addAll(calleeSave())
+                instrs.addAll(translate(s))
+                instrs.addAll(calleeRestoreLocal())
+                sem.curSymTable = sem.curSymTable.parent().get
+                instrs.toList
+            }
 
             case Delimit(s1, s2) => translate(s1) ++ translate(s2)
                 // val res = translate(s1,   regs)
@@ -557,6 +585,8 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
     }
 
     def calleeRestoreLocal(): List[Instruction] = {
+        // This must be used at the end of any anonymous scopes
+        // It makes sure that the stuff saves for the anonymous scopes are saved.
         val regs = ListBuffer.empty[Int] 
         sem.curSymTable.varDict.values.foreach((v) => {
             v.pos match {
