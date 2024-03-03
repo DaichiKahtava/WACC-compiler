@@ -77,11 +77,10 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                 List(MulI(RegisterX(secondary), RegisterX(primary)))
 
             case Div(x, y) => {
-                formatter.includeFx(errorDivZeroFx)
                 return translateTwoExpr(x, y, regs) ++
                 List(
                     Compare(RegisterXZR, RegisterX(secondary)),
-                    BranchCond(errorDivZeroFx.label, EqI),
+                    BranchCond(formatter.includeFx(new errorDivZeroFx(formatter)), EqI),
                     DivI(RegisterX(secondary), RegisterX(primary))
                 )
             }
@@ -166,8 +165,9 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
             case Ident(id) => sem.curSymTable.findVarGlobal(id).get.pos match {
                 case InRegister(r) => List(Move(RegisterX(r), RegisterX(primary)))
                 case OnTempStack(r) => List(
-                        Move(ImmNum(formatter.getSize(S_ANY) * r), RegisterX(secondary)),
-                        Load(BaseOfsRA(RegisterX(r), RegisterX(secondary)), RegisterX(primary))
+                        Comment("TEMP STACK!!!"),
+                        Move(ImmNum(-(formatter.getSize(S_ANY) * (r + 1))), RegisterX(secondary)),
+                        Load(BaseOfsRA(RegisterX(formatter.regConf.pointerReg), RegisterX(secondary)), RegisterX(primary))
                     )
                 case OnStack(offset) => ???
                 case Undefined => ??? // Should not get here
@@ -203,7 +203,7 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
         program.funcs.foreach((f) => {
             // TODO: More idiomatic way of accessing the symbol table?
             sem.curSymTable = sem.curSymTable.findFunGlobal(f.id).get.st // We are in the local symbolTable.
-            sem.curSymTable.assignPositions(formatter)
+            
             instructionList.addAll(translate(f))
             sem.curSymTable = sem.curSymTable.parent().get // We are in the parent/global symbolTable.
         })
@@ -223,9 +223,19 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
         // Callee saves and callee restore must go here.
         // Labels must be ensured unique
         val instructionList = ListBuffer.empty[Instruction]
-        instructionList.addOne(Label(formatter.regConf.funcLabel + func.id))
+        val varAlloc = sem.curSymTable.assignPositions(formatter) // TODO: extra space...
+        val primary = formatter.regConf.scratchRegs.head
+        instructionList.addAll(
+            List(
+                Label(formatter.regConf.funcLabel + func.id),
+                Push(RegisterFP, RegisterLR),
+                Move(RegisterSP, RegisterFP),
+                Move(ImmNum(varAlloc), RegisterX(primary)),
+                AddI(RegisterX(primary), RegisterSP) // varAlloc is negative
+            )
+        )
+        instructionList.addAll(calleeSave())
         instructionList.addAll(translate(func.s))
-        instructionList.addOne(ReturnI)
         instructionList.toList
     } 
 
@@ -233,20 +243,21 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
         val scratchRegs = formatter.regConf.scratchRegs
         val primary = scratchRegs(0)
         val secondary = scratchRegs(1)
-            stmt match {
+        stmt match {
             case Skip() => Nil
             case Decl(_, id, rv) => {
                 val v = sem.curSymTable.findVarGlobal(id).get
                 val destInstr = v.pos match {
                 case InRegister(r) => List(Move(RegisterX(primary), RegisterX(r)))
                     case OnTempStack(r) => List(
-                            Move(ImmNum(r), RegisterX(secondary)),
-                            Store(RegisterX(primary), BaseOfsRA(RegisterX(formatter.regConf.pointerReg), RegisterX(secondary)))
-                        )
+                            Comment("TEMP STACK!!!"),
+                            Move(ImmNum(-(formatter.getSize(S_ANY) * (r + 1))), RegisterX(secondary)),
+                            Load(BaseOfsRA(RegisterX(formatter.regConf.pointerReg), RegisterX(secondary)), RegisterX(primary))                        )
                     case OnStack(offset) => List(
                             Move(ImmNum(offset), RegisterX(secondary)),
                             Store(RegisterX(primary), BaseOfsRA(RegisterX(formatter.regConf.framePReg), RegisterX(secondary)))
-                        )                case Undefined => ???
+                        )                
+                    case Undefined => ???
                     // sem.curSymTable.redefineSymbol(id, VARIABLE(v.tp, InRegister(regs.head)))
                     // translate(rv, regs)
                 }
@@ -258,9 +269,9 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                     // TODO: Abstract!
                     case InRegister(r) => List(Move(RegisterX(primary), RegisterX(r)))
                     case OnTempStack(r) => List(
-                            Move(ImmNum(r), RegisterX(secondary)),
-                            Store(RegisterX(primary), BaseOfsRA(RegisterX(formatter.regConf.pointerReg), RegisterX(secondary)))
-                        )
+                            Comment("TEMP STACK!!!"),
+                            Move(ImmNum(-(formatter.getSize(S_ANY) * (r + 1))), RegisterX(secondary)),
+                            Load(BaseOfsRA(RegisterX(formatter.regConf.pointerReg), RegisterX(secondary)), RegisterX(primary))                        )
                     case OnStack(offset) => List(
                             Move(ImmNum(offset), RegisterX(secondary)),
                             Store(RegisterX(primary), BaseOfsRA(RegisterX(formatter.regConf.framePReg), RegisterX(secondary)))
@@ -312,13 +323,24 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                 )
             }
 
-            case Return(x) => ???
+            case Return(x) => translate(x, formatter.regConf.scratchRegs) ++ 
+                List(
+                    Move(RegisterX(formatter.regConf.scratchRegs(0)),
+                    RegisterX(formatter.regConf.resultRegister))
+                ) ++
+                calleeRestore() ++ 
+                List(
+                    // DEALLOC ALL VARIABLES!!!
+                    Move(ImmNum(sem.curSymTable.stackAllocVars), RegisterX(formatter.regConf.scratchRegs.head)),
+                    SubI(RegisterX(formatter.regConf.scratchRegs.head), RegisterSP),
+                    Pop(RegisterFP, RegisterLR), ReturnI
+                )
             case Exit(x) => callFx("exit", formatter.regConf.scratchRegs, List(x), List(S_INT))
             case Print(x) => callFx(determinePrint(x), formatter.regConf.scratchRegs, List(x), List(S_ANY))
             case Println(x) => {
-                formatter.includeFx(printLineFx)
+                
                 callFx(determinePrint(x), formatter.regConf.scratchRegs, List(x), List(S_ANY)) ++
-                callFx(printLineFx.label, formatter.regConf.scratchRegs, List(), List())
+                callFx(formatter.includeFx(new printLineFx(formatter)), formatter.regConf.scratchRegs, List(), List())
             }
             case Cond(x, s1, s2) => ???
             case Loop(x, s) => ???
@@ -347,16 +369,14 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
         val secondary = regs(1)
         rv match {
             case ArrL(xs) => {
-                formatter.includeFx(mallocFx)
+                
                 val arrLen = xs.length
                 val elemSize = if (arrLen > 0) formatter.getSize(rv.tp.asInstanceOf[S_ARRAY].tp) else 0
                 val arrSize = arrLen * elemSize
                 var arrHead = 0
-                List(
-                    Comment(s"$arrLen element array"),
-                    Move(ImmNum(arrSize + 4), RegisterW(0)),
-                    BranchLink("_malloc"), // TODO: Use callFx
-                    Move(RegisterX(formatter.regConf.resultRegister), RegisterX(formatter.regConf.pointerReg)),
+                List(Comment(s"$arrLen element array")) ++
+                callFx(formatter.includeFx(new mallocFx(formatter)), formatter.regConf.scratchRegs, List(IntL(arrSize + 4)(1,1)), List(S_ANY)) ++
+                List(Move(RegisterX(formatter.regConf.resultRegister), RegisterX(formatter.regConf.pointerReg)),
                     Move(ImmNum(formatter.getSize(S_INT)), RegisterX(primary)),
                     AddI(RegisterX(primary), RegisterX(formatter.regConf.pointerReg)),
                     Move(ImmNum(xs.length), RegisterX(primary)),
@@ -372,7 +392,8 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                     res
                 }).flatten ++ List(Move(RegisterX(formatter.regConf.pointerReg), RegisterX(primary)))
             }
-            case Call(id, xs) => ???
+            case Call(id, xs) => callFx(formatter.regConf.funcLabel ++ id, formatter.regConf.scratchRegs, xs, 
+                sem.curSymTable.findFunGlobal(id).get.st.parDict.values.toList.map((v)=> v.tp))
             case RExpr(e) => translate(e, regs)
             case NewPair(e1, e2) => ???
             case pe: PairElem => translate(pe, regs.tail)
@@ -387,22 +408,11 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
     // Gives the correct print label for the expression
     // And adds the required dependencies
     def determinePrint(x: Expr): String = sem.getType(x) match {
-        case S_STRING => {
-            formatter.includeFx(printStringFx)
-            printStringFx.label
-        }
-        case S_BOOL => {
-            formatter.includeFx(printBoolFx)
-            printBoolFx.label
-        }
-        case S_CHAR => {
-            formatter.includeFx(printCharFx)
-            printCharFx.label
-        }
-        case S_INT => {
-            formatter.includeFx(printIntFx)
-            printIntFx.label
-        }
+        case S_STRING => formatter.includeFx(new printStringFx(formatter))
+        case S_BOOL => formatter.includeFx(new printBoolFx(formatter))
+        case S_CHAR => formatter.includeFx(new printCharFx(formatter))
+        case S_INT =>  formatter.includeFx(new printIntFx(formatter))
+        case S_PAIR(_, _) | S_ARRAY(_) | S_ERASED => formatter.includeFx(new printPointerFx(formatter))
         case _ => ???
     }
 
@@ -410,72 +420,47 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
     def pushRegs(regs: List[Int]): List[Instruction] = {
         Comment("Saving registers") :: (for {
             List(r1, r2) <- regs.grouped(2).toList // [em422]
-        } yield (Push(RegisterX(r1), RegisterX(r2)))) ++ 
+        } yield (Push(RegisterX(r2), RegisterX(r1)))) ++ 
         // This can probably be compacted into above but idk how
-        (if (regs.size % 2 != 0) List(Push(RegisterX(regs.last), RegisterXZR)) else Nil) ++
+        (if (regs.size % 2 != 0) List(Push(RegisterXZR, RegisterX(regs.last))) else Nil) ++
         List(Comment("Saving registers END"))
     }
 
     def popRegs(regs: List[Int]): List[Instruction] = {
         Comment("Restoring registers") :: 
-        (if (regs.size % 2 != 0) List(Pop(RegisterX(regs.last), RegisterXZR)) else Nil) ++ 
+        (if (regs.size % 2 != 0) List(Pop(RegisterXZR, RegisterX(regs.last))) else Nil) ++ 
         (for {
             List(r1, r2) <- regs.grouped(2).toList.reverse
-        } yield (Pop(RegisterX(r1), RegisterX(r2)))) ++ List(Comment("Restoring registers END"))
+        } yield (Pop(RegisterX(r2), RegisterX(r1)))) ++ List(Comment("Restoring registers END"))
         // This can probably be compacted into above but idk how
     }
 
     def callFx(label: String, regs: List[Int], args: List[Expr], parTypes:List[S_TYPE]): List[Instruction] = {
-        // It is expected that will all arguments will be translated and stored in the register
+        // It is expected that all arguments will be translated and stored in the register
         // or on the stack with an offset relative to the frame pointer. 
         val instrs = ListBuffer.empty[Instruction]
 
         val primary = regs(0)
         val secondary = regs(1)
 
-        instrs.addOne(Move(RegisterSP, RegisterX(formatter.regConf.pointerReg)))
+        instrs.addOne(Move(RegisterSP, RegisterX(formatter.regConf.stackAlign)))
+
         instrs.addAll(callerSave())
         // This will save all arguments (if they exist)
         
 
         // To avoid accidentally overwriting registers, we put everything in stack and
-        // Then load anything we need from the stack using pointerReg        
+        // Then load anything we need from the stack using symbolTable     
         for (i <- 0 to Math.min(7, args.length - 1)) {
-            // TODO: Something like RegisterXR ++ availRegs might be more desirable below
-            // <Magin number!> see below!
             instrs.addAll(translate(args(i), formatter.regConf.scratchRegs)) 
-            instrs.addOne(Move(RegisterXR, RegisterX(i)))
+            instrs.addOne(Move(RegisterX(formatter.regConf.scratchRegs.head), RegisterX(i))) 
         }
 
-        var totalSize = 0
-
-        if (args.length >= 8) {
-            val extraElems = args.length - 8
-            
-            // We know that args.length == parTypes.length from semantic checks
-            for (i <- 8 to (args.length - 1)) {
-                totalSize += formatter.getSize(parTypes(i))
-            }
-
-            instrs.addAll(List(
-                Comment("Allocating stack for more than 8 arguments"),
-                Move(ImmNum(((totalSize / 16) + 1) * 16), RegisterX(secondary)),
-                SubI(RegisterX(secondary), RegisterSP)
-                // May waste a memory location of the stack but can be fixed
-                // during optimisation stage TODO: UNDO IT!
-            ))
-
+        if (args.length > 8) {
             var ofs = 0
-            for (i <- 8 to (args.length - 1)) {
+            for (i <- (args.length - 1) to 8) {
                 instrs.addAll(translate(args(i), formatter.regConf.scratchRegs)) 
-                instrs.addOne(Move(ImmNum(ofs), RegisterX(secondary)))
-                var size = formatter.getSize(parTypes(i)) // Recalculation
-                size match {
-                    case 1 => instrs.addOne(StoreByte(RegisterXR, BaseOfsRA(RegisterSP, RegisterX(secondary))))
-                    case 4 => instrs.addOne(StoreWord(RegisterXR, BaseOfsRA(RegisterSP, RegisterX(secondary))))
-                    case 8 => instrs.addOne(Store(RegisterXR, BaseOfsRA(RegisterSP, RegisterX(secondary))))
-                }
-               ofs += size
+                instrs.addOne(Push(RegisterX(formatter.regConf.scratchRegs(0)), RegisterXZR))
             }
         }
 
@@ -487,7 +472,7 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
         ))
         if (args.length >= 8) {
             instrs.addAll(List(
-                Move(ImmNum(((totalSize / 16) + 1) * 16), RegisterX(secondary)),
+                Move(ImmNum((args.length - 8) * 16), RegisterX(secondary)),
                 AddI(RegisterX(secondary), RegisterSP)
             ))
         }
@@ -495,6 +480,7 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
 
         instrs.toList
     }
+
 
 
     // calle functions save/restore registers, the frame pointer as well as the link register

@@ -24,6 +24,7 @@ class Aarch64_formatter() {
         val pointerReg = 16
         val offsetReg = 17
         val framePReg = 29
+        val stackAlign: Int = 16
     }
 
     // Global data for program. Note that data for internal programs are
@@ -67,9 +68,10 @@ class Aarch64_formatter() {
         return stringLabel + String.valueOf(stringLabelCounter)
     }
 
-    def includeFx(f: InternalFunction): Unit = {
+    def includeFx(f: InternalFunction): String = {
         internalFxs.add(f)
         f.dependencies.foreach(includeFx) // TODO: Provision for cycles in dependencies.
+        f.label
     }
 
     def generateAssembly(instr: Instruction): String = instr match {
