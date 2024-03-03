@@ -315,13 +315,13 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                 sem.curSymTable = sem.curSymTable.getNextChildSymbolTable()
                 instrs.addAll(calleeSave())
                 instrs.addAll(translate(s1))
-                instrs.addAll(calleeRestore())
+                instrs.addAll(calleeRestoreLocal())
                 sem.curSymTable = sem.curSymTable.parent().get
                 instrs.addAll(List(Branch(s2Label), Label(s1Label)))
                 sem.curSymTable = sem.curSymTable.getNextChildSymbolTable()
                 instrs.addAll(calleeSave())
                 instrs.addAll(translate(s2))
-                instrs.addAll(calleeRestore())
+                instrs.addAll(calleeRestoreLocal())
                 sem.curSymTable = sem.curSymTable.parent().get
                 instrs.addOne(Label(s2Label))
                 instrs.toList
@@ -500,7 +500,10 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
     }
     
     def calleeSave(): List[Instruction] = {
-        //Note that this uses the current symbol table for the variables to be saved
+        // This should be invoked every time we enter a new symbol table
+        // I.e. this is LOCAL ONLY!
+
+        // Note that this uses the current symbol table for the variables to be saved
         val regs = ListBuffer.empty[Int] 
         sem.curSymTable.varDict.values.foreach((v) => {
             v.pos match {
@@ -513,7 +516,23 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
         pushRegs(regs.toList)
     }
     def calleeRestore(): List[Instruction] = {
+        // This should be invoked only on returns:
+        // It will go to the parent symbol table if anonymous and
+        // will do the parent symbol table's callee restore as well.
+
         //Note that this uses the current symbol table for the variables to be saved
+        var parentStuff = List.empty[Instruction] 
+        if (sem.curSymTable.anonymous) {
+            val childTable = sem.curSymTable
+            sem.curSymTable = sem.curSymTable.parent().get // Anonymous symbol tables always have parents
+            parentStuff = calleeRestore()
+            sem.curSymTable = childTable
+        }
+        calleeRestoreLocal() ++ parentStuff
+        // TODO: Can avoid recalculating registers or abstract that into the funtion translation.
+    }
+
+    def calleeRestoreLocal(): List[Instruction] = {
         val regs = ListBuffer.empty[Int] 
         sem.curSymTable.varDict.values.foreach((v) => {
             v.pos match {
@@ -524,7 +543,6 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
             }
         })
         popRegs(regs.toList)
-        // TODO: Can avoid recalculating registers or abstract that into the funtion translation.
     }
 
     def generateGeneralLabel(): String = {

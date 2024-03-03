@@ -5,7 +5,7 @@ import scala.collection.mutable.ListBuffer
 import scala.collection.mutable.LinkedHashMap
 
 // Symbol table class inspired from week 4 Compiler's lectures
-class SymTable(parentTable: Option[SymTable], returnType: Option[S_TYPE]) {
+class SymTable(parentTable: Option[SymTable], returnType: Option[S_TYPE], val anonymous: Boolean) {
     // LinkedHashMap used to preserve insersion order
     val varDict = LinkedHashMap.empty[String, VARIABLE] 
     val parDict = LinkedHashMap.empty[String, VARIABLE] 
@@ -112,7 +112,7 @@ class SymTable(parentTable: Option[SymTable], returnType: Option[S_TYPE]) {
 
     def newUnamedScope(): SymTable = {
         // TODO: Needs to get tested!
-        val st = new SymTable(Some(this), returnType)
+        val st = new SymTable(Some(this), returnType, true)
         childScopes.append(st)
         return st;
     }
