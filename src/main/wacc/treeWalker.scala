@@ -398,7 +398,6 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
         val secondary = regs(1)
         rv match {
             case ArrL(xs) => {
-                
                 val arrLen = xs.length
                 val elemSize = if (arrLen > 0) formatter.getSize(rv.tp.asInstanceOf[S_ARRAY].tp) else 0
                 val arrSize = arrLen * elemSize
@@ -410,12 +409,12 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                     AddI(RegisterX(primary), RegisterX(formatter.regConf.pointerReg)),
                     Move(ImmNum(xs.length), RegisterX(primary)),
                     Move(ImmNum(-(formatter.getSize(S_INT))), RegisterX(secondary)),
-                    Store(RegisterW(primary), BaseOfsRA(RegisterX(16), RegisterX(secondary)))
+                    Store(RegisterW(primary), BaseOfsRA(RegisterX(formatter.regConf.pointerReg), RegisterX(secondary)))
                 ) ++ (for (x <- xs) yield {
                     val res = translate(x, regs) ++ // translate stores the result in primary by convention
                     List(
                         Move(ImmNum(arrHead), RegisterX(secondary)),
-                        Store(RegisterW(primary), BaseOfsRA(RegisterX(16), RegisterX(secondary)))
+                        Store(RegisterW(primary), BaseOfsRA(RegisterX(formatter.regConf.pointerReg), RegisterX(secondary)))
                     )
                     arrHead += elemSize
                     res
