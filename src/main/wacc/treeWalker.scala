@@ -309,13 +309,12 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                 List(
                     Compare(RegisterX(primary), RegisterXZR), // TODO: Change ResiterXZR
                     BranchCond(s1Label, EqI),
-                    Branch(s2Label),
                 ) ++ 
                 // TODO: Make sure that s1 and s2 have access to the parent symbol table but dont have access to each other's
-                List(Label(s1Label)) ++
                 translate(s1) ++
-                List(Label(s2Label)) ++
-                translate(s2) 
+                List(Branch(s2Label), Label(s1Label)) ++
+                translate(s2) ++
+                List(Label(s2Label))
                 
             }
             case Loop(x, s) => ???
