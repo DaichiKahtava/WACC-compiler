@@ -305,17 +305,26 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
             case Cond(x, s1, s2) => { // TODO: Defintely need to change that
                 val s1Label = generateGeneralLabel()
                 val s2Label = generateGeneralLabel()
-                translate(x, scratchRegs) ++
-                List(
+                val instrs = ListBuffer.empty[Instruction]
+                instrs.addAll(translate(x, scratchRegs)) 
+                instrs.addAll(List(
                     Compare(RegisterX(primary), RegisterXZR), // TODO: Change ResiterXZR
                     BranchCond(s1Label, EqI),
-                ) ++ 
+                ))
                 // TODO: Make sure that s1 and s2 have access to the parent symbol table but dont have access to each other's
-                translate(s1) ++
-                List(Branch(s2Label), Label(s1Label)) ++
-                translate(s2) ++
-                List(Label(s2Label))
-                
+                sem.curSymTable = sem.curSymTable.getNextChildSymbolTable()
+                instrs.addAll(calleeSave())
+                instrs.addAll(translate(s1))
+                instrs.addAll(calleeRestore())
+                sem.curSymTable = sem.curSymTable.parent().get
+                instrs.addAll(List(Branch(s2Label), Label(s1Label)))
+                sem.curSymTable = sem.curSymTable.getNextChildSymbolTable()
+                instrs.addAll(calleeSave())
+                instrs.addAll(translate(s2))
+                instrs.addAll(calleeRestore())
+                sem.curSymTable = sem.curSymTable.parent().get
+                instrs.addOne(Label(s2Label))
+                instrs.toList
             }
             case Loop(x, s) => ???
             case Body(s) => ???

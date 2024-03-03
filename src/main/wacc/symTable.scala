@@ -12,6 +12,8 @@ class SymTable(parentTable: Option[SymTable], returnType: Option[S_TYPE]) {
     val funDict = Map.empty[String, FUNCTION]
     val childScopes = ListBuffer.empty[SymTable]
 
+    var childScopesCounter = -1
+
     var stackAllocVars: Int = 0  
 
     def parent() = parentTable
@@ -171,6 +173,15 @@ class SymTable(parentTable: Option[SymTable], returnType: Option[S_TYPE]) {
                 childScopes.foreach((st) => st.stackAllocVars = stackAllocVars)
                 return stackAllocVars
             }
+    }
+
+    def getNextChildSymbolTable() = {
+        // Invariant:
+        // The function will be called every time an anonymous scope is
+        // cound in the treeWalker. By the semantic checks, the number of invocations
+        // chould be exactly equals to the number of anonymous scopes.     
+        childScopesCounter += 1
+        childScopes(childScopesCounter)
     }
 }
  

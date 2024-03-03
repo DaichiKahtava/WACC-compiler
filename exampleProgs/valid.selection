@@ -100,8 +100,8 @@ exampleProgs/valid/if/whitespace.wacc
 'exampleProgs/valid/pairs/readPair.wacc
 'exampleProgs/valid/pairs/writeFst.wacc
 'exampleProgs/valid/pairs/writeSnd.wacc
-'exampleProgs/valid/scope/ifNested1.wacc
-'exampleProgs/valid/scope/ifNested2.wacc
+exampleProgs/valid/scope/ifNested1.wacc
+exampleProgs/valid/scope/ifNested2.wacc
 'exampleProgs/valid/scope/indentationNotImportant.wacc
 'exampleProgs/valid/scope/intsAndKeywords.wacc
 'exampleProgs/valid/scope/printAllTypes.wacc
@@ -168,7 +168,7 @@ exampleProgs/valid/basic/skip/commentInLine.wacc
 exampleProgs/valid/basic/skip/comment.wacc
 exampleProgs/valid/basic/skip/skip.wacc
 'exampleProgs/valid/function/nested_functions/fibonacciFullRec.wacc
-exampleProgs/valid/function/nested_functions/fibonacciRecursive.wacc
+'exampleProgs/valid/function/nested_functions/fibonacciRecursive.wacc
 'exampleProgs/valid/function/nested_functions/fixedPointRealArithmetic.wacc
 exampleProgs/valid/function/nested_functions/functionConditionalReturn.wacc
 'exampleProgs/valid/function/nested_functions/mutualRecursion.wacc
