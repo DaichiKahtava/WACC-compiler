@@ -436,28 +436,14 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
     // Gives the correct print label for the expression
     // And adds the required dependencies
     def determinePrint(x: Expr): String = sem.getType(x) match {
-        case S_STRING => formatter.includeFx(new printStringFx(formatter))
+        case S_STRING | S_ARRAY(S_CHAR) => formatter.includeFx(new printStringFx(formatter))
         case S_BOOL => formatter.includeFx(new printBoolFx(formatter))
         case S_CHAR => formatter.includeFx(new printCharFx(formatter))
         case S_INT =>  formatter.includeFx(new printIntFx(formatter))
-        case S_PAIR(_, _) | S_ERASED => formatter.includeFx(new printPointerFx(formatter))
-        case S_ARRAY(tp) => x match {
-            case ArrElem(id, xs) => ???
-            case _ => formatter.includeFx(new printPointerFx(formatter))
-        }
+        case S_PAIR(_, _) | S_ERASED => formatter.includeFx(new printPointerFx(formatter)) 
+        case S_ARRAY(tp) => formatter.includeFx(new printPointerFx(formatter))
     }
 
-    // def determinePrint(tp: S_TYPE, inArr: Boolean): String = tp match {
-    //     case S_STRING => formatter.includeFx(new printStringFx(formatter))
-    //     case S_BOOL => formatter.includeFx(new printBoolFx(formatter))
-    //     case S_CHAR if inArr => formatter.includeFx(new printStringFx(formatter))
-    //     case S_CHAR => formatter.includeFx(new printCharFx(formatter))
-    //     case S_INT =>  formatter.includeFx(new printIntFx(formatter))
-    //     case S_PAIR(_, _) | S_ERASED | S_ARRAY(_) => formatter.includeFx(new printPointerFx(formatter))
-    //     // case S_ARRAY(tp) => determinePrint(tp, true)
-    //     case _ => ???
-    // } // Just a quick fix but probably can use the below original recursively for arrays
-        
     def pushRegs(regs: List[Int]): List[Instruction] = {
         Comment("Saving registers") :: (for {
             List(r1, r2) <- regs.grouped(2).toList // [em422]
