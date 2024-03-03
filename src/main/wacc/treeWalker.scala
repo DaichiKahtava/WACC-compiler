@@ -315,7 +315,7 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                 }
                 translate(rv, scratchRegs) ++ destInstr
             }
-            case Asgn(LArrElem(id, xs), rv) => {
+            case Asgn(LArrElem(id, xs), rv) => { // TODO: Nested array extractoin
                 /*
                     - use branch link here (as an exception)
                     - arr load/str uses variable registers with callee saves/restore
@@ -374,9 +374,9 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                     Pop(RegisterFP, RegisterLR), ReturnI
                 )
             case Exit(x) => callFx("exit", formatter.regConf.scratchRegs, List(x), List(S_INT))
-            case Print(x) => callFx(determinePrint(sem.getType(x)), formatter.regConf.scratchRegs, List(x), List(S_ANY))
+            case Print(x) => callFx(determinePrint(sem.getType(x), false), formatter.regConf.scratchRegs, List(x), List(S_ANY))
             case Println(x) => {
-                callFx(determinePrint(sem.getType(x)), formatter.regConf.scratchRegs, List(x), List(S_ANY)) ++
+                callFx(determinePrint(sem.getType(x), false), formatter.regConf.scratchRegs, List(x), List(S_ANY)) ++
                 callFx(formatter.includeFx(new printLineFx(formatter)), formatter.regConf.scratchRegs, List(), List())
             }
             case Cond(x, s1, s2) => ???
@@ -435,13 +435,14 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
 
     // Gives the correct print label for the expression
     // And adds the required dependencies
-    def determinePrint(tp: S_TYPE): String = tp match {
+    def determinePrint(tp: S_TYPE, inArr: Boolean): String = tp match {
         case S_STRING => formatter.includeFx(new printStringFx(formatter))
         case S_BOOL => formatter.includeFx(new printBoolFx(formatter))
+        case S_CHAR if inArr => formatter.includeFx(new printStringFx(formatter))
         case S_CHAR => formatter.includeFx(new printCharFx(formatter))
         case S_INT =>  formatter.includeFx(new printIntFx(formatter))
         case S_PAIR(_, _) | S_ERASED => formatter.includeFx(new printPointerFx(formatter))
-        case S_ARRAY(tp) => determinePrint(tp)
+        case S_ARRAY(tp) => determinePrint(tp, true)
         case _ => ???
     } // Just a quick fix but probably can use the below original recursively for arrays
 
