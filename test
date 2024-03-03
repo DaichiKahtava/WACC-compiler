@@ -88,10 +88,13 @@ test_execute () {
             gLine=${outputA[i - 1]}
             eLine=${expectA[i]}
             eLine="${eLine/[#] /}"
+            eLine="${eLine//#addrs#/}"
+            gLine="${gLine/0x[0-9]*/}"
             if [ "$eLine" != "$gLine" ] 
             then
               if [ "$eLine" != "#" ] && [ "$gLine" != "" ] 
               # WARN! Might miss places where # is expected and we give a newline instead
+              # WARN! Cannot have special characters where addresses are expected
               then
                 printf "Unexpected output at line ${i}:\n   Exp: $eLine\n   Got: $gLine\n"
                 compFlag=1

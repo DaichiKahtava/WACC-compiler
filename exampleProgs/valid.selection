@@ -180,7 +180,7 @@ exampleProgs/valid/basic/skip/skip.wacc
 exampleProgs/valid/function/simple_functions/functionDeclaration.wacc
 exampleProgs/valid/function/simple_functions/functionDoubleReturn.wacc
 'exampleProgs/valid/function/simple_functions/functionIfReturns.wacc
-'exampleProgs/valid/function/simple_functions/functionManyArguments.wacc
+exampleProgs/valid/function/simple_functions/functionManyArguments.wacc
 'exampleProgs/valid/function/simple_functions/functionMultiReturns.wacc
 'exampleProgs/valid/function/simple_functions/functionReturnPair.wacc
 'exampleProgs/valid/function/simple_functions/functionSimpleLoop.wacc
