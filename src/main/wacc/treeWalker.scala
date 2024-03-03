@@ -307,7 +307,7 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                 translate(x, scratchRegs) ++
                 List(
                     Comment("Freeing memory"),
-                    Move(RegisterX(primary), RegisterX(0)),
+                    Move(RegisterX(0), RegisterX(primary)),
                     BranchLink("free")
                 )
             }
