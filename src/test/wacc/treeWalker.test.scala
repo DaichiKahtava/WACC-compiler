@@ -15,7 +15,7 @@ class treeWalkerTest extends AnyFlatSpec with BeforeAndAfterEach
     override protected def beforeEach(): Unit = {
         sem = new Semantics("foo.txt")
         frm = new Aarch64_formatter()
-        sem.curSymTable = new SymTable(None, None)
+        sem.curSymTable = new SymTable(None, None, false)
         tw = new TreeWalker(sem, frm)
         testGpRegsList = frm.regConf.gpRegs.toList
         testRegisterX = RegisterX(0)

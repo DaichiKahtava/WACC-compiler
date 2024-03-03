@@ -5,12 +5,14 @@ import scala.collection.mutable.ListBuffer
 import scala.collection.mutable.LinkedHashMap
 
 // Symbol table class inspired from week 4 Compiler's lectures
-class SymTable(parentTable: Option[SymTable], returnType: Option[S_TYPE]) {
+class SymTable(parentTable: Option[SymTable], returnType: Option[S_TYPE], val anonymous: Boolean) {
     // LinkedHashMap used to preserve insersion order
     val varDict = LinkedHashMap.empty[String, VARIABLE] 
     val parDict = LinkedHashMap.empty[String, VARIABLE] 
     val funDict = Map.empty[String, FUNCTION]
     val childScopes = ListBuffer.empty[SymTable]
+
+    var childScopesCounter = -1
 
     var stackAllocVars: Int = 0  
 
@@ -110,7 +112,7 @@ class SymTable(parentTable: Option[SymTable], returnType: Option[S_TYPE]) {
 
     def newUnamedScope(): SymTable = {
         // TODO: Needs to get tested!
-        val st = new SymTable(Some(this), returnType)
+        val st = new SymTable(Some(this), returnType, true)
         childScopes.append(st)
         return st;
     }
@@ -171,6 +173,15 @@ class SymTable(parentTable: Option[SymTable], returnType: Option[S_TYPE]) {
                 childScopes.foreach((st) => st.stackAllocVars = stackAllocVars)
                 return stackAllocVars
             }
+    }
+
+    def getNextChildSymbolTable() = {
+        // Invariant:
+        // The function will be called every time an anonymous scope is
+        // cound in the treeWalker. By the semantic checks, the number of invocations
+        // chould be exactly equals to the number of anonymous scopes.     
+        childScopesCounter += 1
+        childScopes(childScopesCounter)
     }
 }
  

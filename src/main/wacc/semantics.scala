@@ -3,7 +3,7 @@ package wacc
 class Semantics(fileName: String) {
 
     /// Global pointer/reference to current SymTable
-    var curSymTable = new SymTable(None, None)
+    var curSymTable = new SymTable(None, None, false)
     var errorRep = new SemErrorReporter(fileName)
 
     /// Expressions ///
@@ -301,11 +301,11 @@ class Semantics(fileName: String) {
                 if (existingF.isDefined) {
                     errorRep.addError("Function \""+f.id+"\" is already defined more than once!", f.pos)
                     if (existingF.get.tp != toSemanticType(f.tp)) {
-                        curSymTable.redefineSymbol(f.id, FUNCTION(S_ANY)(new SymTable(Some(curSymTable), Some(S_ANY))))
+                        curSymTable.redefineSymbol(f.id, FUNCTION(S_ANY)(new SymTable(Some(curSymTable), Some(S_ANY), false)))
                     }
 
                 } else {
-                    val fSynT = new SymTable(Some(curSymTable), Some(fType))
+                    val fSynT = new SymTable(Some(curSymTable), Some(fType), false)
                     f.params.foreach((p) => {
                         if (!fSynT.addParam(p.id, VARIABLE(toSemanticType(p.tp)))) {
                             errorRep.addError("Parameter \""+p.id+"\" is already defined!", p.pos)

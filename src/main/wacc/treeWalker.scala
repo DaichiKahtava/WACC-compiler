@@ -110,8 +110,7 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                 List(Compare(RegisterX(primary), RegisterX(secondary)), SetCond(RegisterX(primary), NeI))
                 
             case And(x, y) =>
-                val curLabel = s".L${labelNum}"
-                labelNum += 1
+                val curLabel = generateGeneralLabel()
                 translateTwoExpr(x, y, regs) ++
                 // TODO: ImmNum magic number for true!
                 List(
@@ -124,8 +123,7 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                 )
 
             case Or(x, y) => 
-                val curLabel = s".L${labelNum}"
-                labelNum += 1
+                val curLabel = generateGeneralLabel()
                 translateTwoExpr(x, y, regs) ++
                 List(
                     Move(ImmNum(1), RegisterX(tertiary)),
@@ -304,12 +302,63 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                 callFx(determinePrint(x), formatter.regConf.scratchRegs, List(x), List(S_ANY)) ++
                 callFx(formatter.includeFx(new printLineFx(formatter)), formatter.regConf.scratchRegs, List(), List())
             }
-            case Cond(x, s1, s2) => ???
-            case Loop(x, s) => ???
-            case Body(s) => ???
+            case Cond(x, s1, s2) => { // TODO: Defintely need to change that
+                val s1Label = generateGeneralLabel()
+                val s2Label = generateGeneralLabel()
+                val instrs = ListBuffer.empty[Instruction]
+                instrs.addAll(translate(x, scratchRegs)) 
+                instrs.addAll(List(
+                    Compare(RegisterX(primary), RegisterXZR), // TODO: Change ResiterXZR
+                    BranchCond(s1Label, EqI),
+                ))
+                // TODO: Make sure that s1 and s2 have access to the parent symbol table but dont have access to each other's
+                sem.curSymTable = sem.curSymTable.getNextChildSymbolTable()
+                instrs.addAll(calleeSave())
+                instrs.addAll(translate(s1))
+                instrs.addAll(calleeRestoreLocal())
+                sem.curSymTable = sem.curSymTable.parent().get
+                instrs.addAll(List(Branch(s2Label), Label(s1Label)))
+                sem.curSymTable = sem.curSymTable.getNextChildSymbolTable()
+                instrs.addAll(calleeSave())
+                instrs.addAll(translate(s2))
+                instrs.addAll(calleeRestoreLocal())
+                sem.curSymTable = sem.curSymTable.parent().get
+                instrs.addOne(Label(s2Label))
+                instrs.toList
+            }
+            case Loop(x, s) => {
+                val loopLabel = generateGeneralLabel()
+                val condLabel = generateGeneralLabel()
+                val instrs = ListBuffer.empty[Instruction]
+                instrs.addAll(List(
+                    Branch(condLabel),
+                    Label(loopLabel)
+                ))
+                sem.curSymTable = sem.curSymTable.getNextChildSymbolTable()
+                instrs.addAll(calleeSave())
+                instrs.addAll(translate(s))
+                instrs.addAll(calleeRestoreLocal())
+                sem.curSymTable = sem.curSymTable.parent().get
+                instrs.addOne(Label(condLabel))
+                instrs.addAll(translate(x, scratchRegs))
+                instrs.addAll(List(
+                    Compare(RegisterX(primary), RegisterXZR), // TODO: Change ResiterXZR
+                    BranchCond(loopLabel, NeI),
+                ))
+                instrs.toList
+            }
+            case Body(s) => {
+                val instrs = ListBuffer.empty[Instruction]
+                sem.curSymTable = sem.curSymTable.getNextChildSymbolTable()
+                instrs.addAll(calleeSave())
+                instrs.addAll(translate(s))
+                instrs.addAll(calleeRestoreLocal())
+                sem.curSymTable = sem.curSymTable.parent().get
+                instrs.toList
+            }
 
             case Delimit(s1, s2) => translate(s1) ++ translate(s2)
-                // val res = translate(s1, regs)
+                // val res = translate(s1,   regs)
                 // sem.curSymTable.varDict.values.map(_.pos).foreach{ // Maybe move this somewhere else to a general function when needed
                 //     case InRegister(r) =>
                 //         if (availRegs.contains(r)) availRegs.remove(availRegs.indexOf(r))
@@ -448,38 +497,65 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
     // calle functions save/restore registers, the frame pointer as well as the link register
 
     def callerSave(): List[Instruction] = {
-        val regs = ListBuffer.empty[Int] 
-        sem.curSymTable.parDict.foreachEntry((s, v) => {
-            v.pos match {
-                case InRegister(r) => {
-                    regs.addOne(r)
-                    v.pos = OnTempStack(r)
+        // Anonymous functions have NO parameters BUT they
+        // need to save the parent's parameters if they have any...
+
+        if (sem.curSymTable.anonymous) {
+            var parentStuff = List.empty[Instruction] 
+            val childTable = sem.curSymTable
+            sem.curSymTable = sem.curSymTable.parent().get // Anonymous symbol tables always have parents
+            parentStuff = callerSave()
+            sem.curSymTable = childTable
+            return parentStuff
+        } else {
+            val regs = ListBuffer.empty[Int] 
+            sem.curSymTable.parDict.foreachEntry((s, v) => {
+                v.pos match {
+                    case InRegister(r) => {
+                        regs.addOne(r)
+                        v.pos = OnTempStack(r)
+                    }
+                    case OnStack(offset) => {} //Nothing :)
+                    case OnTempStack(r) => ??? // Invariant: No nested caller/callee saves in the same scope
+                    case Undefined => ???
                 }
-                case OnStack(offset) => {} //Nothing :)
-                case OnTempStack(r) => ??? // Invariant: No nested caller/callee saves in the same scope
-                case Undefined => ???
-            }
-        })
-        pushRegs(regs.toList) // We rely on the preservation of order for LinkedHashMap
+            })
+            return pushRegs(regs.toList) // We rely on the preservation of order for LinkedHashMap
+        }
     }
     def callerRestore(): List[Instruction] = {
-        val regs = ListBuffer.empty[Int] 
-        sem.curSymTable.parDict.foreachEntry((s, v) => {
-            v.pos match {
-                case InRegister(r) => ??? // Nothing should be saved in register here!
-                case OnStack(offset) => {} //Nothing :)
-                case OnTempStack(r) => {
-                    regs.addOne(r)
-                    v.pos = InRegister(r)
+        // Anonymous functions have NO parameters BUT they
+        // need to save the parent's parameters if they have any...
+
+        if (sem.curSymTable.anonymous) {
+            var parentStuff = List.empty[Instruction] 
+            val childTable = sem.curSymTable
+            sem.curSymTable = sem.curSymTable.parent().get // Anonymous symbol tables always have parents
+            parentStuff = callerRestore()
+            sem.curSymTable = childTable
+            return parentStuff
+        } else {
+            val regs = ListBuffer.empty[Int] 
+            sem.curSymTable.parDict.foreachEntry((s, v) => {
+                v.pos match {
+                    case InRegister(r) => ??? // Nothing should be saved in register here!
+                    case OnStack(offset) => {} //Nothing :)
+                    case OnTempStack(r) => {
+                        regs.addOne(r)
+                        v.pos = InRegister(r)
+                    }
+                    case Undefined => ???
                 }
-                case Undefined => ???
-            }
-        })
-        popRegs(regs.toList)
+            })
+            return popRegs(regs.toList)
+        }
     }
     
     def calleeSave(): List[Instruction] = {
-        //Note that this uses the current symbol table for the variables to be saved
+        // This should be invoked every time we enter a new symbol table
+        // I.e. this is LOCAL ONLY!
+
+        // Note that this uses the current symbol table for the variables to be saved
         val regs = ListBuffer.empty[Int] 
         sem.curSymTable.varDict.values.foreach((v) => {
             v.pos match {
@@ -492,7 +568,25 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
         pushRegs(regs.toList)
     }
     def calleeRestore(): List[Instruction] = {
+        // This should be invoked only on returns:
+        // It will go to the parent symbol table if anonymous and
+        // will do the parent symbol table's callee restore as well.
+
         //Note that this uses the current symbol table for the variables to be saved
+        var parentStuff = List.empty[Instruction] 
+        if (sem.curSymTable.anonymous) {
+            val childTable = sem.curSymTable
+            sem.curSymTable = sem.curSymTable.parent().get // Anonymous symbol tables always have parents
+            parentStuff = calleeRestore()
+            sem.curSymTable = childTable
+        }
+        calleeRestoreLocal() ++ parentStuff
+        // TODO: Can avoid recalculating registers or abstract that into the funtion translation.
+    }
+
+    def calleeRestoreLocal(): List[Instruction] = {
+        // This must be used at the end of any anonymous scopes
+        // It makes sure that the stuff saves for the anonymous scopes are saved.
         val regs = ListBuffer.empty[Int] 
         sem.curSymTable.varDict.values.foreach((v) => {
             v.pos match {
@@ -503,7 +597,12 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
             }
         })
         popRegs(regs.toList)
-        // TODO: Can avoid recalculating registers or abstract that into the funtion translation.
+    }
+
+    def generateGeneralLabel(): String = {
+        val curLabel = s".L${labelNum}"
+        labelNum += 1
+        return curLabel
     }
 
 }
