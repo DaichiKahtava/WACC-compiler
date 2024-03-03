@@ -166,8 +166,8 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                 case InRegister(r) => List(Move(RegisterX(r), RegisterX(primary)))
                 case OnTempStack(r) => List(
                         Comment("TEMP STACK!!!"),
-                        Move(ImmNum(formatter.getSize(S_ANY) * r), RegisterX(secondary)),
-                        Load(BaseOfsRA(RegisterSP, RegisterX(secondary)), RegisterX(primary))
+                        Move(ImmNum(-(formatter.getSize(S_ANY) * (r + 1))), RegisterX(secondary)),
+                        Load(BaseOfsRA(RegisterX(formatter.regConf.pointerReg), RegisterX(secondary)), RegisterX(primary))
                     )
                 case OnStack(offset) => ???
                 case Undefined => ??? // Should not get here
@@ -251,9 +251,8 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                 case InRegister(r) => List(Move(RegisterX(primary), RegisterX(r)))
                     case OnTempStack(r) => List(
                             Comment("TEMP STACK!!!"),
-                            Move(ImmNum(r), RegisterX(secondary)),
-                            Store(RegisterX(primary), BaseOfsRA(RegisterX(formatter.regConf.pointerReg), RegisterX(secondary)))
-                        )
+                            Move(ImmNum(-(formatter.getSize(S_ANY) * (r + 1))), RegisterX(secondary)),
+                            Load(BaseOfsRA(RegisterX(formatter.regConf.pointerReg), RegisterX(secondary)), RegisterX(primary))                        )
                     case OnStack(offset) => List(
                             Move(ImmNum(offset), RegisterX(secondary)),
                             Store(RegisterX(primary), BaseOfsRA(RegisterX(formatter.regConf.framePReg), RegisterX(secondary)))
@@ -271,9 +270,8 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                     case InRegister(r) => List(Move(RegisterX(primary), RegisterX(r)))
                     case OnTempStack(r) => List(
                             Comment("TEMP STACK!!!"),
-                            Move(ImmNum(r), RegisterX(secondary)),
-                            Store(RegisterX(primary), BaseOfsRA(RegisterX(formatter.regConf.pointerReg), RegisterX(secondary)))
-                        )
+                            Move(ImmNum(-(formatter.getSize(S_ANY) * (r + 1))), RegisterX(secondary)),
+                            Load(BaseOfsRA(RegisterX(formatter.regConf.pointerReg), RegisterX(secondary)), RegisterX(primary))                        )
                     case OnStack(offset) => List(
                             Move(ImmNum(offset), RegisterX(secondary)),
                             Store(RegisterX(primary), BaseOfsRA(RegisterX(formatter.regConf.framePReg), RegisterX(secondary)))
@@ -381,20 +379,21 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
 
     
     def pushRegs(regs: List[Int]): List[Instruction] = {
+        sem.curSymTable.parDict.foreachEntry((s, v) => println(s + " " + v.pos))
         Comment("Saving registers") :: (for {
             List(r1, r2) <- regs.grouped(2).toList // [em422]
-        } yield (Push(RegisterX(r1), RegisterX(r2)))) ++ 
+        } yield (Push(RegisterX(r2), RegisterX(r1)))) ++ 
         // This can probably be compacted into above but idk how
-        (if (regs.size % 2 != 0) List(Push(RegisterX(regs.last), RegisterXZR)) else Nil) ++
+        (if (regs.size % 2 != 0) List(Push(RegisterXZR, RegisterX(regs.last))) else Nil) ++
         List(Comment("Saving registers END"))
     }
 
     def popRegs(regs: List[Int]): List[Instruction] = {
         Comment("Restoring registers") :: 
-        (if (regs.size % 2 != 0) List(Pop(RegisterX(regs.last), RegisterXZR)) else Nil) ++ 
+        (if (regs.size % 2 != 0) List(Pop(RegisterXZR, RegisterX(regs.last))) else Nil) ++ 
         (for {
             List(r1, r2) <- regs.grouped(2).toList.reverse
-        } yield (Pop(RegisterX(r1), RegisterX(r2)))) ++ List(Comment("Restoring registers END"))
+        } yield (Pop(RegisterX(r2), RegisterX(r1)))) ++ List(Comment("Restoring registers END"))
         // This can probably be compacted into above but idk how
     }
 
@@ -406,16 +405,17 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
         val primary = regs(0)
         val secondary = regs(1)
 
-        instrs.addOne(Move(RegisterSP, RegisterX(formatter.regConf.pointerReg)))
+        instrs.addOne(Move(RegisterSP, RegisterX(formatter.regConf.stackAlign)))
+
         instrs.addAll(callerSave())
         // This will save all arguments (if they exist)
         
 
         // To avoid accidentally overwriting registers, we put everything in stack and
-        // Then load anything we need from the stack using pointerReg        
+        // Then load anything we need from the stack using symbolTable     
         for (i <- 0 to Math.min(7, args.length - 1)) {
             instrs.addAll(translate(args(i), formatter.regConf.scratchRegs)) 
-            instrs.addOne(Move(RegisterX(formatter.regConf.scratchRegs(0)), RegisterX(i))) 
+            instrs.addOne(Move(RegisterX(formatter.regConf.scratchRegs.head), RegisterX(i))) 
         }
 
         if (args.length > 8) {
@@ -452,6 +452,8 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
         sem.curSymTable.parDict.foreachEntry((s, v) => {
             v.pos match {
                 case InRegister(r) => {
+                    println("getting " + r)
+                    println(sem.curSymTable.parDict)
                     regs.addOne(r)
                     v.pos = OnTempStack(r)
                 }
