@@ -245,6 +245,8 @@ class printPointerFx(frm: Aarch64_formatter) extends InternalFunction {
         )
         
     }
+    override def equals(x: Any): Boolean = x.isInstanceOf[printPointerFx]
+    override def hashCode(): Int = 13
 }
 
 class mallocFx(frm: Aarch64_formatter) extends InternalFunction {
@@ -322,7 +324,7 @@ class ArrayStoreFx(frm: Aarch64_formatter, val size: Int) extends InternalFuncti
         )
     }
     override def equals(x: Any): Boolean = x.isInstanceOf[ArrayStoreFx] && x.asInstanceOf[ArrayStoreFx].size == size
-    override def hashCode(): Int = 11
+    override def hashCode(): Int = 100 + size
 }
 
 class ArrayLoadFx(frm: Aarch64_formatter, val size: Int) extends InternalFunction {
@@ -348,5 +350,5 @@ class ArrayLoadFx(frm: Aarch64_formatter, val size: Int) extends InternalFunctio
         )
     }
     override def equals(x: Any): Boolean = x.isInstanceOf[ArrayLoadFx] && x.asInstanceOf[ArrayStoreFx].size == size
-    override def hashCode(): Int = 12
+    override def hashCode(): Int = 200 + size
 }
