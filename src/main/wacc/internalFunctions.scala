@@ -243,8 +243,9 @@ class printPointerFx(frm: Aarch64_formatter) extends InternalFunction {
             Pop(RegisterLR, RegisterXZR),
             ReturnI
         )
-        
     }
+    override def equals(x: Any): Boolean = x.isInstanceOf[printPointerFx]
+    override def hashCode(): Int = 9
 }
 
 class mallocFx(frm: Aarch64_formatter) extends InternalFunction {

@@ -19,7 +19,7 @@ exampleProgs/valid/array/emptyArrayReplace.wacc
 'exampleProgs/valid/array/emptyArrayScope.wacc
 exampleProgs/valid/array/free.wacc
 'exampleProgs/valid/array/lenArrayIndex.wacc
-exampleProgs/valid/array/modifyString.wacc
+'exampleProgs/valid/array/modifyString.wacc
 'exampleProgs/valid/array/printRef.wacc
 'exampleProgs/valid/array/stringFromArray.wacc
 exampleProgs/valid/expressions/andExpr.wacc
