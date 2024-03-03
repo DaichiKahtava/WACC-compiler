@@ -303,7 +303,15 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                 case _ => ??? // Other cases to be implemented.
             }
 
-            case Free(x) => ???
+            case Free(x) => {
+                translate(x, scratchRegs) ++
+                List(
+                    Comment("Freeing memory"),
+                    Move(RegisterX(primary), RegisterX(0)),
+                    BranchLink("free")
+                )
+            }
+
             case Return(x) => ???
             case Exit(x) => callFx("exit", formatter.regConf.scratchRegs, List(x), List(S_INT))
             case Print(x) => callFx(determinePrint(x), formatter.regConf.scratchRegs, List(x), List(S_ANY))
