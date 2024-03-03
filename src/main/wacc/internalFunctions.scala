@@ -308,7 +308,7 @@ class ArrayStoreFx(frm: Aarch64_formatter, val size: Int) extends InternalFuncti
             Comment("Special calling convention: array ptr passed in X7, index in X17, value to store in X8,LR (W30) is used as general register"),
             Push(RegisterLR, RegisterXZR),
             SignExWord(RegisterW(17), RegisterX(17)),
-            Compare(RegisterW(17), RegisterXZR),
+            Compare(RegisterW(17), RegisterWZR),
             CondSelect(RegisterX(17), RegisterX(1), RegisterX(1), LtI),
             BranchCond(dependencies(0).label, LtI),
             Move(ImmNum(size), RegisterX(9)), // Temporary (-4 should come from the size of S_INT)
