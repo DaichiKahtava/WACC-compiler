@@ -290,7 +290,7 @@ class readIntFx(frm: Aarch64_formatter) extends InternalFunction {
             AlignInstr(),
             Label(label),
             Push(RegisterX(primary), RegisterLR),
-            Move(RegisterX(secondary), RegisterSP),
+            Move(RegisterSP, RegisterX(secondary)),
             Address(".L._readi_str0", RegisterX(primary)),
             BranchLink("scanf"),
             Pop(RegisterX(primary), RegisterLR),
