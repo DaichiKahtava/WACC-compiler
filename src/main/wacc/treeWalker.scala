@@ -183,7 +183,7 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                 case Undefined => ??? // Should not get here
             }
 
-            // Todo: magic numbers for registers 7, 17 and W8 (WR)
+            // Todo: magic numbers for registers 7, 17
             case ArrElem(id, xs) => {     
                 // Finds the pointer to the array
                 val extractPtr = sem.curSymTable.findVarGlobal(id).get.pos match {
@@ -201,13 +201,13 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                     formatter.includeFx(new ArrayLoadFx(formatter, elemSize))
                     val res = translate(x, regs) ++ 
                     List(
-                        Move(RegisterW(8), RegisterW(17)),
+                        Move(RegisterWR, RegisterW(17)),
                         BranchLink(s"_arrLoad$elemSize")
                         )
                     if (elemType.isInstanceOf[S_ARRAY])
                         elemType = elemType.asInstanceOf[S_ARRAY].tp
                     res
-                }).flatten ++ List(Move(RegisterW(7), RegisterW(8)))
+                }).flatten ++ List(Move(RegisterW(7), RegisterWR))
             }
         }
     }

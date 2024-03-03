@@ -316,7 +316,7 @@ class ArrayStoreFx(frm: Aarch64_formatter, val size: Int) extends InternalFuncti
             Compare(RegisterW(17), RegisterW(30)),
             CondSelect(RegisterX(17), RegisterX(1), RegisterX(1), GeI),
             BranchCond(dependencies(0).label, GeI),
-            Store(RegisterW(8), BaseOfsExtendShift(RegisterX(7), RegisterX(17), LiteralA("lsl"), Some(2))), // str w8, [x7, x17, lsl #2]
+            Store(RegisterWR, BaseOfsExtendShift(RegisterX(7), RegisterX(17), LiteralA("lsl"), Some(2))), // str w8, [x7, x17, lsl #2]
             Pop(RegisterLR, RegisterXZR),
             ReturnI
         )
