@@ -259,7 +259,10 @@ class Semantics(fileName: String) {
             case Neg(x) => isSemCorrect(x) && equalType(getType(x), S_INT, x.pos)
             case Len(x) => {
                 val isc = isSemCorrect(x)
-                isc && x.isInstanceOf[ArrElem]
+                val isArrElem = x.isInstanceOf[ArrElem]
+                val isIdent = x.isInstanceOf[Ident]
+                isc && (isArrElem || isIdent && 
+                curSymTable.findVarGlobal(x.asInstanceOf[Ident].id).get.tp.isInstanceOf[S_ARRAY])
             } // TODO: Use canWeakenTo
             case Ord(x) => isSemCorrect(x) && equalType(getType(x), S_CHAR, x.pos)
             case Chr(x) => isSemCorrect(x) && equalType(getType(x), S_INT, x.pos)
