@@ -362,9 +362,27 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
     }
 
     def translate(lv: LValue, regs: List[Int]): List[Instruction] = lv match {
+        // This is responsible for getting the *address* of the lvalue
         case LArrElem(id, xs) => ??? 
         case LIdent(id) => ???
-        case pe: PairElem => translate(pe, regs.tail)
+        case pe: PairElem => {
+            // This gets you the location of the specific pair element.
+            val instrs = new ListBuffer[Instruction]
+
+            pe match {
+                case First(lv) => {
+                    instrs.addAll(translate(lv, regs)) // Address of the pair itself
+                }
+                case Second(lv) => {
+                    instrs.addAll(translate(lv, regs)) // Address of the pair itself 
+                    instrs.addAll(List(
+                        Move(ImmNum(formatter.getSize(S_ANY)), RegisterX(regs(1))),
+                        AddI(RegisterX(regs(1)), RegisterX(regs.head))
+                    ))// Address of the offset
+                }
+            }
+            instrs.toList
+        }
     }
 
     def translate(rv: RValue, regs: List[Int]): List[Instruction] = {
@@ -421,24 +439,25 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
             
             case pe: PairElem => {
                 val instrs = new ListBuffer[Instruction]
-                instrs.addAll(translate(pe, regs.tail))
-                instrs.addOne(Move(RegisterX(primary), RegisterX(formatter.regConf.argRegs(0))))
-                
+                // This loads the contents of the pair from either location
+                // For the address of the pair for each location, you use the lvalue instance of PairElem.
                 pe match {
-                    case First(_) => instrs.addOne(Move(ImmNum(0), RegisterX(formatter.regConf.argRegs(1))))
-                    case Second(_) => instrs.addOne(Move(ImmNum(1), RegisterX(formatter.regConf.argRegs(1))))
+                    case First(lv) => {
+                        instrs.addAll(translate(lv, regs))
+                        instrs.addOne(Move(ImmNum(0), RegisterX(formatter.regConf.argRegs(1))))
+                    }
+                    case Second(lv) => {
+                        instrs.addAll(translate(lv, regs))
+                        instrs.addOne(Move(ImmNum(1), RegisterX(formatter.regConf.argRegs(1))))
+                    }
                 }
-
+                
+                instrs.addOne(Move(RegisterX(primary), RegisterX(formatter.regConf.argRegs(0))))
                 instrs.addAll(callFx(formatter.includeFx(new PairLoadFx(formatter)), regs, List(), List()))
 
                 instrs.toList
             }
         }
-    }
-
-    def translate(pe: PairElem, regs: List[Int]): List[Instruction] = pe match {
-        case First(lv) => ??? 
-        case Second(lv) => ???
     }
 
     // Gives the correct print label for the expression
