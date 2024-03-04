@@ -319,7 +319,8 @@ class ArrayStoreFx(frm: Aarch64_formatter, val size: Int) extends InternalFuncti
             BranchCond(dependencies(0).label, GeI),
             size match {
                 case 1 => StoreByte(RegisterWR, BaseOfsRA(RegisterX(7), RegisterX(17)))
-                case _ => Store(RegisterWR, BaseOfsExtendShift(RegisterX(7), RegisterX(17), LiteralA("lsl"), Some(2))) // str w8, [x7, x17, lsl #2]
+                case 4 => Store(RegisterWR, BaseOfsExtendShift(RegisterX(7), RegisterX(17), LiteralA("lsl"), Some(2))) // str w8, [x7, x17, lsl #2]
+                case 8 => Store(RegisterXR, BaseOfsExtendShift(RegisterX(7), RegisterX(17), LiteralA("lsl"), Some(3))) // str x8, [x7, x17, lsl #3]
             },
             Pop(RegisterLR, RegisterXZR),
             ReturnI
@@ -348,8 +349,8 @@ class ArrayLoadFx(frm: Aarch64_formatter, val size: Int) extends InternalFunctio
             BranchCond(dependencies(0).label, GeI),
             size match {
                 case 1 => LoadByte(BaseOfsRA(RegisterX(7), RegisterX(17)), RegisterX(7), true)
+                case 4 => LoadWord(BaseOfsExtendShift(RegisterX(7), RegisterX(17), LiteralA("lsl"), Some(2)), RegisterX(7)) // ldrsw x7, [x7, x17, lsl #2]
                 case 8 => Load(BaseOfsExtendShift(RegisterX(7), RegisterX(17), LiteralA("lsl"), Some(3)), RegisterX(7)) // ldr x7, [x7, x17, lsl #3]
-                case _ => LoadWord(BaseOfsExtendShift(RegisterX(7), RegisterX(17), LiteralA("lsl"), Some(2)), RegisterX(7)) // ldrsw x7, [x7, x17, lsl #2]
             },
             Pop(RegisterLR, RegisterXZR),
             ReturnI
