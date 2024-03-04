@@ -94,7 +94,7 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                     SubI(RegisterX(tertiary), RegisterX(primary))   // Calculate remainder.
                 )
             }
-            
+
             case GrT(x, y) => 
                 translateTwoExpr(x, y, regs) ++
                 List(Compare(RegisterX(primary), RegisterX(secondary)), SetCond(RegisterX(primary), GtI))
