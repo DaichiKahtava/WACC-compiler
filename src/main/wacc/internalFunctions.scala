@@ -25,6 +25,8 @@ class errorBadCharFx(frm: Aarch64_formatter) extends InternalFunction {
             BranchLink("exit")
         )
     }
+    override def equals(x: Any): Boolean = x.isInstanceOf[errorBadCharFx]
+    override def hashCode(): Int = 1
 }
 
 class errorDivZeroFx(frm: Aarch64_formatter) extends InternalFunction {
@@ -44,7 +46,7 @@ class errorDivZeroFx(frm: Aarch64_formatter) extends InternalFunction {
         )
     }
     override def equals(x: Any): Boolean = x.isInstanceOf[errorDivZeroFx]
-    override def hashCode(): Int = 1
+    override def hashCode(): Int = 2
 }
 
 class errorNullFx(frm: Aarch64_formatter) extends InternalFunction {
@@ -62,6 +64,8 @@ class errorNullFx(frm: Aarch64_formatter) extends InternalFunction {
             BranchLink("exit")
         )
     }
+    override def equals(x: Any): Boolean = x.isInstanceOf[errorNullFx]
+    override def hashCode(): Int = 3
 }
 
 class errorOutOfMemoryFx(frm: Aarch64_formatter) extends InternalFunction {
@@ -80,7 +84,7 @@ class errorOutOfMemoryFx(frm: Aarch64_formatter) extends InternalFunction {
         )
     }
     override def equals(x: Any): Boolean = x.isInstanceOf[errorOutOfMemoryFx]
-    override def hashCode(): Int = 2
+    override def hashCode(): Int = 4
 }
 
 class errorOutOfBoundsFx(frm: Aarch64_formatter) extends InternalFunction {
@@ -102,7 +106,7 @@ class errorOutOfBoundsFx(frm: Aarch64_formatter) extends InternalFunction {
         )
     }
     override def equals(x: Any): Boolean = x.isInstanceOf[errorOutOfBoundsFx]
-    override def hashCode(): Int = 3
+    override def hashCode(): Int = 5
 }
 
 class errorOverFlowFx(frm: Aarch64_formatter) extends InternalFunction {
@@ -120,6 +124,8 @@ class errorOverFlowFx(frm: Aarch64_formatter) extends InternalFunction {
             BranchLink("exit")
         )
     }
+    override def equals(x: Any): Boolean = x.isInstanceOf[errorOverFlowFx]
+    override def hashCode(): Int = 6
 }
 
 class printStringFx(frm: Aarch64_formatter) extends InternalFunction {
@@ -149,7 +155,7 @@ class printStringFx(frm: Aarch64_formatter) extends InternalFunction {
         ) 
     }
     override def equals(x: Any): Boolean = x.isInstanceOf[printStringFx]
-    override def hashCode(): Int = 4
+    override def hashCode(): Int = 7
 }
 
 class printCharFx(frm: Aarch64_formatter) extends InternalFunction {
@@ -175,7 +181,7 @@ class printCharFx(frm: Aarch64_formatter) extends InternalFunction {
         ) 
     }
     override def equals(x: Any): Boolean = x.isInstanceOf[printCharFx]
-    override def hashCode(): Int = 5
+    override def hashCode(): Int = 8
 }
 
 class printIntFx(frm: Aarch64_formatter) extends InternalFunction {
@@ -201,7 +207,7 @@ class printIntFx(frm: Aarch64_formatter) extends InternalFunction {
         ) 
     }
     override def equals(x: Any): Boolean = x.isInstanceOf[printIntFx]
-    override def hashCode(): Int = 6
+    override def hashCode(): Int = 9
 }
 
 class printBoolFx(frm: Aarch64_formatter) extends InternalFunction {
@@ -235,7 +241,7 @@ class printBoolFx(frm: Aarch64_formatter) extends InternalFunction {
     }
 
     override def equals(x: Any): Boolean = x.isInstanceOf[printBoolFx]
-    override def hashCode(): Int = 7
+    override def hashCode(): Int = 10
 }
 
 class printLineFx(frm: Aarch64_formatter) extends InternalFunction {
@@ -258,7 +264,7 @@ class printLineFx(frm: Aarch64_formatter) extends InternalFunction {
         )
     }
     override def equals(x: Any): Boolean = x.isInstanceOf[printLineFx]
-    override def hashCode(): Int = 8
+    override def hashCode(): Int = 11
 }
 
 class printPointerFx(frm: Aarch64_formatter) extends InternalFunction {
@@ -281,7 +287,7 @@ class printPointerFx(frm: Aarch64_formatter) extends InternalFunction {
         )
     }
     override def equals(x: Any): Boolean = x.isInstanceOf[printPointerFx]
-    override def hashCode(): Int = 13
+    override def hashCode(): Int = 12
 }
 
 class mallocFx(frm: Aarch64_formatter) extends InternalFunction {
@@ -307,7 +313,7 @@ class mallocFx(frm: Aarch64_formatter) extends InternalFunction {
         )
     }
     override def equals(x: Any): Boolean = x.isInstanceOf[mallocFx]
-    override def hashCode(): Int = 9
+    override def hashCode(): Int = 13
 }
 
 class readIntFx(frm: Aarch64_formatter) extends InternalFunction {
@@ -333,7 +339,7 @@ class readIntFx(frm: Aarch64_formatter) extends InternalFunction {
         )
     }
     override def equals(x: Any): Boolean = x.isInstanceOf[readIntFx]
-    override def hashCode(): Int = 10
+    override def hashCode(): Int = 14
 }
 
 class ArrayStoreFx(frm: Aarch64_formatter, val size: Int) extends InternalFunction {
@@ -424,5 +430,5 @@ class PairLoadFx(frm: Aarch64_formatter) extends InternalFunction {
         )
     }
     override def equals(x: Any): Boolean = x.isInstanceOf[PairLoadFx]
-    override def hashCode(): Int = 14
+    override def hashCode(): Int = 15
 }
