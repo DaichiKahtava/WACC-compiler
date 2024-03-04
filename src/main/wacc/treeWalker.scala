@@ -556,8 +556,7 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
         case S_BOOL => formatter.includeFx(new printBoolFx(formatter))
         case S_CHAR => formatter.includeFx(new printCharFx(formatter))
         case S_INT =>  formatter.includeFx(new printIntFx(formatter))
-        case S_PAIR(_, _) | S_ERASED => formatter.includeFx(new printPointerFx(formatter)) 
-        case S_ARRAY(tp) => formatter.includeFx(new printPointerFx(formatter))
+        case S_PAIR(_, _) | S_ARRAY(_) | S_ERASED |  S_ANY | S_EMPTYARR => formatter.includeFx(new printPointerFx(formatter)) 
     }
 
     def pushRegs(regs: List[Int]): List[Instruction] = {
