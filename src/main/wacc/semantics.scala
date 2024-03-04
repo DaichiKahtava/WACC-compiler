@@ -259,8 +259,7 @@ class Semantics(fileName: String) {
             case Neg(x) => isSemCorrect(x) && equalType(getType(x), S_INT, x.pos)
             case Len(x) => {
                 val isc = isSemCorrect(x)
-                println(getType(x))
-                isc && getType(x).isInstanceOf[S_ARRAY]
+                isc && x.isInstanceOf[ArrElem]
             } // TODO: Use canWeakenTo
             case Ord(x) => isSemCorrect(x) && equalType(getType(x), S_CHAR, x.pos)
             case Chr(x) => isSemCorrect(x) && equalType(getType(x), S_INT, x.pos)
