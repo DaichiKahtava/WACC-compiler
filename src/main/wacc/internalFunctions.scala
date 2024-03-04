@@ -25,6 +25,8 @@ class errorBadCharFx(frm: Aarch64_formatter) extends InternalFunction {
             BranchLink("exit")
         )
     }
+    override def equals(x: Any): Boolean = x.isInstanceOf[errorBadCharFx]
+    override def hashCode(): Int = 16
 }
 
 class errorDivZeroFx(frm: Aarch64_formatter) extends InternalFunction {
@@ -62,6 +64,8 @@ class errorNullFx(frm: Aarch64_formatter) extends InternalFunction {
             BranchLink("exit")
         )
     }
+    override def equals(x: Any): Boolean = x.isInstanceOf[errorNullFx]
+    override def hashCode(): Int = 15
 }
 
 class errorOutOfMemoryFx(frm: Aarch64_formatter) extends InternalFunction {
@@ -120,6 +124,8 @@ class errorOverFlowFx(frm: Aarch64_formatter) extends InternalFunction {
             BranchLink("exit")
         )
     }
+    override def equals(x: Any): Boolean = x.isInstanceOf[errorOverFlowFx]
+    override def hashCode(): Int = 17
 }
 
 class printStringFx(frm: Aarch64_formatter) extends InternalFunction {
