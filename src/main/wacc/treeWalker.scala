@@ -456,7 +456,10 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                     val res = translate(x, regs) ++ // translate stores the result in primary by convention
                     List(
                         Move(ImmNum(arrHead), RegisterX(secondary)),
-                        Store(RegisterW(primary), BaseOfsRA(RegisterX(formatter.regConf.pointerReg), RegisterX(secondary)))
+                        Store(
+                            if (elemSize < 8) RegisterW(primary) else RegisterX(primary), 
+                            BaseOfsRA(RegisterX(formatter.regConf.pointerReg), RegisterX(secondary))
+                        )
                     )
                     arrHead += elemSize
                     res
