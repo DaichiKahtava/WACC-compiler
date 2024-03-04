@@ -47,7 +47,17 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                     SubI(RegisterX(secondary), RegisterX(primary))
                 )
 
-            case Len(x) => translate(x, regs) 
+            case Len(Ident(id)) => sem.curSymTable.findVarGlobal(id).get.pos match {
+                case InRegister(r) => 
+                    List(
+                        Move(ImmNum(-4), RegisterX(secondary)),
+                        LoadWord(BaseOfsRA(RegisterX(r), RegisterX(secondary)), RegisterX(primary))
+                    )
+                case OnStack(offset) => ???
+                case OnTempStack(regNum) => ???
+                case Undefined => ??? // Should not come here
+            }
+            case Len(_) => ???
             case Ord(x) => translate(x, regs) 
             case Chr(x) => translate(x, regs) 
 
@@ -171,7 +181,32 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                 case Undefined => ??? // Should not get here
             }
 
-            case ArrElem(id, xs) => List()
+            // Todo: magic numbers for registers 7, 17
+            case ArrElem(id, xs) => {     
+                // Finds the pointer to the array
+                val extractPtr = sem.curSymTable.findVarGlobal(id).get.pos match {
+                    case InRegister(r) => List(Move(RegisterX(r), RegisterX(7)))
+                    case OnStack(offset) => List() // Todo
+                    case OnTempStack(regNum) => List() // Todo
+                    case Undefined => ??? // Should not come here
+                }
+
+                var elemType = sem.curSymTable.findVarGlobal(id).get.tp.asInstanceOf[S_ARRAY].tp
+                println(elemType)
+                extractPtr ++ 
+                (for (x <- xs) yield {
+                    var elemSize = formatter.getSize(elemType)
+                    formatter.includeFx(new ArrayLoadFx(formatter, elemSize))
+                    val res = translate(x, regs) ++ 
+                    List(
+                        Move(RegisterWR, RegisterW(17)),
+                        BranchLink(s"_arrLoad$elemSize")
+                        )
+                    if (elemType.isInstanceOf[S_ARRAY])
+                        elemType = elemType.asInstanceOf[S_ARRAY].tp
+                    res
+                }).flatten ++ List(Move(RegisterW(7), RegisterWR))
+            }
         }
     }
 
@@ -278,8 +313,42 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                 }
                 translate(rv, scratchRegs) ++ destInstr
             }
-            // LArrElem and Pairs
-            case Asgn(lv, rv) => ???
+            case Asgn(LArrElem(id, xs), rv) => { // TODO: Nested array extractoin
+                /*
+                    - use branch link here (as an exception)
+                    - arr load/str uses variable registers with callee saves/restore
+                    - arr load/str should save result inside X8 <primary>
+                    - use the scratch to store arguments
+                    ->Considered an an extention to this code.
+                */
+
+                // Finds the pointer to the array
+                val extractPtr = sem.curSymTable.findVarGlobal(id).get.pos match {
+                    case InRegister(r) => List(Move(RegisterX(r), RegisterX(7)))
+                    case OnStack(offset) => List() // Todo
+                    case OnTempStack(regNum) => List() // Todo
+                    case Undefined => ??? // Should not come here
+                }
+
+                val elemType = rv.tp
+                val elemSize = formatter.getSize(elemType)
+                formatter.includeFx(new ArrayStoreFx(formatter, elemSize))
+
+                extractPtr ++
+                (xs match {
+                    case x :: Nil =>
+                        translate(x, scratchRegs) ++ // Index in X8
+                        List(Move(RegisterW(primary), RegisterW(17))) ++ // Index in W17
+                        translate(rv, scratchRegs) ++ // Value to store in X8
+                        List(
+                            Move(RegisterX(19), RegisterX(7)),
+                            BranchLink(s"_arrStore$elemSize")
+                        ) 
+                    case x :: xs => Nil // TODO
+                    case Nil => ??? // Should not be empty
+                })
+            }
+            case Asgn(lv, rv) => ??? 
 
             case Read(lv) => ???
             case Free(x) => ???
@@ -298,7 +367,6 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
             case Exit(x) => callFx("exit", formatter.regConf.scratchRegs, List(x), List(S_INT))
             case Print(x) => callFx(determinePrint(x), formatter.regConf.scratchRegs, List(x), List(S_ANY))
             case Println(x) => {
-                
                 callFx(determinePrint(x), formatter.regConf.scratchRegs, List(x), List(S_ANY)) ++
                 callFx(formatter.includeFx(new printLineFx(formatter)), formatter.regConf.scratchRegs, List(), List())
             }
@@ -358,14 +426,6 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
             }
 
             case Delimit(s1, s2) => translate(s1) ++ translate(s2)
-                // val res = translate(s1,   regs)
-                // sem.curSymTable.varDict.values.map(_.pos).foreach{ // Maybe move this somewhere else to a general function when needed
-                //     case InRegister(r) =>
-                //         if (availRegs.contains(r)) availRegs.remove(availRegs.indexOf(r))
-                //     case _ => () // Do nothing otherwise
-                // }
-                // res ++ translate(s2, availRegs.toList)
-            // TODO (for delimit): Weighting? and register allocation
         }
     }
 
@@ -380,7 +440,6 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
         val secondary = regs(1)
         rv match {
             case ArrL(xs) => {
-                
                 val arrLen = xs.length
                 val elemSize = if (arrLen > 0) formatter.getSize(rv.tp.asInstanceOf[S_ARRAY].tp) else 0
                 val arrSize = arrLen * elemSize
@@ -392,12 +451,12 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                     AddI(RegisterX(primary), RegisterX(formatter.regConf.pointerReg)),
                     Move(ImmNum(xs.length), RegisterX(primary)),
                     Move(ImmNum(-(formatter.getSize(S_INT))), RegisterX(secondary)),
-                    Store(RegisterW(primary), BaseOfsRA(RegisterX(16), RegisterX(secondary)))
+                    Store(RegisterW(primary), BaseOfsRA(RegisterX(formatter.regConf.pointerReg), RegisterX(secondary)))
                 ) ++ (for (x <- xs) yield {
                     val res = translate(x, regs) ++ // translate stores the result in primary by convention
                     List(
                         Move(ImmNum(arrHead), RegisterX(secondary)),
-                        Store(RegisterW(primary), BaseOfsRA(RegisterX(16), RegisterX(secondary)))
+                        Store(RegisterW(primary), BaseOfsRA(RegisterX(formatter.regConf.pointerReg), RegisterX(secondary)))
                     )
                     arrHead += elemSize
                     res
@@ -419,15 +478,14 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
     // Gives the correct print label for the expression
     // And adds the required dependencies
     def determinePrint(x: Expr): String = sem.getType(x) match {
-        case S_STRING => formatter.includeFx(new printStringFx(formatter))
+        case S_STRING | S_ARRAY(S_CHAR) => formatter.includeFx(new printStringFx(formatter))
         case S_BOOL => formatter.includeFx(new printBoolFx(formatter))
         case S_CHAR => formatter.includeFx(new printCharFx(formatter))
         case S_INT =>  formatter.includeFx(new printIntFx(formatter))
-        case S_PAIR(_, _) | S_ARRAY(_) | S_ERASED => formatter.includeFx(new printPointerFx(formatter))
-        case _ => ???
+        case S_PAIR(_, _) | S_ERASED => formatter.includeFx(new printPointerFx(formatter)) 
+        case S_ARRAY(tp) => formatter.includeFx(new printPointerFx(formatter))
     }
 
-    
     def pushRegs(regs: List[Int]): List[Instruction] = {
         Comment("Saving registers") :: (for {
             List(r1, r2) <- regs.grouped(2).toList // [em422]
@@ -461,7 +519,7 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
         
 
         // To avoid accidentally overwriting registers, we put everything in stack and
-        // Then load anything we need from the stack using symbolTable     
+        // Then load anything we need from the stack using symbolTable
         for (i <- 0 to Math.min(7, args.length - 1)) {
             instrs.addAll(translate(args(i), formatter.regConf.scratchRegs)) 
             instrs.addOne(Move(RegisterX(formatter.regConf.scratchRegs.head), RegisterX(i))) 

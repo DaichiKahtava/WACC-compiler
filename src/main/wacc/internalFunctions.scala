@@ -34,7 +34,7 @@ class errorNullFx(frm: Aarch64_formatter) extends InternalFunction {
     val instructions: List[Instruction] = {
         val primary = frm.regConf.argRegs(0)
         List(
-            Data("fatal error: null pair dereferenced or freed", ".L._errNull_str0"),
+            Data("fatal error: null pair dereferenced or freed\n", ".L._errNull_str0"),
             AlignInstr(),
             Label(label),
             Address(".L._errNull_str0", RegisterX(primary)),
@@ -71,7 +71,7 @@ class errorOutOfBoundsFx(frm: Aarch64_formatter) extends InternalFunction {
         val primary = frm.regConf.argRegs(0)
         List(
             // Assumes that X1 stores the index
-            Data("fatal error: array index %d out of bounds", ".L._errOutOfBounds_str0"),
+            Data("fatal error: array index %d out of bounds\n", ".L._errOutOfBounds_str0"),
             AlignInstr(),
             Label(label),
             Address(".L._errOutOfBounds_str0", RegisterX(primary)),
@@ -243,7 +243,6 @@ class printPointerFx(frm: Aarch64_formatter) extends InternalFunction {
             Pop(RegisterLR, RegisterXZR),
             ReturnI
         )
-        
     }
     override def equals(x: Any): Boolean = x.isInstanceOf[printPointerFx]
     override def hashCode(): Int = 13
@@ -310,15 +309,18 @@ class ArrayStoreFx(frm: Aarch64_formatter, val size: Int) extends InternalFuncti
             Comment("Special calling convention: array ptr passed in X7, index in X17, value to store in X8,LR (W30) is used as general register"),
             Push(RegisterLR, RegisterXZR),
             SignExWord(RegisterW(17), RegisterX(17)),
-            Compare(RegisterW(17), RegisterXZR),
+            Compare(RegisterW(17), RegisterWZR),
             CondSelect(RegisterX(17), RegisterX(1), RegisterX(1), LtI),
             BranchCond(dependencies(0).label, LtI),
-            Move(ImmNum(size), RegisterX(9)), // Temporary (-4 should come from the size of S_INT)
+            Move(ImmNum(-(frm.getSize(S_INT))), RegisterX(9)), // Temporary (-4 should come from the size of S_INT)
             LoadWord(BaseOfsRA(RegisterX(7), RegisterX(9)), RegisterLR), // ldrsw lr, [x7, #-4]
             Compare(RegisterW(17), RegisterW(30)),
             CondSelect(RegisterX(17), RegisterX(1), RegisterX(1), GeI),
             BranchCond(dependencies(0).label, GeI),
-            Store(RegisterW(8), BaseOfsExtendShift(RegisterX(7), RegisterX(17), LiteralA("lsl"), Some(2))), // str w8, [x7, x17, lsl #2]
+            size match {
+                case 1 => StoreByte(RegisterWR, BaseOfsRA(RegisterX(7), RegisterX(17)))
+                case _ => Store(RegisterWR, BaseOfsExtendShift(RegisterX(7), RegisterX(17), LiteralA("lsl"), Some(2))) // str w8, [x7, x17, lsl #2]
+            },
             Pop(RegisterLR, RegisterXZR),
             ReturnI
         )
@@ -336,15 +338,18 @@ class ArrayLoadFx(frm: Aarch64_formatter, val size: Int) extends InternalFunctio
             Comment("Special calling convention: array ptr passed in X7, index in X17, LR (W30) is used as general register, and return into X7"),
             Push(RegisterLR, RegisterXZR),
             SignExWord(RegisterW(17), RegisterX(17)),
-            Compare(RegisterW(17), RegisterXZR),
+            Compare(RegisterW(17), RegisterWZR),
             CondSelect(RegisterX(17), RegisterX(1), RegisterX(1), LtI),
             BranchCond(dependencies(0).label, LtI),
-            Move(ImmNum(size), RegisterX(9)), // Temporary (-4 should come from the size of S_INT)
+            Move(ImmNum(-(frm.getSize(S_INT))), RegisterX(9)), // Temporary (-4 should come from the size of S_INT)
             LoadWord(BaseOfsRA(RegisterX(7), RegisterX(9)), RegisterLR), // ldrsw lr, [x7, #-4]
             Compare(RegisterW(17), RegisterW(30)),
             CondSelect(RegisterX(17), RegisterX(1), RegisterX(1), GeI),
             BranchCond(dependencies(0).label, GeI),
-            LoadWord(BaseOfsExtendShift(RegisterX(7), RegisterX(17), LiteralA("lsl"), Some(2)), RegisterX(7)), // ldrsw x7, [x7, x17, lsl #2]
+            size match {
+                case 1 => LoadByte(BaseOfsRA(RegisterX(7), RegisterX(17)), RegisterX(7), true)
+                case _ => LoadWord(BaseOfsExtendShift(RegisterX(7), RegisterX(17), LiteralA("lsl"), Some(2)), RegisterX(7)) // ldrsw x7, [x7, x17, lsl #2]
+            },
             Pop(RegisterLR, RegisterXZR),
             ReturnI
         )

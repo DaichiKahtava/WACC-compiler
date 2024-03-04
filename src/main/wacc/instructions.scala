@@ -65,6 +65,7 @@ sealed trait RegisterXorSP extends Register
 case class RegisterX(regN: Int) extends Register with RegisterXorSP
 case class RegisterW(regN: Int) extends Register
 case object RegisterXR extends Register // Indirect result register
+case object RegisterWR extends Register
 case object RegisterFP extends Register // Frame pointer
 case object RegisterLR extends Register // Link register
 case object RegisterSP extends Register with RegisterXorSP // Stack pointer

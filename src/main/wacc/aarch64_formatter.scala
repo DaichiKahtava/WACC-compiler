@@ -138,6 +138,7 @@ class Aarch64_formatter() {
 
     def generateRegister(Register: Register): String = Register match {
         case RegisterXR => "X8"
+        case RegisterWR => "W8"
         case RegisterFP => "fp"
         case RegisterLR => "lr"
         case RegisterSP => "sp"
@@ -150,6 +151,7 @@ class Aarch64_formatter() {
 
     def generateGPRegister(Register: Register): String = Register match {
         case RegisterXR => "X8"
+        case RegisterWR => "W8"
         case RegisterFP => "X29"
         case RegisterLR => "X30"
         case RegisterSP => "X31"
