@@ -58,14 +58,7 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
             case Chr(x) => translate(x, regs) 
 
             // BinOp expressions.
-            case Mod(x, y) =>
-                translateTwoExpr(x, y, regs) ++
-                List(
-                    Move(RegisterX(primary), RegisterX(tertiary)),  // Store x into another register.
-                    DivI(RegisterX(secondary), RegisterX(tertiary)),  // Divide x by y.
-                    MulI(RegisterX(secondary), RegisterX(tertiary)),  // Multiply (y * quotient).
-                    SubI(RegisterX(tertiary), RegisterX(primary))   // Calculate remainder.
-                )
+            
 
 
             // TODO: Add over/underflow checks for add and mul
@@ -83,14 +76,25 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                 List(MulI(RegisterX(secondary), RegisterX(primary)))
 
             case Div(x, y) => {
-                return translateTwoExpr(x, y, regs) ++
+                translateTwoExpr(x, y, regs) ++
                 List(
                     Compare(RegisterXZR, RegisterX(secondary)),
                     BranchCond(formatter.includeFx(new errorDivZeroFx(formatter)), EqI),
                     DivI(RegisterX(secondary), RegisterX(primary))
                 )
             }
-
+            case Mod(x, y) => {
+                translateTwoExpr(x, y, regs) ++
+                List(
+                    Compare(RegisterXZR, RegisterX(secondary)),
+                    BranchCond(formatter.includeFx(new errorDivZeroFx(formatter)), EqI),
+                    Move(RegisterX(primary), RegisterX(tertiary)),  // Store x into another register.
+                    DivI(RegisterX(secondary), RegisterX(tertiary)),  // Divide x by y.
+                    MulI(RegisterX(secondary), RegisterX(tertiary)),  // Multiply (y * quotient).
+                    SubI(RegisterX(tertiary), RegisterX(primary))   // Calculate remainder.
+                )
+            }
+            
             case GrT(x, y) => 
                 translateTwoExpr(x, y, regs) ++
                 List(Compare(RegisterX(primary), RegisterX(secondary)), SetCond(RegisterX(primary), GtI))
