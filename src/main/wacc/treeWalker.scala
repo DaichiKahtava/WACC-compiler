@@ -304,8 +304,13 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
         val secondary = scratchRegs(1)
         stmt match {
             case Skip() => Nil
-            case Decl(_, id, rv) => {
-                translate(rv, scratchRegs) ++ storeContentsToIdentifier(id, scratchRegs)
+            case Decl(tp, id, rv) => {
+                var charCheck = List[Instruction]()
+                if (tp.isInstanceOf[CharT]) {
+                    formatter.includeFx(new errorBadCharFx(formatter))
+                    charCheck = List(isChar(RegisterX(primary)))
+                }
+                translate(rv, scratchRegs) ++ charCheck ++ storeContentsToIdentifier(id, scratchRegs)
             }
 
             case Asgn(LIdent(id), rv) => {

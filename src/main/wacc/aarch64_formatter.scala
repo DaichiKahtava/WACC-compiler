@@ -137,6 +137,11 @@ class Aarch64_formatter() {
         case CondSelect(src1, src2, dst, cond) => 
             "csel\t" + generateRegister(dst) + ", " + generateRegister(src1) + ", " + 
             generateRegister(src2) + ", " + generateCondition(cond) + "\n"
+
+        case isChar(r) => 
+            "tst\t" + generateOperand(r) + ", " + "#0xffffffffffffff80" + "\n" + 
+            generateAssembly(CondSelect(RegisterX(8), RegisterX(1), RegisterX(1), NeI)) +
+            generateAssembly(BranchCond("_errBadChar", NeI))
     }
 
     def generateOperand(op: Operand): String = op match {

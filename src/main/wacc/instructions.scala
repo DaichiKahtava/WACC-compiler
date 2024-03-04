@@ -53,6 +53,8 @@ case class SetCond(r: Register, cond: CondI) extends Instruction
 case class Compare(r1: Register, r2: Register) extends Instruction
 case class CondSelect(src1: Register, src2: Register, dst: Register, cond: CondI) extends Instruction
 
+case class isChar(src: Register) extends Instruction // Checks if the value is a valid character
+
 // TODO: Fill in with all types of operands
 sealed trait Operand 
 //Operand is either a register or an immediate (used for Move only).

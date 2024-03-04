@@ -14,7 +14,7 @@ class errorBadCharFx(frm: Aarch64_formatter) extends InternalFunction {
     val instructions: List[Instruction] = {
         val primary = frm.regConf.argRegs(0)
         List(
-            Data("fatal error: int %d is not ascii character 0-127 \n", ".L._errBad_str0"),
+            Data("fatal error: int %d is not ascii character 0-127 \n", ".L._errBadChar_str0"),
             AlignInstr(),
             Label(label),
             Address(".L._errBadChar_str0", RegisterX(primary)),
