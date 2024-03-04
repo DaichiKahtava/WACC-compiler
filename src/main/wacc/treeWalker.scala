@@ -406,8 +406,31 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
             case Call(id, xs) => callFx(formatter.regConf.funcLabel ++ id, formatter.regConf.scratchRegs, xs, 
                 sem.curSymTable.findFunGlobal(id).get.st.parDict.values.toList.map((v)=> v.tp))
             case RExpr(e) => translate(e, regs)
-            case NewPair(e1, e2) => ???
-            case pe: PairElem => translate(pe, regs.tail)
+            
+            case NewPair(e1, e2) => {
+                val pOfs1 = 0
+                val pOfs2 = formatter.getSize(S_ANY)
+                Move(ImmNum(2 * formatter.getSize(S_ANY)), RegisterX(formatter.regConf.argRegs.head)) :: 
+                    callFx(formatter.includeFx(new mallocFx(formatter)), formatter.regConf.scratchRegs, List(), List(S_ANY)) ++ 
+                    List(Move(RegisterX(formatter.regConf.resultRegister), RegisterX(formatter.regConf.pointerReg))) ++
+                    translate(e1, regs) ++
+                    List(
+                        Move(ImmNum(pOfs1), RegisterX(secondary)),
+                        Store(RegisterX(primary), BaseOfsRA(RegisterX(formatter.regConf.pointerReg), RegisterX(secondary)))
+                        ) ++
+                    translate(e2, regs) ++ 
+                    List(
+                        Move(ImmNum(pOfs2), RegisterX(secondary)),
+                        Store(RegisterX(primary), BaseOfsRA(RegisterX(formatter.regConf.pointerReg), RegisterX(secondary))),
+                        Move(RegisterX(formatter.regConf.pointerReg), RegisterX(primary))
+                    )
+                    // Potential issue: X16 overwritten when dealing with array?
+            }
+            
+            case pe: PairElem => {
+                translate(pe, regs.tail)
+            }
+
         }
     }
 
