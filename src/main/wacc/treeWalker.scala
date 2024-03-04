@@ -5,7 +5,7 @@ import scala.collection.mutable.ListBuffer
 class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
     // GLOBAL POINTER TO THE FINAL (NOT-FORMATTED) ASSEMBLY CODE
     var instructionList = List[Instruction]()
-    var labelNum = 0
+
 
 
     // Conventions for translate: 
@@ -110,7 +110,7 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                 List(Compare(RegisterX(primary), RegisterX(secondary)), SetCond(RegisterX(primary), NeI))
                 
             case And(x, y) =>
-                val curLabel = generateGeneralLabel()
+                val curLabel = formatter.generateGeneralLabel()
                 translateTwoExpr(x, y, regs) ++
                 // TODO: ImmNum magic number for true!
                 List(
@@ -123,7 +123,7 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                 )
 
             case Or(x, y) => 
-                val curLabel = generateGeneralLabel()
+                val curLabel = formatter.generateGeneralLabel()
                 translateTwoExpr(x, y, regs) ++
                 List(
                     Move(ImmNum(1), RegisterX(tertiary)),
@@ -303,8 +303,8 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                 callFx(formatter.includeFx(new printLineFx(formatter)), formatter.regConf.scratchRegs, List(), List())
             }
             case Cond(x, s1, s2) => { // TODO: Defintely need to change that
-                val s1Label = generateGeneralLabel()
-                val s2Label = generateGeneralLabel()
+                val s1Label = formatter.generateGeneralLabel()
+                val s2Label = formatter.generateGeneralLabel()
                 val instrs = ListBuffer.empty[Instruction]
                 instrs.addAll(translate(x, scratchRegs)) 
                 instrs.addAll(List(
@@ -327,8 +327,8 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                 instrs.toList
             }
             case Loop(x, s) => {
-                val loopLabel = generateGeneralLabel()
-                val condLabel = generateGeneralLabel()
+                val loopLabel = formatter.generateGeneralLabel()
+                val condLabel = formatter.generateGeneralLabel()
                 val instrs = ListBuffer.empty[Instruction]
                 instrs.addAll(List(
                     Branch(condLabel),
@@ -430,7 +430,6 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
             case pe: PairElem => {
                 translate(pe, regs.tail)
             }
-
         }
     }
 
@@ -622,10 +621,5 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
         popRegs(regs.toList)
     }
 
-    def generateGeneralLabel(): String = {
-        val curLabel = s".L${labelNum}"
-        labelNum += 1
-        return curLabel
-    }
 
 }
