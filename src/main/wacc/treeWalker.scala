@@ -390,7 +390,7 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
 
                     /* Generate the load instructions and call the readIntFx function. 
                        The result will be stored in the primary scratch register. */
-                    val readInstr =  loadInstr ++ saveVarInstr ++ callFx(readFx.label, formatter.regConf.scratchRegs, List(), List())
+                    val readInstr =  loadInstr ++ saveVarInstr ++ callFx(readFx.label, formatter.regConf.scratchRegs, Left(List()), List())
                     val storeInstr = generateInstructions(v.pos) // Store the result back into the variable.
 
                     readInstr ++ storeInstr
