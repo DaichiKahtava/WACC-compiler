@@ -48,16 +48,24 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                 )
 
             case Len(Ident(id)) => sem.curSymTable.findVarGlobal(id).get.pos match {
-                case InRegister(r) => 
+                case InRegister(r) => {
                     List(
                         Move(ImmNum(-4), RegisterX(secondary)),
                         LoadWord(BaseOfsRA(RegisterX(r), RegisterX(secondary)), RegisterX(primary))
                     )
+                }
                 case OnStack(offset) => ???
                 case OnTempStack(regNum) => ???
                 case Undefined => ??? // Should not come here
             }
+            case Len(x@ArrElem(id, xs)) => 
+                translate(x, regs) ++ 
+                List(
+                    Move(ImmNum(-4), RegisterX(secondary)),
+                    LoadWord(BaseOfsRA(RegisterX(primary), RegisterX(secondary)), RegisterX(primary))
+                )
             case Len(_) => ???
+            
             case Ord(x) => translate(x, regs) 
             case Chr(x) => translate(x, regs) 
 
@@ -192,10 +200,11 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                 }
 
                 var elemType = sem.curSymTable.findVarGlobal(id).get.tp.asInstanceOf[S_ARRAY].tp
+                var elemSize = formatter.getSize(elemType)
                 println(elemType)
                 extractPtr ++ 
                 (for (x <- xs) yield {
-                    var elemSize = formatter.getSize(elemType)
+                    elemSize = formatter.getSize(elemType)
                     formatter.includeFx(new ArrayLoadFx(formatter, elemSize))
                     val res = translate(x, regs) ++ 
                     List(
@@ -205,7 +214,7 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                     if (elemType.isInstanceOf[S_ARRAY])
                         elemType = elemType.asInstanceOf[S_ARRAY].tp
                     res
-                }).flatten ++ List(Move(RegisterW(7), RegisterWR))
+                }).flatten ++ (if (elemSize == 8) List(Move(RegisterX(7), RegisterXR)) else List(Move(RegisterX(7), RegisterXR)))
             }
         }
     }
