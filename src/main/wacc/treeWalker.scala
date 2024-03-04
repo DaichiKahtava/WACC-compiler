@@ -343,8 +343,61 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                     case Nil => ??? // Should not be empty
                 })
             }
-            case Asgn(lv, rv) => ??? 
-            case Read(lv) => ???
+
+            // LArrElem and Pairs
+            case Asgn(lv, rv) => ???
+
+            case Read(lv) => lv match {
+                case LIdent(id) => {
+                    // Find the variable in the symbol table and get its position.
+                    val v = sem.curSymTable.findVarGlobal(id).get
+                    
+                    // Function to generate both cases to load and store instructions.
+                    def generateInstructions(pos: Position): List[Instruction] = pos match {
+                        /* If the variable is in a register, generate a move instruction to move 
+                           its value to the primary scratch register. */
+                        case InRegister(r) => List(Move(RegisterX(primary), RegisterX(r)))
+                        /* If the variable is on the temporary stack, generate instructions 
+                           to move its offset to the secondary scratch register and load 
+                           its value to the primary scratch register. */
+                        case OnTempStack(r) => List(
+                            Move(ImmNum(r), RegisterX(secondary)),
+                            Load(BaseOfsRA(RegisterX(formatter.regConf.pointerReg), RegisterX(secondary)), RegisterX(primary))
+                        )
+                        /* If the variable is on the stack, generate instructions to move its 
+                           offset to the secondary scratch register and load its value to the primary 
+                           scratch register. */
+                        case OnStack(offset) => List(
+                            Move(ImmNum(offset), RegisterX(secondary)),
+                            Load(BaseOfsRA(RegisterX(formatter.regConf.framePReg), RegisterX(secondary)), RegisterX(primary))
+                        )
+                        case Undefined => throw new RuntimeException("Invalid position for read.")
+                    }
+
+                    val loadInstr = generateInstructions(v.pos) // Include the readIntFx internal function in the formatter.
+
+                    // Preserves original value in cases of empty inputs for scanf.
+                    val saveVarInstr = List(Move(RegisterX(primary), RegisterX(0)))
+
+                    // Check the type of the variable and include the appropriate read function.
+                    val readFx = sem.getType(lv) match {
+                        case S_INT => new readIntFx(formatter)
+                        case S_CHAR => new readCharFx(formatter)
+                        case _ => throw new RuntimeException("Invalid type for read.")
+                    }
+
+                    formatter.includeFx(readFx)
+
+                    /* Generate the load instructions and call the readIntFx function. 
+                       The result will be stored in the primary scratch register. */
+                    val readInstr =  loadInstr ++ saveVarInstr ++ callFx(readFx.label, formatter.regConf.scratchRegs, List(), List())
+                    val storeInstr = generateInstructions(v.pos) // Store the result back into the variable.
+
+                    readInstr ++ storeInstr
+                }
+                case _ => throw new RuntimeException("Invalid case for read.")
+            }
+
             case Free(x) => {
                 // Include the errorNullFx internal function in the formatter.
                 formatter.includeFx(new errorNullFx(formatter))
@@ -362,6 +415,7 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                     BranchLink("free")
                     )
             }
+
             case Return(x) => translate(x, formatter.regConf.scratchRegs) ++ 
                 List(
                     Move(RegisterX(formatter.regConf.scratchRegs(0)),
