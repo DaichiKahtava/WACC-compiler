@@ -27,6 +27,8 @@ trait registerConfig {
     val variabRegs: List[Int]
     val gpRegs: List[Int]
     val funcLabel: String
+    val strLabel: String
+    val genLabel: String
     val resultRegister: Int
     val pointerReg: Int
     val offsetReg: Int

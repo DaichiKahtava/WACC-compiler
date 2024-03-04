@@ -20,6 +20,8 @@ class Aarch64_formatter() {
         val variabRegs = calleeRegs
         val gpRegs = callerRegs ++ calleeRegs
         val funcLabel = "wacc_user_"
+        val strLabel = ".L.str"
+        val genLabel = ".L"
         val resultRegister = 0
         val pointerReg = 16
         val offsetReg = 17
@@ -27,11 +29,18 @@ class Aarch64_formatter() {
         val stackAlign: Int = 16
     }
 
+    
     // Global data for program. Note that data for internal programs are
     // Included in the internal programs themselves
     var stringLabelCounter = -1 // -1 means no string
-    val stringLabel = ".L.str"
     val data = ListBuffer.empty[String]
+    
+    var labelNum = -1
+
+    def generateGeneralLabel(): String = {
+        labelNum += 1
+        return regConf.genLabel + labelNum
+    }
 
     def generateAssembly(instructions: List[Instruction], filename: String): Unit = {
         // Create a new PrintWriter instance for the output file.
@@ -44,7 +53,7 @@ class Aarch64_formatter() {
             writer.write(".data\n")
             for (i <- 0 to (data.length - 1)) {
                 val str = data(i)
-                writer.write("\t.word " + str.length + "\n" + stringLabel + i +":\n\t.asciz \"" + deescapeString(str) + "\"\n")
+                writer.write("\t.word " + str.length + "\n" + regConf.strLabel + i +":\n\t.asciz \"" + deescapeString(str) + "\"\n")
             }
         }
 
@@ -65,7 +74,7 @@ class Aarch64_formatter() {
     def includeString(s: String): String = {
         data.addOne(s)
         stringLabelCounter = stringLabelCounter + 1 
-        return stringLabel + String.valueOf(stringLabelCounter)
+        return regConf.strLabel + String.valueOf(stringLabelCounter)
     }
 
     def includeFx(f: InternalFunction): String = {

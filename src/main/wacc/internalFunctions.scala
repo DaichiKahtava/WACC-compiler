@@ -395,3 +395,34 @@ class ArrayLoadFx(frm: Aarch64_formatter, val size: Int) extends InternalFunctio
     override def equals(x: Any): Boolean = x.isInstanceOf[ArrayLoadFx] && x.asInstanceOf[ArrayLoadFx].size == size
     override def hashCode(): Int = 200 + size
 }
+
+class PairLoadFx(frm: Aarch64_formatter) extends InternalFunction {
+    val label: String = "_pairLoad"
+    val dependencies: List[InternalFunction] = List.empty
+    val instructions: List[Instruction] = {
+        val address = frm.regConf.argRegs(0) // result
+        val position = frm.regConf.argRegs(1)
+        List(
+            Label(label),
+            // The first argument should be the address
+            // The second argument should be whether the forst or second element are returned
+            Comment("Gets either the first or second element from a pair"),
+            Push(RegisterLR, RegisterXZR),
+
+            Compare(RegisterX(position), RegisterXZR),
+            BranchCond("_pairLoadPos0", EqI),
+            Move(ImmNum(frm.getSize(S_ANY)), RegisterX(position)),
+            Branch("_pairAfterLoad"),
+            Label("_pairLoadPos0"),
+            Move(ImmNum(0), RegisterX(position)),
+            Label("_pairAfterLoad"),
+
+            Load(BaseOfsRA(RegisterX(address), RegisterX(position)), RegisterX(address)),
+
+            Pop(RegisterLR, RegisterXZR),
+            ReturnI
+        )
+    }
+    override def equals(x: Any): Boolean = x.isInstanceOf[PairLoadFx]
+    override def hashCode(): Int = 14
+}
