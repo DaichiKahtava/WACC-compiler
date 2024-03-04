@@ -358,7 +358,7 @@ class PairLoadFx(frm: Aarch64_formatter) extends InternalFunction {
     val dependencies: List[InternalFunction] = List.empty
     val instructions: List[Instruction] = {
         val address = frm.regConf.argRegs(0) // result
-        val position = frm.regConf.argRegs(0)
+        val position = frm.regConf.argRegs(1)
         List(
             Label(label),
             // The first argument should be the address
@@ -377,6 +377,7 @@ class PairLoadFx(frm: Aarch64_formatter) extends InternalFunction {
             Load(BaseOfsRA(RegisterX(address), RegisterX(position)), RegisterX(address)),
 
             Pop(RegisterLR, RegisterXZR),
+            ReturnI
         )
     }
     override def equals(x: Any): Boolean = x.isInstanceOf[PairLoadFx]
