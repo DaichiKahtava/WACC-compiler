@@ -354,6 +354,6 @@ class ArrayLoadFx(frm: Aarch64_formatter, val size: Int) extends InternalFunctio
             ReturnI
         )
     }
-    override def equals(x: Any): Boolean = x.isInstanceOf[ArrayLoadFx] && x.asInstanceOf[ArrayStoreFx].size == size
+    override def equals(x: Any): Boolean = x.isInstanceOf[ArrayLoadFx] && x.asInstanceOf[ArrayLoadFx].size == size
     override def hashCode(): Int = 200 + size
 }
