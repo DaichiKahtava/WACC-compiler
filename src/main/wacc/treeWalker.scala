@@ -364,9 +364,11 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
     def translate(lv: LValue, regs: List[Int]): List[Instruction] = lv match {
         // This is responsible for getting the *address* of the lvalue
         case LArrElem(id, xs) => ??? 
-        case LIdent(id) => ???
-            // NOTE: We get here when we need to find the address of the id
-            // I.e. when the id is a pair or an array.
+        
+        case LIdent(id) => loadContentsFromIdentifier(id, regs)
+        // NOTE: We get here ONLY when we need to find the address of the id
+        // I.e. when the id is a pair or an array.
+        // So, we just return their contents
         
         case pe: PairElem => {
             // This gets you the location of the specific pair element.
