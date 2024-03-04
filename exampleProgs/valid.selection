@@ -215,9 +215,9 @@ exampleProgs/valid/IO/print/print.wacc
 'exampleProgs/valid/IO/read/echoPuncChar.wacc
 'exampleProgs/valid/IO/read/readAtEof.wacc
 'exampleProgs/valid/IO/read/read.wacc
-'exampleProgs/valid/runtimeErr/arrayOutOfBounds/arrayNegBounds.wacc
-'exampleProgs/valid/runtimeErr/arrayOutOfBounds/arrayOutOfBounds.wacc
-'exampleProgs/valid/runtimeErr/arrayOutOfBounds/arrayOutOfBoundsWrite.wacc
+exampleProgs/valid/runtimeErr/arrayOutOfBounds/arrayNegBounds.wacc
+exampleProgs/valid/runtimeErr/arrayOutOfBounds/arrayOutOfBounds.wacc
+exampleProgs/valid/runtimeErr/arrayOutOfBounds/arrayOutOfBoundsWrite.wacc
 exampleProgs/valid/runtimeErr/badChar/negativeChr.wacc
 exampleProgs/valid/runtimeErr/badChar/tooBigChr.wacc
 exampleProgs/valid/runtimeErr/divideByZero/divideByZero.wacc
