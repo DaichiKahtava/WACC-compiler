@@ -308,6 +308,9 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                         )
                         case Undefined => ??? // Should not get here.
                     }
+
+                    // Preserves original value in cases of empty inputs for scanf.
+                    val saveVarInstr = List(Move(RegisterX(primary), RegisterX(0))) 
                     
                     // Check the type of the variable and include the appropriate read function.
                     val readFx = sem.getType(lv) match {
@@ -320,7 +323,7 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
 
                     /* Generate the load instructions and call the readIntFx function. 
                        The result will be stored in the primary scratch register. */
-                    val readInstr = loadInstr ++ callFx(readFx.label, formatter.regConf.scratchRegs, List(), List())
+                    val readInstr = saveVarInstr ++ loadInstr ++ callFx(readFx.label, formatter.regConf.scratchRegs, List(), List())
 
                     // Store the result back into the variable.
                     val storeInstr = v.pos match {
