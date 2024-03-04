@@ -288,10 +288,12 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                 case LIdent(id) => {
                     // Find the variable in the symbol table and get its position.
                     val v = sem.curSymTable.findVarGlobal(id).get
-                    val loadInstr = v.pos match {
+                    
+                    // Function to generate both cases to load and store instructions.
+                    def generateInstructions(pos: Position): List[Instruction] = pos match {
                         /* If the variable is in a register, generate a move instruction to move 
                            its value to the primary scratch register. */
-                        case InRegister(r) => List(Move(RegisterX(r), RegisterX(primary)))
+                        case InRegister(r) => List(Move(RegisterX(primary), RegisterX(r)))
                         /* If the variable is on the temporary stack, generate instructions 
                            to move its offset to the secondary scratch register and load 
                            its value to the primary scratch register. */
@@ -306,42 +308,31 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                             Move(ImmNum(offset), RegisterX(secondary)),
                             Load(BaseOfsRA(RegisterX(formatter.regConf.framePReg), RegisterX(secondary)), RegisterX(primary))
                         )
-                        case Undefined => ??? // Should not get here.
+                        case Undefined => throw new RuntimeException("Invalid position for read.")
                     }
 
+                    val loadInstr = generateInstructions(v.pos) // Include the readIntFx internal function in the formatter.
+
                     // Preserves original value in cases of empty inputs for scanf.
-                    val saveVarInstr = List(Move(RegisterX(primary), RegisterX(0))) 
-                    
+                    val saveVarInstr = List(Move(RegisterX(primary), RegisterX(0)))
+
                     // Check the type of the variable and include the appropriate read function.
                     val readFx = sem.getType(lv) match {
                         case S_INT => new readIntFx(formatter)
                         case S_CHAR => new readCharFx(formatter)
-                        case _ => ??? // Other types to be implemented.
+                        case _ => throw new RuntimeException("Invalid type for read.")
                     }
 
-                    formatter.includeFx(readFx) // Include the readIntFx internal function in the formatter.
+                    formatter.includeFx(readFx)
 
                     /* Generate the load instructions and call the readIntFx function. 
                        The result will be stored in the primary scratch register. */
-                    val readInstr = saveVarInstr ++ loadInstr ++ callFx(readFx.label, formatter.regConf.scratchRegs, List(), List())
-
-                    // Store the result back into the variable.
-                    val storeInstr = v.pos match {
-                        case InRegister(r) => List(Move(RegisterX(primary), RegisterX(r)))
-                        case OnTempStack(r) => List(
-                            Move(ImmNum(r), RegisterX(secondary)),
-                            Load(BaseOfsRA(RegisterX(formatter.regConf.pointerReg), RegisterX(secondary)), RegisterX(primary))
-                        )
-                        case OnStack(offset) => List(
-                            Move(ImmNum(offset), RegisterX(secondary)),
-                            Load(BaseOfsRA(RegisterX(formatter.regConf.framePReg), RegisterX(secondary)), RegisterX(primary))
-                        )
-                        case Undefined => ??? // Should not get here.
-                    }
+                    val readInstr =  loadInstr ++ saveVarInstr ++ callFx(readFx.label, formatter.regConf.scratchRegs, List(), List())
+                    val storeInstr = generateInstructions(v.pos) // Store the result back into the variable.
 
                     readInstr ++ storeInstr
                 }
-                case _ => ??? // Other cases to be implemented.
+                case _ => throw new RuntimeException("Invalid case for read.")
             }
 
             case Free(x) => {
