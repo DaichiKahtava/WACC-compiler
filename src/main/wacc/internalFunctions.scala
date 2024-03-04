@@ -8,6 +8,25 @@ sealed trait InternalFunction {
 
 // Internal functions must always be called with callFx!
 
+class errorBadCharFx(frm: Aarch64_formatter) extends InternalFunction {
+    val label: String = "_errBadChar"
+    val dependencies: List[InternalFunction] = List.empty
+    val instructions: List[Instruction] = {
+        val primary = frm.regConf.argRegs(0)
+        List(
+            Data("fatal error: int %d is not ascii character 0-127 \n", ".L._errBad_str0"),
+            AlignInstr(),
+            Label(label),
+            Address(".L._errBadChar_str0", RegisterX(primary)),
+            BranchLink("printf"),
+            Move(ImmNum(0), RegisterX(primary)),
+            BranchLink("fflush"),
+            Move(ImmNum(-1), RegisterW(primary)),
+            BranchLink("exit")
+        )
+    }
+}
+
 class errorDivZeroFx(frm: Aarch64_formatter) extends InternalFunction {
     val label: String = "_errDivZero"
     val dependencies: List[InternalFunction] = List(new printStringFx(frm))
@@ -84,6 +103,23 @@ class errorOutOfBoundsFx(frm: Aarch64_formatter) extends InternalFunction {
     }
     override def equals(x: Any): Boolean = x.isInstanceOf[errorOutOfBoundsFx]
     override def hashCode(): Int = 3
+}
+
+class errorOverFlowFx(frm: Aarch64_formatter) extends InternalFunction {
+    val label: String = "_errOverflow"
+    val dependencies: List[InternalFunction] = List(new printStringFx(frm))
+    val instructions: List[Instruction] = {
+        val primary = frm.regConf.argRegs(0)
+        List(
+            Data("fatal error: integer overflow or underflow occurred\n", ".L._errOverflow_str0"),
+            AlignInstr(),
+            Label(label),
+            Address(".L._errOverflow_str0", RegisterX(primary)),
+            BranchLink("_prints"),
+            Move(ImmNum(-1), RegisterW(primary)),
+            BranchLink("exit")
+        )
+    }
 }
 
 class printStringFx(frm: Aarch64_formatter) extends InternalFunction {
