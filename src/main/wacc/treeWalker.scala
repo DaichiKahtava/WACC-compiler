@@ -287,7 +287,8 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
             case Read(lv) => lv match {
                 case LIdent(id) => {
                     // Find the variable in the symbol table and get its position.
-                    val loadInstr = sem.curSymTable.findVarGlobal(id).get.pos match {
+                    val v = sem.curSymTable.findVarGlobal(id).get
+                    val loadInstr = v.pos match {
                         /* If the variable is in a register, generate a move instruction to move 
                            its value to the primary scratch register. */
                         case InRegister(r) => List(Move(RegisterX(r), RegisterX(primary)))
@@ -298,6 +299,9 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                             Move(ImmNum(r), RegisterX(secondary)),
                             Load(BaseOfsRA(RegisterX(formatter.regConf.pointerReg), RegisterX(secondary)), RegisterX(primary))
                         )
+                        /* If the variable is on the stack, generate instructions to move its 
+                           offset to the secondary scratch register and load its value to the primary 
+                           scratch register. */
                         case OnStack(offset) => List(
                             Move(ImmNum(offset), RegisterX(secondary)),
                             Load(BaseOfsRA(RegisterX(formatter.regConf.framePReg), RegisterX(secondary)), RegisterX(primary))
@@ -309,7 +313,23 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
 
                     /* Generate the load instructions and call the readIntFx function. 
                        The result will be stored in the primary scratch register. */
-                    loadInstr ++ callFx("_readi", formatter.regConf.scratchRegs, List(), List())
+                    val readInstr = loadInstr ++ callFx("_readi", formatter.regConf.scratchRegs, List(), List())
+
+                    // Store the result back into the variable.
+                    val storeInstr = v.pos match {
+                        case InRegister(r) => List(Move(RegisterX(primary), RegisterX(r)))
+                        case OnTempStack(r) => List(
+                            Move(ImmNum(r), RegisterX(secondary)),
+                            Load(BaseOfsRA(RegisterX(formatter.regConf.pointerReg), RegisterX(secondary)), RegisterX(primary))
+                        )
+                        case OnStack(offset) => List(
+                            Move(ImmNum(offset), RegisterX(secondary)),
+                            Load(BaseOfsRA(RegisterX(formatter.regConf.framePReg), RegisterX(secondary)), RegisterX(primary))
+                        )
+                        case Undefined => ??? // Should not get here.
+                    }
+
+                    readInstr ++ storeInstr
                 }
                 case _ => ??? // Other cases to be implemented.
             }
