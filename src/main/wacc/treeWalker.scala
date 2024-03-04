@@ -160,16 +160,7 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                 List(Move(ImmNum(0), RegisterX(primary))) // Treat as null pointer?
 
             // Pattern match for the identifier.
-            case Ident(id) => sem.curSymTable.findVarGlobal(id).get.pos match {
-                case InRegister(r) => List(Move(RegisterX(r), RegisterX(primary)))
-                case OnTempStack(r) => List(
-                        Comment("TEMP STACK!!!"),
-                        Move(ImmNum(-(formatter.getSize(S_ANY) * (r + 1))), RegisterX(secondary)),
-                        Load(BaseOfsRA(RegisterX(formatter.regConf.pointerReg), RegisterX(secondary)), RegisterX(primary))
-                    )
-                case OnStack(offset) => ???
-                case Undefined => ??? // Should not get here
-            }
+            case Ident(id) => loadContentsFromIdentifier(id, regs)
 
             case ArrElem(id, xs) => List()
         }
@@ -194,6 +185,44 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
     def translate(list: List[Any], regs: List[Int]): List[Instruction] = list match {
         // Defaulting case.
         case _ => throw new RuntimeException("Undefined list.")
+    }
+
+    def storeContentsToIdentifier(id: String, regs: List[Int]): List[Instruction] = {
+        // stores the contents from the primary register to where an identifier
+        // is considered to be stored
+        val primary = regs(0)
+        val secondary = regs(1)
+        val v = sem.curSymTable.findVarGlobal(id).get
+        val destInstr = v.pos match {
+        case InRegister(r) => List(Move(RegisterX(primary), RegisterX(r)))
+            case OnTempStack(r) => List(
+                    Comment("TEMP STACK!!!"),
+                    Move(ImmNum(-(formatter.getSize(S_ANY) * (r + 1))), RegisterX(secondary)),
+                    Load(BaseOfsRA(RegisterX(formatter.regConf.pointerReg), RegisterX(secondary)), RegisterX(primary))                        )
+            case OnStack(offset) => List(
+                    Move(ImmNum(offset), RegisterX(secondary)),
+                    Store(RegisterX(primary), BaseOfsRA(RegisterX(formatter.regConf.framePReg), RegisterX(secondary)))
+                )                
+            case Undefined => ???
+            // sem.curSymTable.redefineSymbol(id, VARIABLE(v.tp, InRegister(regs.head)))
+            // translate(rv, regs)
+        }
+        destInstr
+    }
+
+    def loadContentsFromIdentifier(id: String, regs: List[Int]): List[Instruction] = {
+        val primary = regs(0)
+        val secondary = regs(1)        
+        sem.curSymTable.findVarGlobal(id).get.pos match {
+            case InRegister(r) => List(Move(RegisterX(r), RegisterX(primary)))
+            case OnTempStack(r) => List(
+                    Comment("TEMP STACK!!!"),
+                    Move(ImmNum(-(formatter.getSize(S_ANY) * (r + 1))), RegisterX(secondary)),
+                    Load(BaseOfsRA(RegisterX(formatter.regConf.pointerReg), RegisterX(secondary)), RegisterX(primary))
+                )
+            case OnStack(offset) => ???
+            case Undefined => ??? // Should not get here
+        }
     }
 
     def translate(program: Program): List[Instruction] = {
@@ -244,39 +273,11 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
         stmt match {
             case Skip() => Nil
             case Decl(_, id, rv) => {
-                val v = sem.curSymTable.findVarGlobal(id).get
-                val destInstr = v.pos match {
-                case InRegister(r) => List(Move(RegisterX(primary), RegisterX(r)))
-                    case OnTempStack(r) => List(
-                            Comment("TEMP STACK!!!"),
-                            Move(ImmNum(-(formatter.getSize(S_ANY) * (r + 1))), RegisterX(secondary)),
-                            Load(BaseOfsRA(RegisterX(formatter.regConf.pointerReg), RegisterX(secondary)), RegisterX(primary))                        )
-                    case OnStack(offset) => List(
-                            Move(ImmNum(offset), RegisterX(secondary)),
-                            Store(RegisterX(primary), BaseOfsRA(RegisterX(formatter.regConf.framePReg), RegisterX(secondary)))
-                        )                
-                    case Undefined => ???
-                    // sem.curSymTable.redefineSymbol(id, VARIABLE(v.tp, InRegister(regs.head)))
-                    // translate(rv, regs)
-                }
-                translate(rv, formatter.regConf.scratchRegs) ++ destInstr
+                translate(rv, scratchRegs) ++ storeContentsToIdentifier(id, scratchRegs)
             }
 
             case Asgn(LIdent(id), rv) => {
-                val destInstr = sem.curSymTable.findVarGlobal(id).get.pos match {
-                    // TODO: Abstract!
-                    case InRegister(r) => List(Move(RegisterX(primary), RegisterX(r)))
-                    case OnTempStack(r) => List(
-                            Comment("TEMP STACK!!!"),
-                            Move(ImmNum(-(formatter.getSize(S_ANY) * (r + 1))), RegisterX(secondary)),
-                            Load(BaseOfsRA(RegisterX(formatter.regConf.pointerReg), RegisterX(secondary)), RegisterX(primary))                        )
-                    case OnStack(offset) => List(
-                            Move(ImmNum(offset), RegisterX(secondary)),
-                            Store(RegisterX(primary), BaseOfsRA(RegisterX(formatter.regConf.framePReg), RegisterX(secondary)))
-                        )
-                    case Undefined => ??? // Should not come here
-                }
-                translate(rv, scratchRegs) ++ destInstr
+                translate(rv, scratchRegs) ++ storeContentsToIdentifier(id, scratchRegs)
             }
             // LArrElem and Pairs
             case Asgn(lv, rv) => ???
@@ -298,7 +299,6 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
             case Exit(x) => callFx("exit", formatter.regConf.scratchRegs, List(x), List(S_INT))
             case Print(x) => callFx(determinePrint(x), formatter.regConf.scratchRegs, List(x), List(S_ANY))
             case Println(x) => {
-                
                 callFx(determinePrint(x), formatter.regConf.scratchRegs, List(x), List(S_ANY)) ++
                 callFx(formatter.includeFx(new printLineFx(formatter)), formatter.regConf.scratchRegs, List(), List())
             }
@@ -365,6 +365,9 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
         // This is responsible for getting the *address* of the lvalue
         case LArrElem(id, xs) => ??? 
         case LIdent(id) => ???
+            // NOTE: We get here when we need to find the address of the id
+            // I.e. when the id is a pair or an array.
+        
         case pe: PairElem => {
             // This gets you the location of the specific pair element.
             val instrs = new ListBuffer[Instruction]
