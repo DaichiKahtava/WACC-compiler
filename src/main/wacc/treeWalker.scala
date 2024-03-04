@@ -493,32 +493,46 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
         }
     }
 
-    def translate(lv: LValue, regs: List[Int]): List[Instruction] = lv match {
-        // This is responsible for getting the *address* of the lvalue
-        case LArrElem(id, xs) => ??? 
-        
-        case LIdent(id) => loadContentsFromIdentifier(id, regs)
-        // NOTE: We get here ONLY when we need to find the address of the id
-        // I.e. when the id is a pair or an array.
-        // So, we just return their contents
-        
-        case pe: PairElem => {
-            // This gets you the location of the specific pair element.
-            val instrs = new ListBuffer[Instruction]
+    def translate(lv: LValue, regs: List[Int]): List[Instruction] ={
+        val primary = regs(0)
+        val secondary = regs(1)
+        lv match {
+            // This is responsible for getting the *address* of the lvalue
+            case LArrElem(id, xs) => ??? 
+            
+            case LIdent(id) => loadContentsFromIdentifier(id, regs)
+            // NOTE: We get here ONLY when we need to find the address of the id
+            // I.e. when the id is a pair or an array.
+            // So, we just return their contents
+            
+            case pe: PairElem => {
+                // This gets you the location of the specific pair element.
+                val instrs = new ListBuffer[Instruction]
+                
+                val lv_ = pe match {
+                    case First(p) => p
+                    case Second(p) => p
+                }
 
-            pe match {
-                case First(lv) => {
-                    instrs.addAll(translate(lv, regs)) // Address of the pair itself
+                instrs.addAll(translate(lv_, regs)) 
+                // determining the reference r_p which is the pointer of p
+
+                instrs.addAll(List(
+                    Compare(RegisterX(primary), RegisterXZR),
+                    BranchCond(formatter.includeFx(new errorNullFx(formatter)), EqI)
+                )) // Check
+                
+                pe match {
+                    case First(pos)  => instrs.addOne(Move(ImmNum(0), RegisterX(secondary)))
+                    case Second(pos) => instrs.addOne(Move(ImmNum(formatter.getSize(S_ANY)), RegisterX(secondary)))
                 }
-                case Second(lv) => {
-                    instrs.addAll(translate(lv, regs)) // Address of the pair itself 
-                    instrs.addAll(List(
-                        Move(ImmNum(formatter.getSize(S_ANY)), RegisterX(regs(1))),
-                        AddI(RegisterX(regs(1)), RegisterX(regs.head))
-                    ))// Address of the offset
-                }
+
+                instrs.addAll(List(
+                    Load(BaseOfsRA(RegisterX(primary), RegisterX(secondary)), RegisterX(primary)),
+                )) // following r_p to abtain a pointer to the pair p
+
+                instrs.toList
             }
-            instrs.toList
         }
     }
 
@@ -582,21 +596,28 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                 val instrs = new ListBuffer[Instruction]
                 // This loads the contents of the pair from either location
                 // For the address of the pair for each location, you use the lvalue instance of PairElem.
-                var loadPosition = 0
+                
+                var lv = pe match {
+                    case First(lv) => lv
+                    case Second(lv) => lv
+                }
+                
+                instrs.addAll(translate(lv, regs)) // obtain reference r
+                instrs.addAll(List(
+                    Compare(RegisterX(primary), RegisterXZR),
+                    BranchCond(formatter.includeFx(new errorNullFx(formatter)), EqI),
+                )) // following r to abtain a pointer to the pair p
+
+                
                 pe match {
                     case First(lv) => {
-                        instrs.addAll(translate(lv, regs))
                         instrs.addOne(Move(ImmNum(0), RegisterX(secondary)))
                     }
                     case Second(lv) => {
-                        instrs.addAll(translate(lv, regs))
-                        loadPosition = 1
-                        instrs.addOne(Move(ImmNum(1), RegisterX(secondary)))
+                        instrs.addOne(Move(ImmNum(formatter.getSize(S_ANY)), RegisterX(secondary)))
                     }
                 }
-                
-                instrs.addOne(Move(RegisterX(primary), RegisterX(formatter.regConf.argRegs(0))))
-                instrs.addAll(callFx(formatter.includeFx(new PairLoadFx(formatter)), regs, Left(List(RegisterX(primary), (RegisterX(secondary)))), List()))
+                instrs.addOne(Load(BaseOfsRA(RegisterX(primary), RegisterX(secondary)), RegisterX(primary)))
 
                 instrs.toList
             }
