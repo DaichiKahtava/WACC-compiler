@@ -308,12 +308,19 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                         )
                         case Undefined => ??? // Should not get here.
                     }
+                    
+                    // Check the type of the variable and include the appropriate read function.
+                    val readFx = sem.getType(lv) match {
+                        case S_INT => new readIntFx(formatter)
+                        case S_CHAR => new readCharFx(formatter)
+                        case _ => ??? // Other types to be implemented.
+                    }
 
-                    formatter.includeFx(new readIntFx(formatter)) // Include the readIntFx internal function in the formatter.
+                    formatter.includeFx(readFx) // Include the readIntFx internal function in the formatter.
 
                     /* Generate the load instructions and call the readIntFx function. 
                        The result will be stored in the primary scratch register. */
-                    val readInstr = loadInstr ++ callFx("_readi", formatter.regConf.scratchRegs, List(), List())
+                    val readInstr = loadInstr ++ callFx(readFx.label, formatter.regConf.scratchRegs, List(), List())
 
                     // Store the result back into the variable.
                     val storeInstr = v.pos match {
