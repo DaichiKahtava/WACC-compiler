@@ -346,9 +346,24 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                 })
             }
             case Asgn(lv, rv) => ??? 
-
             case Read(lv) => ???
-            case Free(x) => ???
+            case Free(x) => {
+                // Include the errorNullFx internal function in the formatter.
+                formatter.includeFx(new errorNullFx(formatter))
+                translate(x, scratchRegs) ++ 
+                List(
+                    // Compare the value in the primary scratch register with zero.
+                    Compare(RegisterX(primary), RegisterXZR),
+                    // If they are equal (i.e., the pointer is null), branch to the '_errNull' label.
+                    BranchCond("_errNull", EqI),
+
+                    /* Move the memory location from the primary scratch register to RegisterX(0).
+                       'free' function expects the memory location in RegisterX(0). */
+                    Move(RegisterX(0), RegisterX(primary)),
+                    // Call the 'free' function to free the memory at the specified location.
+                    BranchLink("free")
+                    )
+            }
             case Return(x) => translate(x, formatter.regConf.scratchRegs) ++ 
                 List(
                     Move(RegisterX(formatter.regConf.scratchRegs(0)),
