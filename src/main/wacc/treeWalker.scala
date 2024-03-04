@@ -337,10 +337,7 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                         translate(x, scratchRegs) ++ // Index in X8
                         List(Move(RegisterW(primary), RegisterW(17))) ++ // Index in W17
                         translate(rv, scratchRegs) ++ // Value to store in X8
-                        List(
-                            Move(RegisterX(19), RegisterX(7)),
-                            BranchLink(s"_arrStore$elemSize")
-                        ) 
+                        List(BranchLink(s"_arrStore$elemSize")) 
                     case x :: xs => Nil // TODO
                     case Nil => ??? // Should not be empty
                 })

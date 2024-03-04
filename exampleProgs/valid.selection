@@ -7,7 +7,7 @@ exampleProgs/valid/array/arrayEmpty.wacc
 exampleProgs/valid/array/arrayLength.wacc
 exampleProgs/valid/array/arrayLookup.wacc
 exampleProgs/valid/array/arrayNested.wacc
-'exampleProgs/valid/array/arrayOnHeap.wacc
+exampleProgs/valid/array/arrayOnHeap.wacc
 exampleProgs/valid/array/arrayPrint.wacc
 exampleProgs/valid/array/arraySimple.wacc
 exampleProgs/valid/array/array.wacc
