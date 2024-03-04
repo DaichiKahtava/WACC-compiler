@@ -358,14 +358,6 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
             }
 
             case Delimit(s1, s2) => translate(s1) ++ translate(s2)
-                // val res = translate(s1,   regs)
-                // sem.curSymTable.varDict.values.map(_.pos).foreach{ // Maybe move this somewhere else to a general function when needed
-                //     case InRegister(r) =>
-                //         if (availRegs.contains(r)) availRegs.remove(availRegs.indexOf(r))
-                //     case _ => () // Do nothing otherwise
-                // }
-                // res ++ translate(s2, availRegs.toList)
-            // TODO (for delimit): Weighting? and register allocation
         }
     }
 
@@ -428,7 +420,18 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
             }
             
             case pe: PairElem => {
-                translate(pe, regs.tail)
+                val instrs = new ListBuffer[Instruction]
+                instrs.addAll(translate(pe, regs.tail))
+                instrs.addOne(Move(RegisterX(primary), RegisterX(formatter.regConf.argRegs(0))))
+                
+                pe match {
+                    case First(_) => instrs.addOne(Move(ImmNum(0), RegisterX(formatter.regConf.argRegs(1))))
+                    case Second(_) => instrs.addOne(Move(ImmNum(1), RegisterX(formatter.regConf.argRegs(1))))
+                }
+
+                instrs.addAll(callFx(formatter.includeFx(new PairLoadFx(formatter)), regs, List(), List()))
+
+                instrs.toList
             }
         }
     }
