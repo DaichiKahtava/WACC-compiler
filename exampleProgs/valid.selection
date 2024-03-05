@@ -232,8 +232,8 @@ exampleProgs/valid/runtimeErr/divideByZero/modByZero.wacc
 'exampleProgs/valid/runtimeErr/integerOverflow/intUnderflow.wacc
 'exampleProgs/valid/runtimeErr/integerOverflow/intWayOverflow.wacc
 exampleProgs/valid/runtimeErr/nullDereference/freeNull.wacc
-'exampleProgs/valid/runtimeErr/nullDereference/readNull1.wacc
-'exampleProgs/valid/runtimeErr/nullDereference/readNull2.wacc
+exampleProgs/valid/runtimeErr/nullDereference/readNull1.wacc
+exampleProgs/valid/runtimeErr/nullDereference/readNull2.wacc
 exampleProgs/valid/runtimeErr/nullDereference/setNull1.wacc
 exampleProgs/valid/runtimeErr/nullDereference/setNull2.wacc
 exampleProgs/valid/runtimeErr/nullDereference/useNull1.wacc
