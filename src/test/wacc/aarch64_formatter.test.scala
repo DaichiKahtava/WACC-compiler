@@ -31,7 +31,7 @@ class aarch64FormTest extends AnyFlatSpec with BeforeAndAfterEach {
     it should "process an add" in {
         frm.generateAssembly(List(AddI(RegisterX(1), RegisterX(2))), tempFile.getAbsolutePath)
         val result = scala.io.Source.fromFile(tempFile).mkString
-        result shouldBe ".align 4\n.text\n.global main\nadd\tX2, X2, X1\n"
+        result shouldBe ".align 4\n.text\n.global main\nadds\tX2, X2, X1\n"
     }
 
     it should "process a list of multiple instructions" in {
@@ -43,7 +43,7 @@ class aarch64FormTest extends AnyFlatSpec with BeforeAndAfterEach {
 
         frm.generateAssembly(instructions, tempFile.getAbsolutePath)
         val result = scala.io.Source.fromFile(tempFile).mkString
-        val expected = ".align 4\n.text\n.global main\nmov\tX2, X1\nadd\tX2, X2, X1\nsub\tX2, X2, X1\n"
+        val expected = ".align 4\n.text\n.global main\nmov\tX2, X1\nadds\tX2, X2, X1\nsubs\tX2, X2, X1\n"
         
         result shouldBe expected
     }
@@ -51,7 +51,7 @@ class aarch64FormTest extends AnyFlatSpec with BeforeAndAfterEach {
     it should "process a sub instruction" in {
         frm.generateAssembly(List(SubI(RegisterX(1), RegisterX(2))), tempFile.getAbsolutePath)
         val result = scala.io.Source.fromFile(tempFile).mkString
-        result shouldBe ".align 4\n.text\n.global main\nsub\tX2, X2, X1\n"
+        result shouldBe ".align 4\n.text\n.global main\nsubs\tX2, X2, X1\n"
     }
 
     it should "process a Load instruction" in {
@@ -124,7 +124,7 @@ class aarch64FormTest extends AnyFlatSpec with BeforeAndAfterEach {
 
         frm.generateAssembly(instructions, tempFile.getAbsolutePath)
         val result = scala.io.Source.fromFile(tempFile).mkString
-        val expected = ".align 4\n.text\n.global main\nmov\tX1, #10\nadd\tX2, X2, X1\nsub\tX2, X2, X5\nstr\tX2, [X3]\n"
+        val expected = ".align 4\n.text\n.global main\nmov\tX1, #10\nadds\tX2, X2, X1\nsubs\tX2, X2, X5\nstr\tX2, [X3]\n"
         
         result shouldBe expected
     }
