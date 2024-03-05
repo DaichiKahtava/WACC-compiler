@@ -63,9 +63,7 @@ sealed trait Register extends Operand
 sealed trait RegisterXorSP extends Register
 
 
-case class RegisterX(regN: Int) extends Register with RegisterXorSP {
-  val w = RegisterW(regN)
-}
+case class RegisterX(regN: Int) extends Register with RegisterXorSP
 case class RegisterW(regN: Int) extends Register 
 case object RegisterXR extends Register // Indirect result register
 case object RegisterWR extends Register

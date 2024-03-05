@@ -79,20 +79,12 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                 List(MulI(RegisterX(secondary), RegisterX(primary)))
 
             case Div(x, y) => {
-                translateTwoExpr(x, y, regs) ++
-                List(
-                    Compare(RegisterXZR, RegisterX(secondary)),
-                    BranchCond(formatter.includeFx(new errorDivZeroFx(formatter)), EqI),
-                    DivI(RegisterX(secondary), RegisterX(primary))
-                )
+                translateTwoExpr(x, y, regs) ++ divMod(false, regs)
             }
             case Mod(x, y) => {
-                translateTwoExpr(x, y, regs) ++
+                translateTwoExpr(x, y, regs) ++ divMod(true, regs) ++ 
                 List(
-                    Compare(RegisterXZR, RegisterX(secondary)),
-                    BranchCond(formatter.includeFx(new errorDivZeroFx(formatter)), EqI),
-                    Move(RegisterX(primary), RegisterX(tertiary)),  // Store x into another register.
-                    DivI(RegisterX(secondary), RegisterX(tertiary)),  // Divide x by y.
+                    // Msub in aarch64
                     MulI(RegisterX(secondary), RegisterX(tertiary)),  // Multiply (y * quotient).
                     SubI(RegisterX(tertiary), RegisterX(primary))   // Calculate remainder.
                 )
@@ -878,5 +870,16 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
         popRegs(regs.toList)
     }
 
-
+    def divMod(mod: Boolean, regs: List[Int]): List[Instruction] = {
+        val primary = regs(0)
+        val secondary = regs(1)
+        var tertiary =  regs(2)
+        if (!mod) tertiary = primary
+        List(
+            Compare(RegisterXZR, RegisterX(secondary)),
+            BranchCond(formatter.includeFx(new errorDivZeroFx(formatter)), EqI),
+            Move(RegisterX(primary), RegisterX(tertiary)),
+            DivI(RegisterX(secondary), RegisterX(tertiary))
+        )
+    }
 }
