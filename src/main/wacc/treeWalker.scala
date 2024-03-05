@@ -432,6 +432,35 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                     instructionList ++= callFx(readFx.label, formatter.regConf.scratchRegs, Left(List()), List())
                     instructionList ++= generateInstructions(v.pos) // Store the result back into the variable.
                 }
+
+                case pe: PairElem => {
+
+                    // Obtain the address of the pair.
+                    val lv_ = pe match {
+                        case First(p) => p
+                        case Second(p) => p
+                    }
+                    
+                    instructionList ++= (translate(lv_, scratchRegs)) // Will load the pair address into primary.
+
+                    // Check if the pair is null before attempting to read from it.
+                    instructionList ++= List(
+                        Compare(RegisterX(primary), RegisterXZR),
+                        BranchCond(formatter.includeFx(new errorNullFx(formatter)), EqI)
+                    )
+
+                    // Determine offset for the specific pair element.
+                    pe match {
+                        case First(pos) => instructionList += (Move(ImmNum(0), RegisterX(secondary)))
+                        case Second(pos) => instructionList += (Move(ImmNum(formatter.getSize(S_ANY)), RegisterX(secondary)))
+                    }
+
+                    // Obtain the value stored in the pair element
+                    instructionList ++= (List(
+                        Load(BaseOfsRA(RegisterX(primary), RegisterX(secondary)), RegisterX(primary))
+                    ))
+                }
+
                 case _ => throw new RuntimeException("Invalid case for read.")
             }
 
