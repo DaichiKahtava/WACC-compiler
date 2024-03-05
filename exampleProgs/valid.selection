@@ -1,6 +1,3 @@
-'exampleProgs/valid/advanced/binarySortTree.wacc
-'exampleProgs/valid/advanced/hashTable.wacc
-'exampleProgs/valid/advanced/ticTacToe.wacc
 exampleProgs/valid/array/arrayBasic.wacc
 exampleProgs/valid/array/arrayEmpty.wacc
 exampleProgs/valid/array/arrayIndexMayBeArrayIndex.wacc
