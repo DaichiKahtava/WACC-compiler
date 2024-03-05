@@ -534,76 +534,75 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
         instructionList.toList
     }
 
-    def translate(lv: LValue, regs: List[Int]): List[Instruction] ={
+    def translate(lv: LValue, regs: List[Int]): List[Instruction] = {
         val primary = regs(0)
         val secondary = regs(1)
+        val instructionList = ListBuffer.empty[Instruction]
         lv match {
             // This is responsible for getting the *address* of the lvalue
             case LArrElem(id, xs) => ??? 
             
-            case LIdent(id) => loadContentsFromIdentifier(id, regs)
+            case LIdent(id) => instructionList ++= loadContentsFromIdentifier(id, regs)
             // NOTE: We get here ONLY when we need to find the address of the id
             // I.e. when the id is a pair or an array.
             // So, we just return their contents
             
             case pe: PairElem => {
-                // This gets you the location of the specific pair element.
-                val instrs = new ListBuffer[Instruction]
-                
                 val lv_ = pe match {
                     case First(p) => p
                     case Second(p) => p
                 }
 
-                instrs.addAll(translate(lv_, regs)) 
+                instructionList ++= (translate(lv_, regs)) 
                 // determining the reference r_p which is the pointer of p
 
-                instrs.addAll(List(
+                instructionList ++= (List(
                     Compare(RegisterX(primary), RegisterXZR),
                     BranchCond(formatter.includeFx(new errorNullFx(formatter)), EqI)
                 )) // Check
 
                 if (lv_.isInstanceOf[PairElem]) {
-                    instrs.addAll(List(
+                    instructionList ++= (List(
                         Move(ImmNum(0), RegisterX(secondary)),
                         Load(BaseOfsRA(RegisterX(primary), RegisterX(secondary)), RegisterX(primary))
                     ))
                 } // following r to abtain a pointer to the pair p
                 
                 pe match {
-                    case First(pos)  => instrs.addOne(Move(ImmNum(0), RegisterX(secondary)))
-                    case Second(pos) => instrs.addOne(Move(ImmNum(formatter.getSize(S_ANY)), RegisterX(secondary)))
+                    case First(pos)  => instructionList += (Move(ImmNum(0), RegisterX(secondary)))
+                    case Second(pos) => instructionList += (Move(ImmNum(formatter.getSize(S_ANY)), RegisterX(secondary)))
                 }
 
-                instrs.addAll(List(
+                instructionList ++= (List(
                     AddI(RegisterX(secondary), RegisterX(primary)),
                 )) // obtaining the reference to the *element* of the pair
-
-                instrs.toList
             }
         }
+        instructionList.toList
     }
 
     def translate(rv: RValue, regs: List[Int]): List[Instruction] = {
         val primary = regs(0)
         val secondary = regs(1)
+        val instructionList = ListBuffer.empty[Instruction]
         rv match {
             case ArrL(xs) => {
                 val arrLen = xs.length
                 val elemSize = if (arrLen > 0) formatter.getSize(rv.tp.asInstanceOf[S_ARRAY].tp) else 0
                 val arrSize = arrLen * elemSize
                 var arrHead = 0
-                List(Comment(s"$arrLen element array"),
+                instructionList ++= List(Comment(s"$arrLen element array"),
                     Move(ImmNum(arrSize + 4), RegisterX(primary))                
-                ) ++
-                callFx(formatter.includeFx(new mallocFx(formatter)), formatter.regConf.scratchRegs, Left(List(RegisterX(primary))), List(S_ANY)) ++
-                List(Move(RegisterX(formatter.regConf.resultRegister), RegisterX(formatter.regConf.pointerReg)),
+                )
+                instructionList ++= callFx(formatter.includeFx(new mallocFx(formatter)), formatter.regConf.scratchRegs, Left(List(RegisterX(primary))), List(S_ANY))
+                instructionList ++= List(Move(RegisterX(formatter.regConf.resultRegister), RegisterX(formatter.regConf.pointerReg)),
                     Move(ImmNum(formatter.getSize(S_INT)), RegisterX(primary)),
                     AddI(RegisterX(primary), RegisterX(formatter.regConf.pointerReg)),
                     Move(ImmNum(xs.length), RegisterX(primary)),
                     Move(ImmNum(-(formatter.getSize(S_INT))), RegisterX(secondary)),
                     Store(RegisterW(primary), BaseOfsRA(RegisterX(formatter.regConf.pointerReg), RegisterX(secondary)))
-                ) ++ (for (x <- xs) yield {
+                )
+                instructionList ++= (for (x <- xs) yield {
                     val res = translate(x, regs) ++ // translate stores the result in primary by convention
                     List(
                         Move(ImmNum(arrHead), RegisterX(secondary)),
@@ -614,25 +613,26 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                     )
                     arrHead += elemSize
                     res
-                }).flatten ++ List(Move(RegisterX(formatter.regConf.pointerReg), RegisterX(primary)))
+                }).flatten
+                instructionList += (Move(RegisterX(formatter.regConf.pointerReg), RegisterX(primary)))
             }
-            case Call(id, xs) => callFx(formatter.regConf.funcLabel ++ id, formatter.regConf.scratchRegs, Right(xs), 
+            case Call(id, xs) => instructionList ++= callFx(formatter.regConf.funcLabel ++ id, formatter.regConf.scratchRegs, Right(xs), 
                 sem.curSymTable.findFunGlobal(id).get.st.parDict.values.toList.map((v)=> v.tp))
-            case RExpr(e) => translate(e, regs)
+            case RExpr(e) => instructionList ++= translate(e, regs)
             
             case NewPair(e1, e2) => {
                 val pOfs1 = 0
                 val pOfs2 = formatter.getSize(S_ANY)
-                    Move(ImmNum(2 * formatter.getSize(S_ANY)), RegisterX(primary))::
-                    callFx(formatter.includeFx(new mallocFx(formatter)), formatter.regConf.scratchRegs, Left(List(RegisterX(primary))), List(S_ANY)) ++ 
-                    List(Move(RegisterX(primary), RegisterX(formatter.regConf.pointerReg))) ++
-                    translate(e1, regs) ++
-                    List(
+                    instructionList += Move(ImmNum(2 * formatter.getSize(S_ANY)), RegisterX(primary))
+                    instructionList ++= callFx(formatter.includeFx(new mallocFx(formatter)), formatter.regConf.scratchRegs, Left(List(RegisterX(primary))), List(S_ANY))
+                    instructionList += (Move(RegisterX(primary), RegisterX(formatter.regConf.pointerReg)))
+                    instructionList ++= translate(e1, regs)
+                    instructionList ++= List(
                         Move(ImmNum(pOfs1), RegisterX(secondary)),
                         Store(RegisterX(primary), BaseOfsRA(RegisterX(formatter.regConf.pointerReg), RegisterX(secondary)))
-                        ) ++
-                    translate(e2, regs) ++ 
-                    List(
+                        )
+                    instructionList ++= translate(e2, regs)
+                    instructionList ++= List(
                         Move(ImmNum(pOfs2), RegisterX(secondary)),
                         Store(RegisterX(primary), BaseOfsRA(RegisterX(formatter.regConf.pointerReg), RegisterX(secondary))),
                         Move(RegisterX(formatter.regConf.pointerReg), RegisterX(primary))
@@ -641,7 +641,6 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
             }
             
             case pe: PairElem => {
-                val instrs = new ListBuffer[Instruction]
                 // This loads the contents of the pair from either location
                 // For the address of the pair for each location, you use the lvalue instance of PairElem.
                 
@@ -650,14 +649,14 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                     case Second(lv) => lv
                 }
                 
-                instrs.addAll(translate(lv, regs)) // obtain reference r
-                instrs.addAll(List(
+                instructionList ++= translate(lv, regs) // obtain reference r
+                instructionList ++= (List(
                     Compare(RegisterX(primary), RegisterXZR),
                     BranchCond(formatter.includeFx(new errorNullFx(formatter)), EqI),
                 )) 
                 
                 if (lv.isInstanceOf[PairElem]) {
-                    instrs.addAll(List(
+                    instructionList ++= (List(
                         Move(ImmNum(0), RegisterX(secondary)),
                         Load(BaseOfsRA(RegisterX(primary), RegisterX(secondary)), RegisterX(primary))
                     ))
@@ -666,17 +665,16 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                 
                 pe match {
                     case First(lv) => {
-                        instrs.addOne(Move(ImmNum(0), RegisterX(secondary)))
+                        instructionList += (Move(ImmNum(0), RegisterX(secondary)))
                     }
                     case Second(lv) => {
-                        instrs.addOne(Move(ImmNum(formatter.getSize(S_ANY)), RegisterX(secondary)))
+                        instructionList += (Move(ImmNum(formatter.getSize(S_ANY)), RegisterX(secondary)))
                     }
                 }
-                instrs.addOne(Load(BaseOfsRA(RegisterX(primary), RegisterX(secondary)), RegisterX(primary)))
-
-                instrs.toList
+                instructionList += (Load(BaseOfsRA(RegisterX(primary), RegisterX(secondary)), RegisterX(primary)))
             }
         }
+        instructionList.toList
     }
 
     // Gives the correct print label for the expression
