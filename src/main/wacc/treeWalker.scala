@@ -275,9 +275,9 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
         })
         // TODO: Use blocks of sorts...
         sem.curSymTable.assignPositions(formatter)
-        instructionList.addAll(List(Label("main"), Push(RegisterFP, RegisterLR)))
+        instructionList ++= (List(Label("main"), Push(RegisterFP, RegisterLR)))
         instructionList ++= translate(program.s)
-        instructionList.addAll(List(
+        instructionList ++= (List(
             Pop(RegisterFP, RegisterLR),
             Move(ImmNum(0), RegisterX(0)),
             ReturnI
@@ -291,7 +291,7 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
         val instructionList = ListBuffer.empty[Instruction]
         val varAlloc = sem.curSymTable.assignPositions(formatter) // TODO: extra space...
         val primary = formatter.regConf.scratchRegs.head
-        instructionList.addAll(
+        instructionList ++= (
             List(
                 Label(formatter.regConf.funcLabel + func.id),
                 Push(RegisterFP, RegisterLR),
@@ -300,8 +300,8 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                 AddI(RegisterX(primary), RegisterSP) // varAlloc is negative
             )
         )
-        instructionList.addAll(calleeSave())
-        instructionList.addAll(translate(func.s))
+        instructionList ++= (calleeSave())
+        instructionList ++= (translate(func.s))
         instructionList.toList
     } 
 
