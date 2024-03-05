@@ -196,21 +196,7 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                         var elemSize = formatter.getSize(currentType)
                         instructionList.addAll(translate(xs(i), regs)) // Index in primary
 
-                        instructionList.addAll(List(
-                            // Lower bound check
-                            Compare(RegisterW(primary), RegisterWZR),
-                            CondSelect(RegisterX(primary), RegisterX(1), RegisterX(1), LtI),
-                            BranchCond(formatter.includeFx(func), LtI),
-                            
-                            // Upper bound check
-                            Pop(RegisterX(secondary), RegisterXZR), // Pop the address into secondary
-                            Move(ImmNum(-4), RegisterX(tertiary)),
-                            LoadWord(BaseOfsRA(RegisterX(secondary), RegisterX(tertiary)), RegisterLR),
-                            Compare(RegisterW(primary), RegisterLR.w),
-                            CondSelect(RegisterX(primary), RegisterX(1), RegisterX(1), GeI),
-                            BranchCond(formatter.includeFx(func), GeI),
-                            Push(RegisterX(secondary), RegisterXZR) // Push the address back on
-                        ))
+                        instructionList.addAll(checkArrBound(primary, secondary, tertiary))
                 
                         instructionList.addAll(List(
                             Move(ImmNum(elemSize), RegisterX(secondary)),
@@ -590,21 +576,7 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                 val func = new errorOutOfBoundsFx(formatter)
                 var elemSize = formatter.getSize(currentType)
                 instructionList.addAll(translate(xs(xs.length - 1), regs)) // Index in primary
-                instructionList.addAll(List(
-                            // Lower bound check
-                            Compare(RegisterW(primary), RegisterWZR),
-                            CondSelect(RegisterX(primary), RegisterX(1), RegisterX(1), LtI),
-                            BranchCond(formatter.includeFx(func), LtI),
-                            
-                            // Upper bound check
-                            Pop(RegisterX(secondary), RegisterXZR), // Pop the address into secondary
-                            Move(ImmNum(-4), RegisterX(tertiary)),
-                            LoadWord(BaseOfsRA(RegisterX(secondary), RegisterX(tertiary)), RegisterLR),
-                            Compare(RegisterW(primary), RegisterLR.w),
-                            CondSelect(RegisterX(primary), RegisterX(1), RegisterX(1), GeI),
-                            BranchCond(formatter.includeFx(func), GeI),
-                            Push(RegisterX(secondary), RegisterXZR) // Push the address back on
-                ))
+                instructionList.addAll(checkArrBound(primary, secondary, tertiary))
                 instructionList.addAll(List(
                     Move(ImmNum(elemSize), RegisterX(secondary)),
                     MulI(RegisterX(secondary), RegisterX(primary)), // offset in primary
@@ -971,6 +943,25 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
             BranchCond(formatter.includeFx(new errorDivZeroFx(formatter)), EqI),
             Move(RegisterX(primary), RegisterX(tertiary)),
             DivI(RegisterX(secondary), RegisterX(tertiary))
+        )
+    }
+
+    def checkArrBound(primary: Int, secondary: Int, tertiary: Int): List[Instruction] = {
+        val func = new errorOutOfBoundsFx(formatter)
+        List(
+            // Lower bound check
+            Compare(RegisterW(primary), RegisterWZR),
+            CondSelect(RegisterX(primary), RegisterX(1), RegisterX(1), LtI),
+            BranchCond(formatter.includeFx(func), LtI),
+            
+            // Upper bound check
+            Pop(RegisterX(secondary), RegisterXZR), // Pop the address into secondary
+            Move(ImmNum(-(formatter.getSize(S_INT))), RegisterX(tertiary)),
+            LoadWord(BaseOfsRA(RegisterX(secondary), RegisterX(tertiary)), RegisterLR),
+            Compare(RegisterW(primary), RegisterLR.w),
+            CondSelect(RegisterX(primary), RegisterX(1), RegisterX(1), GeI),
+            BranchCond(formatter.includeFx(func), GeI),
+            Push(RegisterX(secondary), RegisterXZR) // Push the address back on
         )
     }
 }
