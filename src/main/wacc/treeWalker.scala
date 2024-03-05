@@ -45,7 +45,7 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                 translate(x, regs) ++
                 List(
                     Move(RegisterX(primary), RegisterX(secondary)),
-                    Move(ImmNum(0), RegisterW(primary)), 
+                    Move(ImmNum(0), RegisterX(primary)), 
                     SubI(RegisterW(secondary), RegisterW(primary)),
                     BranchCond("_errOverflow", VsI)
                 )
