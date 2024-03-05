@@ -55,7 +55,6 @@ case class CondSelect(src1: Register, src2: Register, dst: Register, cond: CondI
 
 case class isChar(src: Register) extends Instruction // Checks if the value is a valid character
 
-// TODO: Fill in with all types of operands
 sealed trait Operand 
 //Operand is either a register or an immediate (used for Move only).
 sealed trait Register extends Operand

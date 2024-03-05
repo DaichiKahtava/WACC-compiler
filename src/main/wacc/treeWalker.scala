@@ -200,7 +200,7 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                     if (elemType.isInstanceOf[S_ARRAY])
                         elemType = elemType.asInstanceOf[S_ARRAY].tp
                     res
-                }).flatten ++ (if (elemSize == 8) List(Move(RegisterX(7), RegisterXR)) else List(Move(RegisterX(7), RegisterXR)))
+                }).flatten ++ List(Move(RegisterX(7), RegisterXR))
             }
         }
     }
