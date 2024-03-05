@@ -274,7 +274,11 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                     Move(ImmNum(-(formatter.getSize(S_ANY) * (r + 1))), RegisterX(secondary)),
                     Load(BaseOfsRA(RegisterX(formatter.regConf.pointerReg), RegisterX(secondary)), RegisterX(primary))
                 )
-            case OnStack(offset) => ???
+            case OnStack(offset) => List(
+                    Comment("TEMP STACK!!!"),
+                    Move(ImmNum(offset), RegisterX(secondary)),
+                    Load(BaseOfsRA(RegisterX(formatter.regConf.framePReg), RegisterX(secondary)), RegisterX(primary))
+                )
             case Undefined => ??? // Should not get here
         }
     }
