@@ -307,6 +307,7 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
         val scratchRegs = formatter.regConf.scratchRegs
         val primary = scratchRegs(0)
         val secondary = scratchRegs(1)
+        val tertiary = scratchRegs(2)
         stmt match {
             case Skip() => Nil
             case Decl(tp, id, rv) => {
@@ -355,7 +356,21 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
             }
 
             // LArrElem and Pairs
-            case Asgn(lv, rv) => ???
+            case Asgn(lv, rv) => {
+                val instrs = ListBuffer.empty[Instruction]
+
+                instrs.addAll(translate(rv, scratchRegs))
+                instrs.addOne(Push(RegisterX(primary), RegisterXZR))
+                instrs.addAll(translate(lv, scratchRegs))
+                instrs.addOne(Pop(RegisterX(secondary), RegisterXZR))
+
+                instrs.addAll(List(
+                    Move(ImmNum(0), RegisterX(tertiary)),
+                    Store(RegisterX(secondary), BaseOfsRA(RegisterX(primary), RegisterX(tertiary)))
+                ))
+
+                instrs.toList
+            }
 
             case Read(lv) => lv match {
                 case LIdent(id) => {
@@ -531,6 +546,13 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                     Compare(RegisterX(primary), RegisterXZR),
                     BranchCond(formatter.includeFx(new errorNullFx(formatter)), EqI)
                 )) // Check
+
+                if (lv_.isInstanceOf[PairElem]) {
+                    instrs.addAll(List(
+                        Move(ImmNum(0), RegisterX(secondary)),
+                        Load(BaseOfsRA(RegisterX(primary), RegisterX(secondary)), RegisterX(primary))
+                    ))
+                } // following r to abtain a pointer to the pair p
                 
                 pe match {
                     case First(pos)  => instrs.addOne(Move(ImmNum(0), RegisterX(secondary)))
@@ -538,8 +560,8 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                 }
 
                 instrs.addAll(List(
-                    Load(BaseOfsRA(RegisterX(primary), RegisterX(secondary)), RegisterX(primary)),
-                )) // following r_p to abtain a pointer to the pair p
+                    AddI(RegisterX(secondary), RegisterX(primary)),
+                )) // obtaining the reference to the *element* of the pair
 
                 instrs.toList
             }
@@ -616,7 +638,14 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                 instrs.addAll(List(
                     Compare(RegisterX(primary), RegisterXZR),
                     BranchCond(formatter.includeFx(new errorNullFx(formatter)), EqI),
-                )) // following r to abtain a pointer to the pair p
+                )) 
+                
+                if (lv.isInstanceOf[PairElem]) {
+                    instrs.addAll(List(
+                        Move(ImmNum(0), RegisterX(secondary)),
+                        Load(BaseOfsRA(RegisterX(primary), RegisterX(secondary)), RegisterX(primary))
+                    ))
+                } // following r to abtain a pointer to the pair p
 
                 
                 pe match {
