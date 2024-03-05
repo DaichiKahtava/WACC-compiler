@@ -326,7 +326,7 @@ class readIntFx(frm: Aarch64_formatter) extends InternalFunction {
         val secondary = frm.regConf.argRegs(1) 
         // Temporary storage for stack pointer 
         List (
-            Comment("Read int as in the reference compiler"),
+            Comment("Read int as in the ref. compiler"),
             Data("%d\n", ".L._readi_str0"),
             AlignInstr(),
             Label(label),
@@ -340,6 +340,30 @@ class readIntFx(frm: Aarch64_formatter) extends InternalFunction {
     }
     override def equals(x: Any): Boolean = x.isInstanceOf[readIntFx]
     override def hashCode(): Int = 14
+}
+
+// Format predominantly similar to readIntFx (just above).
+class readCharFx(frm: Aarch64_formatter) extends InternalFunction {
+    val label: String = "_readc"
+    val dependencies: List[InternalFunction] = List.empty
+    val instructions: List[Instruction] = {
+        val primary   = frm.regConf.argRegs(0) 
+        val secondary = frm.regConf.argRegs(1)
+        List(
+            Comment("Read char as in the ref. compiler"),
+            Data("%c\n", ".L._readc_str0"),
+            AlignInstr(),
+            Label(label),
+            Push(RegisterX(primary), RegisterLR),
+            Move(RegisterSP, RegisterX(secondary)),
+            Address(".L._readc_str0", RegisterX(primary)),
+            BranchLink("scanf"),
+            Pop(RegisterX(primary), RegisterLR),
+            ReturnI
+        )
+    }
+    override def equals(x: Any): Boolean = x.isInstanceOf[readCharFx]
+    override def hashCode(): Int = 15
 }
 
 class ArrayStoreFx(frm: Aarch64_formatter, val size: Int) extends InternalFunction {
@@ -430,5 +454,5 @@ class PairLoadFx(frm: Aarch64_formatter) extends InternalFunction {
         )
     }
     override def equals(x: Any): Boolean = x.isInstanceOf[PairLoadFx]
-    override def hashCode(): Int = 15
+    override def hashCode(): Int = 16
 }

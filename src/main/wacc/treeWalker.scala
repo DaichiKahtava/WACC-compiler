@@ -353,8 +353,61 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                     case Nil => ??? // Should not be empty
                 })
             }
-            case Asgn(lv, rv) => ??? 
-            case Read(lv) => ???
+
+            // LArrElem and Pairs
+            case Asgn(lv, rv) => ???
+
+            case Read(lv) => lv match {
+                case LIdent(id) => {
+                    // Find the variable in the symbol table and get its position.
+                    val v = sem.curSymTable.findVarGlobal(id).get
+                    
+                    // Function to generate both cases to load and store instructions.
+                    def generateInstructions(pos: Position): List[Instruction] = pos match {
+                        /* If the variable is in a register, generate a move instruction to move 
+                           its value to the primary scratch register. */
+                        case InRegister(r) => List(Move(RegisterX(primary), RegisterX(r)))
+                        /* If the variable is on the temporary stack, generate instructions 
+                           to move its offset to the secondary scratch register and load 
+                           its value to the primary scratch register. */
+                        case OnTempStack(r) => List(
+                            Move(ImmNum(r), RegisterX(secondary)),
+                            Load(BaseOfsRA(RegisterX(formatter.regConf.pointerReg), RegisterX(secondary)), RegisterX(primary))
+                        )
+                        /* If the variable is on the stack, generate instructions to move its 
+                           offset to the secondary scratch register and load its value to the primary 
+                           scratch register. */
+                        case OnStack(offset) => List(
+                            Move(ImmNum(offset), RegisterX(secondary)),
+                            Load(BaseOfsRA(RegisterX(formatter.regConf.framePReg), RegisterX(secondary)), RegisterX(primary))
+                        )
+                        case Undefined => throw new RuntimeException("Invalid position for read.")
+                    }
+
+                    val loadInstr = generateInstructions(v.pos) // Include the readIntFx internal function in the formatter.
+
+                    // Preserves original value in cases of empty inputs for scanf.
+                    val saveVarInstr = List(Move(RegisterX(primary), RegisterX(0)))
+
+                    // Check the type of the variable and include the appropriate read function.
+                    val readFx = sem.getType(lv) match {
+                        case S_INT => new readIntFx(formatter)
+                        case S_CHAR => new readCharFx(formatter)
+                        case _ => throw new RuntimeException("Invalid type for read.")
+                    }
+
+                    formatter.includeFx(readFx)
+
+                    /* Generate the load instructions and call the readIntFx function. 
+                       The result will be stored in the primary scratch register. */
+                    val readInstr =  loadInstr ++ saveVarInstr ++ callFx(readFx.label, formatter.regConf.scratchRegs, Left(List()), List())
+                    val storeInstr = generateInstructions(v.pos) // Store the result back into the variable.
+
+                    readInstr ++ storeInstr
+                }
+                case _ => throw new RuntimeException("Invalid case for read.")
+            }
+
             case Free(x) => {
                 // Include the errorNullFx internal function in the formatter.
                 formatter.includeFx(new errorNullFx(formatter))
@@ -372,6 +425,7 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                     BranchLink("free")
                     )
             }
+
             case Return(x) => translate(x, formatter.regConf.scratchRegs) ++ 
                 List(
                     Move(RegisterX(formatter.regConf.scratchRegs(0)),
@@ -449,32 +503,46 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
         }
     }
 
-    def translate(lv: LValue, regs: List[Int]): List[Instruction] = lv match {
-        // This is responsible for getting the *address* of the lvalue
-        case LArrElem(id, xs) => ??? 
-        
-        case LIdent(id) => loadContentsFromIdentifier(id, regs)
-        // NOTE: We get here ONLY when we need to find the address of the id
-        // I.e. when the id is a pair or an array.
-        // So, we just return their contents
-        
-        case pe: PairElem => {
-            // This gets you the location of the specific pair element.
-            val instrs = new ListBuffer[Instruction]
+    def translate(lv: LValue, regs: List[Int]): List[Instruction] ={
+        val primary = regs(0)
+        val secondary = regs(1)
+        lv match {
+            // This is responsible for getting the *address* of the lvalue
+            case LArrElem(id, xs) => ??? 
+            
+            case LIdent(id) => loadContentsFromIdentifier(id, regs)
+            // NOTE: We get here ONLY when we need to find the address of the id
+            // I.e. when the id is a pair or an array.
+            // So, we just return their contents
+            
+            case pe: PairElem => {
+                // This gets you the location of the specific pair element.
+                val instrs = new ListBuffer[Instruction]
+                
+                val lv_ = pe match {
+                    case First(p) => p
+                    case Second(p) => p
+                }
 
-            pe match {
-                case First(lv) => {
-                    instrs.addAll(translate(lv, regs)) // Address of the pair itself
+                instrs.addAll(translate(lv_, regs)) 
+                // determining the reference r_p which is the pointer of p
+
+                instrs.addAll(List(
+                    Compare(RegisterX(primary), RegisterXZR),
+                    BranchCond(formatter.includeFx(new errorNullFx(formatter)), EqI)
+                )) // Check
+                
+                pe match {
+                    case First(pos)  => instrs.addOne(Move(ImmNum(0), RegisterX(secondary)))
+                    case Second(pos) => instrs.addOne(Move(ImmNum(formatter.getSize(S_ANY)), RegisterX(secondary)))
                 }
-                case Second(lv) => {
-                    instrs.addAll(translate(lv, regs)) // Address of the pair itself 
-                    instrs.addAll(List(
-                        Move(ImmNum(formatter.getSize(S_ANY)), RegisterX(regs(1))),
-                        AddI(RegisterX(regs(1)), RegisterX(regs.head))
-                    ))// Address of the offset
-                }
+
+                instrs.addAll(List(
+                    Load(BaseOfsRA(RegisterX(primary), RegisterX(secondary)), RegisterX(primary)),
+                )) // following r_p to abtain a pointer to the pair p
+
+                instrs.toList
             }
-            instrs.toList
         }
     }
 
@@ -538,21 +606,28 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                 val instrs = new ListBuffer[Instruction]
                 // This loads the contents of the pair from either location
                 // For the address of the pair for each location, you use the lvalue instance of PairElem.
-                var loadPosition = 0
+                
+                var lv = pe match {
+                    case First(lv) => lv
+                    case Second(lv) => lv
+                }
+                
+                instrs.addAll(translate(lv, regs)) // obtain reference r
+                instrs.addAll(List(
+                    Compare(RegisterX(primary), RegisterXZR),
+                    BranchCond(formatter.includeFx(new errorNullFx(formatter)), EqI),
+                )) // following r to abtain a pointer to the pair p
+
+                
                 pe match {
                     case First(lv) => {
-                        instrs.addAll(translate(lv, regs))
                         instrs.addOne(Move(ImmNum(0), RegisterX(secondary)))
                     }
                     case Second(lv) => {
-                        instrs.addAll(translate(lv, regs))
-                        loadPosition = 1
-                        instrs.addOne(Move(ImmNum(1), RegisterX(secondary)))
+                        instrs.addOne(Move(ImmNum(formatter.getSize(S_ANY)), RegisterX(secondary)))
                     }
                 }
-                
-                instrs.addOne(Move(RegisterX(primary), RegisterX(formatter.regConf.argRegs(0))))
-                instrs.addAll(callFx(formatter.includeFx(new PairLoadFx(formatter)), regs, Left(List(RegisterX(primary), (RegisterX(secondary)))), List()))
+                instrs.addOne(Load(BaseOfsRA(RegisterX(primary), RegisterX(secondary)), RegisterX(primary)))
 
                 instrs.toList
             }
@@ -566,8 +641,7 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
         case S_BOOL => formatter.includeFx(new printBoolFx(formatter))
         case S_CHAR => formatter.includeFx(new printCharFx(formatter))
         case S_INT =>  formatter.includeFx(new printIntFx(formatter))
-        case S_PAIR(_, _) | S_ERASED => formatter.includeFx(new printPointerFx(formatter)) 
-        case S_ARRAY(tp) => formatter.includeFx(new printPointerFx(formatter))
+        case S_PAIR(_, _) | S_ARRAY(_) | S_ERASED |  S_ANY | S_EMPTYARR => formatter.includeFx(new printPointerFx(formatter)) 
     }
 
     def pushRegs(regs: List[Int]): List[Instruction] = {
