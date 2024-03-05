@@ -68,7 +68,9 @@ case class RegisterW(regN: Int) extends Register
 case object RegisterXR extends Register // Indirect result register
 case object RegisterWR extends Register
 case object RegisterFP extends Register // Frame pointer
-case object RegisterLR extends Register // Link register
+case object RegisterLR extends Register { // Link register
+  val w: RegisterW = RegisterW(30)
+} 
 case object RegisterSP extends Register with RegisterXorSP // Stack pointer
 case object RegisterWSP extends Register // Stack pointer
 case object RegisterXZR extends Register // Zero register

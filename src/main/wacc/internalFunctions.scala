@@ -366,66 +366,6 @@ class readCharFx(frm: Aarch64_formatter) extends InternalFunction {
     override def hashCode(): Int = 15
 }
 
-class ArrayStoreFx(frm: Aarch64_formatter, val size: Int) extends InternalFunction {
-    val label: String = s"_arrStore$size"
-    val dependencies: List[InternalFunction] = List(new errorOutOfBoundsFx(frm))
-    val instructions: List[Instruction] = {
-        List(
-            Label(label),
-            Comment("Special calling convention: array ptr passed in X7, index in X17, value to store in X8,LR (W30) is used as general register"),
-            Push(RegisterLR, RegisterXZR),
-            SignExWord(RegisterW(17), RegisterX(17)),
-            Compare(RegisterW(17), RegisterWZR),
-            CondSelect(RegisterX(17), RegisterX(1), RegisterX(1), LtI),
-            BranchCond(dependencies(0).label, LtI),
-            Move(ImmNum(-(frm.getSize(S_INT))), RegisterX(9)), // Temporary (-4 should come from the size of S_INT)
-            LoadWord(BaseOfsRA(RegisterX(7), RegisterX(9)), RegisterLR), // ldrsw lr, [x7, #-4]
-            Compare(RegisterW(17), RegisterW(30)),
-            CondSelect(RegisterX(17), RegisterX(1), RegisterX(1), GeI),
-            BranchCond(dependencies(0).label, GeI),
-            size match {
-                case 1 => StoreByte(RegisterWR, BaseOfsRA(RegisterX(7), RegisterX(17)))
-                case 4 => Store(RegisterWR, BaseOfsExtendShift(RegisterX(7), RegisterX(17), LiteralA("lsl"), Some(2))) // str w8, [x7, x17, lsl #2]
-                case 8 => Store(RegisterXR, BaseOfsExtendShift(RegisterX(7), RegisterX(17), LiteralA("lsl"), Some(3))) // str x8, [x7, x17, lsl #3]
-            },
-            Pop(RegisterLR, RegisterXZR),
-            ReturnI
-        )
-    }
-    override def equals(x: Any): Boolean = x.isInstanceOf[ArrayStoreFx] && x.asInstanceOf[ArrayStoreFx].size == size
-    override def hashCode(): Int = 100 + size
-}
-
-class ArrayLoadFx(frm: Aarch64_formatter, val size: Int) extends InternalFunction {
-    val label: String = s"_arrLoad$size"
-    val dependencies: List[InternalFunction] = List(new errorOutOfBoundsFx(frm))
-    val instructions: List[Instruction] = {
-        List(
-            Label(label),
-            Comment("Special calling convention: array ptr passed in X7, index in X17, LR (W30) is used as general register, and return into X7"),
-            Push(RegisterLR, RegisterXZR),
-            SignExWord(RegisterW(17), RegisterX(17)),
-            Compare(RegisterW(17), RegisterWZR),
-            CondSelect(RegisterX(17), RegisterX(1), RegisterX(1), LtI),
-            BranchCond(dependencies(0).label, LtI),
-            Move(ImmNum(-(frm.getSize(S_INT))), RegisterX(9)), // Temporary (-4 should come from the size of S_INT)
-            LoadWord(BaseOfsRA(RegisterX(7), RegisterX(9)), RegisterLR), // ldrsw lr, [x7, #-4]
-            Compare(RegisterW(17), RegisterW(30)),
-            CondSelect(RegisterX(17), RegisterX(1), RegisterX(1), GeI),
-            BranchCond(dependencies(0).label, GeI),
-            size match {
-                case 1 => LoadByte(BaseOfsRA(RegisterX(7), RegisterX(17)), RegisterX(7), true)
-                case 4 => LoadWord(BaseOfsExtendShift(RegisterX(7), RegisterX(17), LiteralA("lsl"), Some(2)), RegisterX(7)) // ldrsw x7, [x7, x17, lsl #2]
-                case 8 => Load(BaseOfsExtendShift(RegisterX(7), RegisterX(17), LiteralA("lsl"), Some(3)), RegisterX(7)) // ldr x7, [x7, x17, lsl #3]
-            },
-            Pop(RegisterLR, RegisterXZR),
-            ReturnI
-        )
-    }
-    override def equals(x: Any): Boolean = x.isInstanceOf[ArrayLoadFx] && x.asInstanceOf[ArrayLoadFx].size == size
-    override def hashCode(): Int = 200 + size
-}
-
 class PairLoadFx(frm: Aarch64_formatter) extends InternalFunction {
     val label: String = "_pairLoad"
     val dependencies: List[InternalFunction] = List.empty
