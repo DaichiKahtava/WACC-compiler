@@ -6,6 +6,11 @@ class Semantics(fileName: String) {
     var curSymTable = new SymTable(None, None, false)
     var errorRep = new SemErrorReporter(fileName)
 
+    def getArity(tp: S_TYPE): Int = tp match {
+        case S_ARRAY(tp) => 1 + getArity(tp)
+        case _ => 0
+    }
+
     /// Expressions ///
     def getType(e: Expr): S_TYPE = {
         return e match {
@@ -286,7 +291,23 @@ class Semantics(fileName: String) {
             case And(x1, x2) => (isSemCorrect(x1) && equalType(getType(x1), S_BOOL, x1.pos)) && (isSemCorrect(x2) && equalType(getType(x2), S_BOOL, x2.pos))
             case Or(x1, x2) => (isSemCorrect(x1) && equalType(getType(x1), S_BOOL, x1.pos)) && (isSemCorrect(x2) && equalType(getType(x2), S_BOOL, x2.pos))
 
-            case ArrElem(_, xs)  => isSemCorrect(xs) && (xs.foldLeft(true)((b, x) => b && equalType(getType(x), S_INT, x.pos)))
+            case ArrElem(id, xs)  => {
+                curSymTable.findVarGlobal(id) match {
+                    case None => {
+                        errorRep.addError("Unrecognised variable:" + id, e.pos)
+                        false
+                    }
+                    case Some(VARIABLE(tp)) => {
+                        if (! (isSemCorrect(xs) && (xs.foldLeft(true)((b, x) => b && equalType(getType(x), S_INT, x.pos))) && 
+                        getArity(tp) >= xs.length)) {
+                            errorRep.addError("Array arity mishmatch", e.pos)
+                            false
+                        } else {
+                            true
+                        }
+                    }
+                }
+            }
         }
     }
 
@@ -362,7 +383,23 @@ class Semantics(fileName: String) {
             if (isSemCorrect(rv)) {
                 val curType = getType(rv)
                 rv match {
-                    case RExpr(ArrElem(id, xs)) => checkCompatible(curType, toSemanticType(tp), d.pos)
+                    case RExpr(ArrElem(id, xs)) => curSymTable.findVarGlobal(id) match {
+                            case None => {
+                                errorRep.addError("Unrecognised variable: " + id, d.pos)
+                                return false
+                            }
+                            case Some(VARIABLE(t@S_ARRAY(_))) => {
+                                if (t != toSemanticType(tp)) {
+                                    errorRep.addError("Array arity mismatch: " + id, d.pos)
+                                    return false
+                                } else {
+                                    return true
+                                }
+                            }
+                            case Some(_) => {
+                                return false
+                            }
+                        }
                     case pe: PairElem if curType == S_ANY => true
                     case _ => checkCompatible(curType, toSemanticType(tp), d.pos)
                 }
@@ -474,7 +511,14 @@ class Semantics(fileName: String) {
             }        
         }
         case l@LArrElem(id, xs) => isSemCorrect(xs) && (curSymTable.findVarGlobal(id) match {
-            case Some(VARIABLE(S_ARRAY(_))) => true 
+            case Some(VARIABLE(t@S_ARRAY(_))) => {
+                if (getArity(t) >= xs.length) {
+                    return true
+                } else {
+                    errorRep.addError("Array arity mishmatch", l.pos)
+                    return false
+                }
+            } 
             case Some(VARIABLE(_)) => {
                 errorRep.addError("Not an array: \"" + id + "\"", l.pos)
                 false
