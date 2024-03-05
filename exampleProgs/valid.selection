@@ -3,7 +3,7 @@
 'exampleProgs/valid/advanced/ticTacToe.wacc
 exampleProgs/valid/array/arrayBasic.wacc
 exampleProgs/valid/array/arrayEmpty.wacc
-'exampleProgs/valid/array/arrayIndexMayBeArrayIndex.wacc
+exampleProgs/valid/array/arrayIndexMayBeArrayIndex.wacc
 exampleProgs/valid/array/arrayLength.wacc
 exampleProgs/valid/array/arrayLookup.wacc
 exampleProgs/valid/array/arrayNested.wacc
@@ -91,7 +91,7 @@ exampleProgs/valid/pairs/nestedPairLeftAssign.wacc
 exampleProgs/valid/pairs/nestedPairRightExtract.wacc
 exampleProgs/valid/pairs/nestedPair.wacc
 exampleProgs/valid/pairs/null.wacc
-'exampleProgs/valid/pairs/pairarray.wacc
+exampleProgs/valid/pairs/pairarray.wacc
 exampleProgs/valid/pairs/pairExchangeArrayOk.wacc
 exampleProgs/valid/pairs/printNullPair.wacc
 exampleProgs/valid/pairs/printNull.wacc

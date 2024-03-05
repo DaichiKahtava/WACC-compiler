@@ -599,7 +599,7 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                     BranchCond(formatter.includeFx(new errorNullFx(formatter)), EqI)
                 )) // Check
 
-                if (lv_.isInstanceOf[PairElem]) {
+                if (lv_.isInstanceOf[PairElem] || lv_.isInstanceOf[LArrElem]) {
                     instructionList ++= (List(
                         Move(ImmNum(0), RegisterX(secondary)),
                         Load(BaseOfsRA(RegisterX(primary), RegisterX(secondary)), RegisterX(primary))
@@ -693,7 +693,7 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                     BranchCond(formatter.includeFx(new errorNullFx(formatter)), EqI),
                 )) 
                 
-                if (lv.isInstanceOf[PairElem]) {
+                if (lv.isInstanceOf[PairElem] || lv.isInstanceOf[LArrElem]) {
                     instructionList ++= (List(
                         Move(ImmNum(0), RegisterX(secondary)),
                         Load(BaseOfsRA(RegisterX(primary), RegisterX(secondary)), RegisterX(primary))
