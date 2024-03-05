@@ -328,19 +328,23 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
         val primary = scratchRegs(0)
         val secondary = scratchRegs(1)
         val tertiary = scratchRegs(2)
+        val instructionList = ListBuffer.empty[Instruction]
         stmt match {
-            case Skip() => Nil
+            case Skip() => instructionList ++= Nil
             case Decl(tp, id, rv) => {
                 var charCheck = List[Instruction]()
                 if (tp.isInstanceOf[CharT]) {
                     formatter.includeFx(new errorBadCharFx(formatter))
                     charCheck = List(isChar(RegisterX(primary)))
                 }
-                translate(rv, scratchRegs) ++ charCheck ++ storeContentsToIdentifier(id, scratchRegs)
+                instructionList ++= translate(rv, scratchRegs)
+                instructionList ++= charCheck
+                instructionList ++= storeContentsToIdentifier(id, scratchRegs)
             }
 
             case Asgn(LIdent(id), rv) => {
-                translate(rv, scratchRegs) ++ storeContentsToIdentifier(id, scratchRegs)
+                instructionList ++= translate(rv, scratchRegs)
+                instructionList ++= storeContentsToIdentifier(id, scratchRegs)
             }
             case Asgn(LArrElem(id, xs), rv) => { // TODO: Nested array extractoin
                 /*
@@ -363,8 +367,8 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                 val elemSize = formatter.getSize(elemType)
                 formatter.includeFx(new ArrayStoreFx(formatter, elemSize))
 
-                extractPtr ++
-                (xs match {
+                instructionList ++= extractPtr
+                instructionList ++= (xs match {
                     case x :: Nil =>
                         translate(x, scratchRegs) ++ // Index in X8
                         List(Move(RegisterW(primary), RegisterW(17))) ++ // Index in W17
@@ -377,19 +381,15 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
 
             // LArrElem and Pairs
             case Asgn(lv, rv) => {
-                val instrs = ListBuffer.empty[Instruction]
+                instructionList ++= translate(rv, scratchRegs)
+                instructionList += Push(RegisterX(primary), RegisterXZR)
+                instructionList ++= translate(lv, scratchRegs)
+                instructionList += Pop(RegisterX(secondary), RegisterXZR)
 
-                instrs.addAll(translate(rv, scratchRegs))
-                instrs.addOne(Push(RegisterX(primary), RegisterXZR))
-                instrs.addAll(translate(lv, scratchRegs))
-                instrs.addOne(Pop(RegisterX(secondary), RegisterXZR))
-
-                instrs.addAll(List(
+                instructionList ++= (List(
                     Move(ImmNum(0), RegisterX(tertiary)),
                     Store(RegisterX(secondary), BaseOfsRA(RegisterX(primary), RegisterX(tertiary)))
                 ))
-
-                instrs.toList
             }
 
             case Read(lv) => lv match {
@@ -419,10 +419,10 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                         case Undefined => throw new RuntimeException("Invalid position for read.")
                     }
 
-                    val loadInstr = generateInstructions(v.pos) // Include the readIntFx internal function in the formatter.
+                    instructionList ++= generateInstructions(v.pos) // Include the readIntFx internal function in the formatter.
 
                     // Preserves original value in cases of empty inputs for scanf.
-                    val saveVarInstr = List(Move(RegisterX(primary), RegisterX(0)))
+                    instructionList ++= List(Move(RegisterX(primary), RegisterX(0)))
 
                     // Check the type of the variable and include the appropriate read function.
                     val readFx = sem.getType(lv) match {
@@ -435,10 +435,8 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
 
                     /* Generate the load instructions and call the readIntFx function. 
                        The result will be stored in the primary scratch register. */
-                    val readInstr =  loadInstr ++ saveVarInstr ++ callFx(readFx.label, formatter.regConf.scratchRegs, Left(List()), List())
-                    val storeInstr = generateInstructions(v.pos) // Store the result back into the variable.
-
-                    readInstr ++ storeInstr
+                    instructionList ++= callFx(readFx.label, formatter.regConf.scratchRegs, Left(List()), List())
+                    instructionList ++= generateInstructions(v.pos) // Store the result back into the variable.
                 }
                 case _ => throw new RuntimeException("Invalid case for read.")
             }
@@ -446,8 +444,8 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
             case Free(x) => {
                 // Include the errorNullFx internal function in the formatter.
                 formatter.includeFx(new errorNullFx(formatter))
-                translate(x, scratchRegs) ++ 
-                List(
+                instructionList ++= translate(x, scratchRegs)
+                instructionList ++= List(
                     // Compare the value in the primary scratch register with zero.
                     Compare(RegisterX(primary), RegisterXZR),
                     // If they are equal (i.e., the pointer is null), branch to the '_errNull' label.
@@ -461,81 +459,79 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                     )
             }
 
-            case Return(x) => translate(x, formatter.regConf.scratchRegs) ++ 
-                List(
+            case Return(x) => {
+                instructionList ++= translate(x, formatter.regConf.scratchRegs)
+                instructionList ++= List(
                     Move(RegisterX(formatter.regConf.scratchRegs(0)),
                     RegisterX(formatter.regConf.resultRegister))
-                ) ++
-                calleeRestore() ++ 
-                List(
+                )
+                instructionList ++= calleeRestore()
+                instructionList ++= List(
                     // DEALLOC ALL VARIABLES!!!
                     Move(ImmNum(sem.curSymTable.stackAllocVars), RegisterX(formatter.regConf.scratchRegs.head)),
                     SubI(RegisterX(formatter.regConf.scratchRegs.head), RegisterSP),
                     Pop(RegisterFP, RegisterLR), ReturnI
                 )
-            case Exit(x) => callFx("exit", formatter.regConf.scratchRegs, Right(List(x)), List(S_INT))
-            case Print(x) => callFx(determinePrint(x), formatter.regConf.scratchRegs, Right(List(x)), List(S_ANY))
+            }
+            
+            case Exit(x) => instructionList ++= callFx("exit", formatter.regConf.scratchRegs, Right(List(x)), List(S_INT))
+            case Print(x) => instructionList ++= callFx(determinePrint(x), formatter.regConf.scratchRegs, Right(List(x)), List(S_ANY))
             case Println(x) => {
-                callFx(determinePrint(x), formatter.regConf.scratchRegs, Right(List(x)), List(S_ANY)) ++
-                callFx(formatter.includeFx(new printLineFx(formatter)), formatter.regConf.scratchRegs, Left(List()), List())
+                instructionList ++= callFx(determinePrint(x), formatter.regConf.scratchRegs, Right(List(x)), List(S_ANY))
+                instructionList ++= callFx(formatter.includeFx(new printLineFx(formatter)), formatter.regConf.scratchRegs, Left(List()), List())
             }
             case Cond(x, s1, s2) => { // TODO: Defintely need to change that
                 val s1Label = formatter.generateGeneralLabel()
                 val s2Label = formatter.generateGeneralLabel()
-                val instrs = ListBuffer.empty[Instruction]
-                instrs.addAll(translate(x, scratchRegs)) 
-                instrs.addAll(List(
+                instructionList ++= translate(x, scratchRegs)
+                instructionList ++= (List(
                     Compare(RegisterX(primary), RegisterXZR), // TODO: Change ResiterXZR
                     BranchCond(s1Label, EqI),
                 ))
                 // TODO: Make sure that s1 and s2 have access to the parent symbol table but dont have access to each other's
                 sem.curSymTable = sem.curSymTable.getNextChildSymbolTable()
-                instrs.addAll(calleeSave())
-                instrs.addAll(translate(s1))
-                instrs.addAll(calleeRestoreLocal())
+                instructionList ++= calleeSave()
+                instructionList ++= translate(s1)
+                instructionList ++= calleeRestoreLocal()
                 sem.curSymTable = sem.curSymTable.parent().get
-                instrs.addAll(List(Branch(s2Label), Label(s1Label)))
+                instructionList ++= (List(Branch(s2Label), Label(s1Label)))
                 sem.curSymTable = sem.curSymTable.getNextChildSymbolTable()
-                instrs.addAll(calleeSave())
-                instrs.addAll(translate(s2))
-                instrs.addAll(calleeRestoreLocal())
+                instructionList ++= calleeSave()
+                instructionList ++= translate(s2)
+                instructionList ++= calleeRestoreLocal()
                 sem.curSymTable = sem.curSymTable.parent().get
-                instrs.addOne(Label(s2Label))
-                instrs.toList
+                instructionList += Label(s2Label)
             }
             case Loop(x, s) => {
                 val loopLabel = formatter.generateGeneralLabel()
                 val condLabel = formatter.generateGeneralLabel()
-                val instrs = ListBuffer.empty[Instruction]
-                instrs.addAll(List(
+                instructionList ++= (List(
                     Branch(condLabel),
                     Label(loopLabel)
                 ))
                 sem.curSymTable = sem.curSymTable.getNextChildSymbolTable()
-                instrs.addAll(calleeSave())
-                instrs.addAll(translate(s))
-                instrs.addAll(calleeRestoreLocal())
+                instructionList ++= calleeSave()
+                instructionList ++= translate(s)
+                instructionList ++= calleeRestoreLocal()
                 sem.curSymTable = sem.curSymTable.parent().get
-                instrs.addOne(Label(condLabel))
-                instrs.addAll(translate(x, scratchRegs))
-                instrs.addAll(List(
+                instructionList += Label(condLabel)
+                instructionList ++= translate(x, scratchRegs)
+                instructionList ++= (List(
                     Compare(RegisterX(primary), RegisterXZR), // TODO: Change ResiterXZR
                     BranchCond(loopLabel, NeI),
                 ))
-                instrs.toList
             }
             case Body(s) => {
-                val instrs = ListBuffer.empty[Instruction]
                 sem.curSymTable = sem.curSymTable.getNextChildSymbolTable()
-                instrs.addAll(calleeSave())
-                instrs.addAll(translate(s))
-                instrs.addAll(calleeRestoreLocal())
+                instructionList ++= calleeSave()
+                instructionList ++= translate(s)
+                instructionList ++= calleeRestoreLocal()
                 sem.curSymTable = sem.curSymTable.parent().get
-                instrs.toList
             }
 
-            case Delimit(s1, s2) => translate(s1) ++ translate(s2)
+            case Delimit(s1, s2) => instructionList ++= translate(s1) ++ translate(s2)
         }
+        instructionList.toList
     }
 
     def translate(lv: LValue, regs: List[Int]): List[Instruction] ={
