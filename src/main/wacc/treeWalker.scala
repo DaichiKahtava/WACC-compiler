@@ -29,36 +29,41 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
         val primary   = regs(0)
         val secondary = regs(1)
         val tertiary = regs(2)
+        val instructionList = ListBuffer.empty[Instruction]
 
         e match {
 
             // UnOp expressions.
-            case Not(x) => translate(x, regs) ++ 
-                List(
+            case Not(x) => {
+                instructionList ++= translate(x, regs)
+                instructionList ++= List(
                     Move(ImmNum(1), RegisterX(secondary)),
                     Compare(RegisterX(primary), RegisterX(secondary)), 
                     SetCond(RegisterX(primary), NeI)
                 )
+            }
 
-            case Neg(x) => 
+            case Neg(x) => {
                 formatter.includeFx(new errorOverFlowFx(formatter))
-                translate(x, regs) ++
-                List(
+                instructionList ++= translate(x, regs)
+                instructionList ++= List(
                     Move(RegisterX(primary), RegisterX(secondary)),
                     Move(ImmNum(0), RegisterX(primary)), 
                     SubI(RegisterW(secondary), RegisterW(primary)),
                     BranchCond("_errOverflow", VsI)
                 )
+            }
 
-            case Len(x) => 
-                translate(x, regs) ++ 
-                List(
+            case Len(x) => {
+                instructionList ++= translate(x, regs)
+                instructionList ++= List(
                     Move(ImmNum(-(formatter.getSize(S_INT))), RegisterX(secondary)),
                     LoadWord(BaseOfsRA(RegisterX(primary), RegisterX(secondary)), RegisterX(primary))
                 )
+            }
             
-            case Ord(x) => translate(x, regs) 
-            case Chr(x) => translate(x, regs) 
+            case Ord(x) => instructionList ++= translate(x, regs) 
+            case Chr(x) => instructionList ++= translate(x, regs) 
 
             // BinOp expressions.
             
@@ -66,29 +71,33 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
 
             // TODO: Add over/underflow checks for add and mul
             // TODO: Duplicate code --> Abstraction of biinary operators
-            case Add(x, y) => 
-                translateTwoExpr(x, y, regs) ++
-                List(AddI(RegisterX(secondary), RegisterX(primary)))
+            case Add(x, y) => {
+                instructionList ++= translateTwoExpr(x, y, regs)
+                instructionList ++= List(AddI(RegisterX(secondary), RegisterX(primary)))
+            }
             
-            case Minus(x, y) =>
-                translateTwoExpr(x, y, regs) ++
-                List(SubI(RegisterX(secondary), RegisterX(primary)))
+            case Minus(x, y) => {
+                instructionList ++= translateTwoExpr(x, y, regs)
+                instructionList ++= List(SubI(RegisterX(secondary), RegisterX(primary)))
+            }
             
-            case Mul(x, y) =>
-                translateTwoExpr(x, y, regs) ++
-                List(MulI(RegisterX(secondary), RegisterX(primary)))
+            case Mul(x, y) => {
+                instructionList ++= translateTwoExpr(x, y, regs)
+                instructionList ++= List(MulI(RegisterX(secondary), RegisterX(primary)))
+            }
 
             case Div(x, y) => {
-                translateTwoExpr(x, y, regs) ++
-                List(
+                instructionList ++= translateTwoExpr(x, y, regs)
+                instructionList ++= List(
                     Compare(RegisterXZR, RegisterX(secondary)),
                     BranchCond(formatter.includeFx(new errorDivZeroFx(formatter)), EqI),
                     DivI(RegisterX(secondary), RegisterX(primary))
                 )
             }
+
             case Mod(x, y) => {
-                translateTwoExpr(x, y, regs) ++
-                List(
+                instructionList ++= translateTwoExpr(x, y, regs)
+                instructionList ++= List(
                     Compare(RegisterXZR, RegisterX(secondary)),
                     BranchCond(formatter.includeFx(new errorDivZeroFx(formatter)), EqI),
                     Move(RegisterX(primary), RegisterX(tertiary)),  // Store x into another register.
@@ -98,35 +107,41 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                 )
             }
 
-            case GrT(x, y) => 
-                translateTwoExpr(x, y, regs) ++
-                List(Compare(RegisterX(primary), RegisterX(secondary)), SetCond(RegisterX(primary), GtI))
+            case GrT(x, y) => {
+                instructionList ++= translateTwoExpr(x, y, regs)
+                instructionList ++= List(Compare(RegisterX(primary), RegisterX(secondary)), SetCond(RegisterX(primary), GtI))
+            }
 
-            case GrEqT(x, y) =>
-                translateTwoExpr(x, y, regs) ++
-                List(Compare(RegisterX(primary), RegisterX(secondary)), SetCond(RegisterX(primary), GeI))
+            case GrEqT(x, y) => {
+                instructionList ++= translateTwoExpr(x, y, regs)
+                instructionList ++= List(Compare(RegisterX(primary), RegisterX(secondary)), SetCond(RegisterX(primary), GeI))
+            }
 
-            case LsT(x, y) =>
-                translateTwoExpr(x, y, regs) ++
-                List(Compare(RegisterX(primary), RegisterX(secondary)), SetCond(RegisterX(primary), LtI))
+            case LsT(x, y) => {
+                instructionList ++= translateTwoExpr(x, y, regs)
+                instructionList ++= List(Compare(RegisterX(primary), RegisterX(secondary)), SetCond(RegisterX(primary), LtI))
+            }
 
-            case LsEqT(x, y) =>
-                translateTwoExpr(x, y, regs) ++
-                List(Compare(RegisterX(primary), RegisterX(secondary)), SetCond(RegisterX(primary), LeI))
+            case LsEqT(x, y) => {
+                instructionList ++= translateTwoExpr(x, y, regs)
+                instructionList ++= List(Compare(RegisterX(primary), RegisterX(secondary)), SetCond(RegisterX(primary), LeI))
+            }
 
-            case Eq(x, y) =>
-                translateTwoExpr(x, y, regs) ++
-                List(Compare(RegisterX(primary), RegisterX(secondary)), SetCond(RegisterX(primary), EqI))
+            case Eq(x, y) => {
+                instructionList ++= translateTwoExpr(x, y, regs)
+                instructionList ++= List(Compare(RegisterX(primary), RegisterX(secondary)), SetCond(RegisterX(primary), EqI))
+            }
 
-            case NEq(x, y) =>
-                translateTwoExpr(x, y, regs) ++
-                List(Compare(RegisterX(primary), RegisterX(secondary)), SetCond(RegisterX(primary), NeI))
+            case NEq(x, y) => {
+                instructionList ++= translateTwoExpr(x, y, regs)
+                instructionList ++= List(Compare(RegisterX(primary), RegisterX(secondary)), SetCond(RegisterX(primary), NeI))
+            }
                 
-            case And(x, y) =>
+            case And(x, y) => {
                 val curLabel = formatter.generateGeneralLabel()
-                translateTwoExpr(x, y, regs) ++
+                instructionList ++= translateTwoExpr(x, y, regs)
                 // TODO: ImmNum magic number for true!
-                List(
+                instructionList ++= List(
                     Move(ImmNum(1), RegisterX(tertiary)),
                     Compare(RegisterX(primary), RegisterX(tertiary)),
                     BranchCond(curLabel, NeI),
@@ -134,11 +149,12 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                     Label(curLabel),
                     SetCond(RegisterX(primary), EqI)
                 )
+            }
 
-            case Or(x, y) => 
+            case Or(x, y) => {
                 val curLabel = formatter.generateGeneralLabel()
-                translateTwoExpr(x, y, regs) ++
-                List(
+                instructionList ++= translateTwoExpr(x, y, regs)
+                instructionList ++= List(
                     Move(ImmNum(1), RegisterX(tertiary)),
                     Compare(RegisterX(primary), RegisterX(tertiary)),
                     BranchCond(curLabel, EqI),
@@ -146,11 +162,12 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                     Label(curLabel),
                     SetCond(RegisterX(primary), EqI)
                 )
+            }
 
             // Atom expressions.
 
             // Load the integer directly.
-            case IntL(n) => List(Move(ImmNum(n), RegisterX(primary)))
+            case IntL(n) => instructionList ++= List(Move(ImmNum(n), RegisterX(primary)))
 
             // Load the boolean value using integers.
             case BoolL(b) => {
@@ -158,22 +175,21 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                     case true  => 1
                     case false => 0 
                 }
-                List(Move(ImmNum(value), RegisterX(primary)))
+                instructionList ++= List(Move(ImmNum(value), RegisterX(primary)))
             }
 
             // Obtain the integer value of a character.
-            case CharL(c) => List(Move(ImmNum(c.toInt), RegisterX(primary)))
+            case CharL(c) => instructionList ++= List(Move(ImmNum(c.toInt), RegisterX(primary)))
             
             case StrL(s) => {
                 val label = formatter.includeString(s)
-                return List(Address(label, RegisterX(regs.head)))
+                instructionList ++= List(Address(label, RegisterX(regs.head)))
             }
 
-            case PairL() => 
-                List(Move(ImmNum(0), RegisterX(primary))) // Treat as null pointer?
+            case PairL() => instructionList ++= List(Move(ImmNum(0), RegisterX(primary))) // Treat as null pointer?
 
             // Pattern match for the identifier.
-            case Ident(id) => loadContentsFromIdentifier(id, regs)
+            case Ident(id) => instructionList ++= loadContentsFromIdentifier(id, regs)
 
             // Todo: magic numbers for registers 7, 17
             case ArrElem(id, xs) => {     
@@ -188,8 +204,8 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                 var elemType = sem.curSymTable.findVarGlobal(id).get.tp.asInstanceOf[S_ARRAY].tp
                 var elemSize = formatter.getSize(elemType)
                 println(elemType)
-                extractPtr ++ 
-                (for (x <- xs) yield {
+                instructionList ++= extractPtr
+                instructionList ++= (for (x <- xs) yield {
                     elemSize = formatter.getSize(elemType)
                     formatter.includeFx(new ArrayLoadFx(formatter, elemSize))
                     val res = translate(x, regs) ++ 
@@ -200,9 +216,11 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                     if (elemType.isInstanceOf[S_ARRAY])
                         elemType = elemType.asInstanceOf[S_ARRAY].tp
                     res
-                }).flatten ++ List(Move(RegisterX(7), RegisterXR))
+                }).flatten
+                instructionList ++= List(Move(RegisterX(7), RegisterXR))
             }
         }
+        instructionList.toList
     }
 
     // Translates y pushes the value of y into the stack, then translates x and pops
