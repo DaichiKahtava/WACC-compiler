@@ -40,9 +40,7 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                     SetCond(RegisterX(primary), NeI)
                 )
 
-            case Neg(x) => 
-                formatter.includeFx(new errorOverFlowFx(formatter))
-                translate(x, regs) ++
+            case Neg(x) => translate(x, regs) ++
                 List(
                     Move(RegisterX(primary), RegisterX(secondary)),
                     Move(ImmNum(0), RegisterX(primary)), 
@@ -65,30 +63,18 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
 
 
             // TODO: Add over/underflow checks for add and mul
-            // TODO: Duplicate code --> Abstraction of binary operators
-            case Add(x, y) =>
-                formatter.includeFx(new errorOverFlowFx(formatter))
+            // TODO: Duplicate code --> Abstraction of biinary operators
+            case Add(x, y) => 
                 translateTwoExpr(x, y, regs) ++
-                List(
-                    AddI(RegisterW(secondary), RegisterW(primary)),
-                    BranchCond("_errOverflow", VsI)
-                )
+                List(AddI(RegisterX(secondary), RegisterX(primary)))
             
             case Minus(x, y) =>
-                formatter.includeFx(new errorOverFlowFx(formatter))
                 translateTwoExpr(x, y, regs) ++
-                List(
-                    SubI(RegisterW(secondary), RegisterW(primary)),
-                    BranchCond("_errOverflow", VsI)
-                )
+                List(SubI(RegisterX(secondary), RegisterX(primary)))
             
             case Mul(x, y) =>
-                formatter.includeFx(new errorOverFlowFx(formatter))
                 translateTwoExpr(x, y, regs) ++
-                List(
-                    MulI(RegisterX(secondary), RegisterX(primary)),
-                    BranchCond("_errOverflow", NeI)
-                )
+                List(MulI(RegisterX(secondary), RegisterX(primary)))
 
             case Div(x, y) => {
                 translateTwoExpr(x, y, regs) ++

@@ -121,13 +121,9 @@ class Aarch64_formatter() {
         case BranchCond(label, cond) => "b." + generateCondition(cond) + "\t" + label + "\n"
         case BranchLink(label) => "bl\t" + label + "\n"
 
-        case AddI(src, dst) => "adds\t" + generateRegister(dst) + ", " + generateRegister(dst) + ", " + generateOperand(src) + "\n"
-        case SubI(src, dst) => "subs\t" + generateRegister(dst) + ", " + generateRegister(dst) + ", " + generateOperand(src) + "\n"
-        // TODO: Has some random magic numbers
-        case MulI(src, dst) => 
-            "smull\t" + generateRegister(dst) + ", " + generateRegister(dst.asInstanceOf[RegisterX].w) + ", " + generateOperand(src.asInstanceOf[RegisterX].w) + "\n" + 
-            "sbfx\t" + generateRegister(src) + ", " + generateRegister(dst) + ", " + "#31, #1" + "\n" + 
-            "cmp\t" + generateRegister(src) + ", " + generateRegister(dst) + ", asr #32" + "\n"
+        case AddI(src, dst) => "add\t" + generateRegister(dst) + ", " + generateRegister(dst) + ", " + generateOperand(src) + "\n"
+        case SubI(src, dst) => "sub\t" + generateRegister(dst) + ", " + generateRegister(dst) + ", " + generateOperand(src) + "\n"
+        case MulI(src, dst) => "mul\t" + generateRegister(dst) + ", " + generateRegister(dst) + ", " + generateOperand(src) + "\n"
         case DivI(src, dst) => "sdiv\t" + generateRegister(dst) + ", " + generateRegister(dst) + ", " + generateOperand(src) + "\n"
 
         case Address(label, dst) => {
