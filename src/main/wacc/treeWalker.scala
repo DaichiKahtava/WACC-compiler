@@ -187,18 +187,18 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
 
             case ArrElem(id, xs) => {
                 val func = new errorOutOfBoundsFx(formatter)
-                instructionList.addAll(loadContentsFromIdentifier(id, regs)) // Address
-                instructionList.addOne(Push(RegisterX(primary), RegisterXZR))
+                instructionList ++= loadContentsFromIdentifier(id, regs) // Address
+                instructionList += Push(RegisterX(primary), RegisterXZR)
 
                 var currentType = sem.curSymTable.findVarGlobal(id).get.tp
                     for (i <- 0 to xs.length - 1) {
                         currentType = currentType.asInstanceOf[S_ARRAY].tp
                         var elemSize = formatter.getSize(currentType)
-                        instructionList.addAll(translate(xs(i), regs)) // Index in primary
+                        instructionList ++= translate(xs(i), regs) // Index in primary
 
-                        instructionList.addAll(checkArrBound(primary, secondary, tertiary))
+                        instructionList ++= checkArrBound(primary, secondary, tertiary)
                 
-                        instructionList.addAll(List(
+                        instructionList ++= (List(
                             Move(ImmNum(elemSize), RegisterX(secondary)),
                             MulI(RegisterX(secondary), RegisterX(primary)), // offset in primary
                             Pop(RegisterX(secondary), RegisterXZR),
@@ -208,7 +208,7 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                             
                         ))
 
-                        instructionList.addOne(
+                        instructionList += (
                             formatter.getSize(currentType) match {
                                 // loading not correct
                                 case 1 => LoadByte(BaseOfsRA(RegisterX(primary), RegisterX(secondary)), RegisterX(primary), true)
@@ -216,10 +216,10 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                                 case 8 => Load(BaseOfsRA(RegisterX(primary), RegisterX(secondary)), RegisterX(primary)) // ldr x7, [x7, x17, lsl #3]
                             }
                         )
-                        instructionList.addOne(Push(RegisterX(primary), RegisterXZR))
+                        instructionList += (Push(RegisterX(primary), RegisterXZR))
                     }
                     
-                instructionList.addOne(Pop(RegisterX(primary), RegisterXZR))
+                instructionList += (Pop(RegisterX(primary), RegisterXZR))
             }
         }
         instructionList.toList
@@ -294,7 +294,7 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
             // TODO: More idiomatic way of accessing the symbol table?
             sem.curSymTable = sem.curSymTable.findFunGlobal(f.id).get.st // We are in the local symbolTable.
             
-            instructionList.addAll(translate(f))
+            instructionList ++= translate(f)
             sem.curSymTable = sem.curSymTable.parent().get // We are in the parent/global symbolTable.
         })
         // TODO: Use blocks of sorts...
@@ -355,10 +355,10 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
 
             // LArrElem and Pairs
             case Asgn(lv, rv) => {
-                instructionList.addAll(translate(rv, scratchRegs))
-                instructionList.addOne(Push(RegisterX(primary), RegisterXZR))
-                instructionList.addAll(translate(lv, scratchRegs))
-                instructionList.addAll(List(
+                instructionList ++= translate(rv, scratchRegs)
+                instructionList += Push(RegisterX(primary), RegisterXZR)
+                instructionList ++= translate(lv, scratchRegs)
+                instructionList ++= (List(
                     Pop(RegisterX(secondary), RegisterXZR),
                     Move(ImmNum(0), RegisterX(tertiary))
                 ))
@@ -367,9 +367,9 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                 // secondary is the value to store
                 // tertiary has zero offset
                 formatter.getSize(rv.tp) match {
-                    case 1 => instructionList.addOne(StoreByte(RegisterW(secondary), BaseOfsRA(RegisterX(primary), RegisterX(tertiary))))
-                    case 4 => instructionList.addOne(Store(RegisterW(secondary), BaseOfsRA(RegisterX(primary), RegisterX(tertiary)))) // str w8, [x7, x17, lsl #2]
-                    case 8 => instructionList.addOne(Store(RegisterX(secondary), BaseOfsRA(RegisterX(primary), RegisterX(tertiary)))) // str x8, [x7, x17, lsl #3]
+                    case 1 => instructionList += (StoreByte(RegisterW(secondary), BaseOfsRA(RegisterX(primary), RegisterX(tertiary))))
+                    case 4 => instructionList += (Store(RegisterW(secondary), BaseOfsRA(RegisterX(primary), RegisterX(tertiary)))) // str w8, [x7, x17, lsl #2]
+                    case 8 => instructionList += (Store(RegisterX(secondary), BaseOfsRA(RegisterX(primary), RegisterX(tertiary)))) // str x8, [x7, x17, lsl #3]
                 }
             }
 
@@ -554,16 +554,16 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                 // regs(0) stores the index -> actual offset
                 // regs(1) stores the address of the array
                 // regs(2) stores the size of the element
-                instructionList.addAll(loadContentsFromIdentifier(id, regs))
+                instructionList ++= loadContentsFromIdentifier(id, regs)
 
-                instructionList.addOne(Push(RegisterX(primary), RegisterXZR))
+                instructionList += (Push(RegisterX(primary), RegisterXZR))
 
                 var currentType = sem.curSymTable.findVarGlobal(id).get.tp.asInstanceOf[S_ARRAY].tp
                 if (xs.length > 1) {
                     for (i <- 0 to xs.length - 2) {
                         var elemSize = formatter.getSize(currentType)
-                        instructionList.addAll(translate(xs(i), regs)) // Index in primary
-                        instructionList.addAll(List(
+                        instructionList ++= translate(xs(i), regs) // Index in primary
+                        instructionList ++= (List(
                             Move(ImmNum(elemSize), RegisterX(secondary)),
                             MulI(RegisterX(secondary), RegisterX(primary)), // offset in primary
                             Pop(RegisterX(secondary), RegisterXZR),
@@ -579,9 +579,9 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
 
                 val func = new errorOutOfBoundsFx(formatter)
                 var elemSize = formatter.getSize(currentType)
-                instructionList.addAll(translate(xs(xs.length - 1), regs)) // Index in primary
-                instructionList.addAll(checkArrBound(primary, secondary, tertiary))
-                instructionList.addAll(List(
+                instructionList ++= translate(xs(xs.length - 1), regs) // Index in primary
+                instructionList ++= checkArrBound(primary, secondary, tertiary)
+                instructionList ++= (List(
                     Move(ImmNum(elemSize), RegisterX(secondary)),
                     MulI(RegisterX(secondary), RegisterX(primary)), // offset in primary
                     Pop(RegisterX(secondary), RegisterXZR),

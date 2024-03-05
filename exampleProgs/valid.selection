@@ -184,7 +184,7 @@ exampleProgs/valid/function/simple_functions/functionSimpleLoop.wacc
 exampleProgs/valid/function/simple_functions/functionSimple.wacc
 exampleProgs/valid/function/simple_functions/functionUpdateParameter.wacc
 exampleProgs/valid/function/simple_functions/incFunction.wacc
-'exampleProgs/valid/function/simple_functions/lotsOfLocals.wacc
+exampleProgs/valid/function/simple_functions/lotsOfLocals.wacc
 exampleProgs/valid/function/simple_functions/manyArgumentsChar.wacc
 exampleProgs/valid/function/simple_functions/manyArgumentsInt.wacc
 exampleProgs/valid/function/simple_functions/negFunction.wacc
