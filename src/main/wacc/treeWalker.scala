@@ -40,10 +40,12 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                     SetCond(RegisterX(primary), NeI)
                 )
 
-            case Neg(x) => translate(x, regs) ++
+            case Neg(x) => 
+                formatter.includeFx(new errorOverFlowFx(formatter))
+                translate(x, regs) ++
                 List(
                     Move(RegisterX(primary), RegisterX(secondary)),
-                    Move(ImmNum(0), RegisterX(primary)), 
+                    Move(ImmNum(0), RegisterW(primary)), 
                     SubI(RegisterW(secondary), RegisterW(primary)),
                     BranchCond("_errOverflow", VsI)
                 )
@@ -51,7 +53,7 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
             case Len(x) => 
                 translate(x, regs) ++ 
                 List(
-                    Move(ImmNum(-4), RegisterX(secondary)),
+                    Move(ImmNum(-(formatter.getSize(S_INT))), RegisterX(secondary)),
                     LoadWord(BaseOfsRA(RegisterX(primary), RegisterX(secondary)), RegisterX(primary))
                 )
             
@@ -235,7 +237,7 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
             case OnTempStack(r) => List(
                     Comment("TEMP STACK!!!"),
                     Move(ImmNum(-(formatter.getSize(S_ANY) * (r + 1))), RegisterX(secondary)),
-                    Load(BaseOfsRA(RegisterX(formatter.regConf.pointerReg), RegisterX(secondary)), RegisterX(primary))                        )
+                    Load(BaseOfsRA(RegisterX(formatter.regConf.pointerReg), RegisterX(secondary)), RegisterX(primary)))
             case OnStack(offset) => List(
                     Move(ImmNum(offset), RegisterX(secondary)),
                     Store(RegisterX(primary), BaseOfsRA(RegisterX(formatter.regConf.framePReg), RegisterX(secondary)))
