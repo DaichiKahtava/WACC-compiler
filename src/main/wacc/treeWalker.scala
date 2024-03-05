@@ -185,33 +185,36 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
             // Pattern match for the identifier.
             case Ident(id) => instructionList ++= loadContentsFromIdentifier(id, regs)
 
-            // Todo: magic numbers for registers 7, 17
-            case ArrElem(id, xs) => {     
-                // Finds the pointer to the array
-                val extractPtr = sem.curSymTable.findVarGlobal(id).get.pos match {
-                    case InRegister(r) => List(Move(RegisterX(r), RegisterX(7)))
-                    case OnStack(offset) => List() // Todo
-                    case OnTempStack(regNum) => List() // Todo
-                    case Undefined => ??? // Should not come here
-                }
+            case ArrElem(id, xs) => {                
+                instructionList.addAll(loadContentsFromIdentifier(id, regs)) // Address
+                instructionList.addOne(Push(RegisterX(primary), RegisterXZR))
 
-                var elemType = sem.curSymTable.findVarGlobal(id).get.tp.asInstanceOf[S_ARRAY].tp
-                var elemSize = formatter.getSize(elemType)
-                println(elemType)
-                instructionList ++= extractPtr
-                instructionList ++= (for (x <- xs) yield {
-                    elemSize = formatter.getSize(elemType)
-                    formatter.includeFx(new ArrayLoadFx(formatter, elemSize))
-                    val res = translate(x, regs) ++ 
-                    List(
-                        Move(RegisterWR, RegisterW(17)),
-                        BranchLink(s"_arrLoad$elemSize")
+                var currentType = sem.curSymTable.findVarGlobal(id).get.tp
+                    for (i <- 0 to xs.length - 1) {
+                        currentType = currentType.asInstanceOf[S_ARRAY].tp
+                        var elemSize = formatter.getSize(currentType)
+                        instructionList.addAll(translate(xs(i), regs)) // Index in primary
+                        instructionList.addAll(List(
+                            Move(ImmNum(elemSize), RegisterX(secondary)),
+                            MulI(RegisterX(secondary), RegisterX(primary)), // offset in primary
+                            Pop(RegisterX(secondary), RegisterXZR),
+                            AddI(RegisterX(secondary), RegisterX(primary)),
+                            Move(ImmNum(0), RegisterX(secondary)),
+                            Comment("Load")
+                        ))
+
+                        instructionList.addOne(
+                            formatter.getSize(currentType) match {
+                                // loading not correct
+                                case 1 => LoadByte(BaseOfsRA(RegisterX(primary), RegisterX(secondary)), RegisterX(primary), true)
+                                case 4 => LoadWord(BaseOfsRA(RegisterX(primary), RegisterX(secondary)), RegisterX(primary)) // ldrsw x7, [x7, x17, lsl #2]
+                                case 8 => Load(BaseOfsRA(RegisterX(primary), RegisterX(secondary)), RegisterX(primary)) // ldr x7, [x7, x17, lsl #3]
+                            }
                         )
-                    if (elemType.isInstanceOf[S_ARRAY])
-                        elemType = elemType.asInstanceOf[S_ARRAY].tp
-                    res
-                }).flatten
-                instructionList ++= List(Move(RegisterX(7), RegisterXR))
+                        instructionList.addOne(Push(RegisterX(primary), RegisterXZR))
+                    }
+                    
+                instructionList.addOne(Pop(RegisterX(primary), RegisterXZR))
             }
         }
         instructionList.toList
@@ -340,50 +343,25 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                 instructionList ++= translate(rv, scratchRegs)
                 instructionList ++= storeContentsToIdentifier(id, scratchRegs)
             }
-            case Asgn(LArrElem(id, xs), rv) => { // TODO: Nested array extractoin
-                /*
-                    - use branch link here (as an exception)
-                    - arr load/str uses variable registers with callee saves/restore
-                    - arr load/str should save result inside X8 <primary>
-                    - use the scratch to store arguments
-                    ->Considered an an extention to this code.
-                */
-
-                // Finds the pointer to the array
-                val extractPtr = sem.curSymTable.findVarGlobal(id).get.pos match {
-                    case InRegister(r) => List(Move(RegisterX(r), RegisterX(7)))
-                    case OnStack(offset) => List() // Todo
-                    case OnTempStack(regNum) => List() // Todo
-                    case Undefined => ??? // Should not come here
-                }
-
-                val elemType = rv.tp
-                val elemSize = formatter.getSize(elemType)
-                formatter.includeFx(new ArrayStoreFx(formatter, elemSize))
-
-                instructionList ++= extractPtr
-                instructionList ++= (xs match {
-                    case x :: Nil =>
-                        translate(x, scratchRegs) ++ // Index in X8
-                        List(Move(RegisterW(primary), RegisterW(17))) ++ // Index in W17
-                        translate(rv, scratchRegs) ++ // Value to store in X8
-                        List(BranchLink(s"_arrStore$elemSize")) 
-                    case x :: xs => Nil // TODO
-                    case Nil => ??? // Should not be empty
-                })
-            }
 
             // LArrElem and Pairs
             case Asgn(lv, rv) => {
-                instructionList ++= translate(rv, scratchRegs)
-                instructionList += Push(RegisterX(primary), RegisterXZR)
-                instructionList ++= translate(lv, scratchRegs)
-                instructionList += Pop(RegisterX(secondary), RegisterXZR)
-
-                instructionList ++= (List(
-                    Move(ImmNum(0), RegisterX(tertiary)),
-                    Store(RegisterX(secondary), BaseOfsRA(RegisterX(primary), RegisterX(tertiary)))
+                instructionList.addAll(translate(rv, scratchRegs))
+                instructionList.addOne(Push(RegisterX(primary), RegisterXZR))
+                instructionList.addAll(translate(lv, scratchRegs))
+                instructionList.addAll(List(
+                    Pop(RegisterX(secondary), RegisterXZR),
+                    Move(ImmNum(0), RegisterX(tertiary))
                 ))
+
+                // primary is the pointer to the array *element* pointer
+                // secondary is the value to store
+                // tertiary has zero offset
+                formatter.getSize(rv.tp) match {
+                    case 1 => instructionList.addOne(StoreByte(RegisterW(secondary), BaseOfsRA(RegisterX(primary), RegisterX(tertiary))))
+                    case 4 => instructionList.addOne(Store(RegisterW(secondary), BaseOfsRA(RegisterX(primary), RegisterX(tertiary)))) // str w8, [x7, x17, lsl #2]
+                    case 8 => instructionList.addOne(Store(RegisterX(secondary), BaseOfsRA(RegisterX(primary), RegisterX(tertiary)))) // str x8, [x7, x17, lsl #3]
+                }
             }
 
             case Read(lv) => lv match {
@@ -560,10 +538,47 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
     def translate(lv: LValue, regs: List[Int]): List[Instruction] = {
         val primary = regs(0)
         val secondary = regs(1)
+        val tertiary = regs(3)
         val instructionList = ListBuffer.empty[Instruction]
         lv match {
-            // This is responsible for getting the *address* of the lvalue
-            case LArrElem(id, xs) => ??? 
+            case LArrElem(id, xs) => {
+                // regs(0) stores the index -> actual offset
+                // regs(1) stores the address of the array
+                // regs(2) stores the size of the element
+
+                instructionList.addAll(loadContentsFromIdentifier(id, regs))
+
+                instructionList.addOne(Push(RegisterX(primary), RegisterXZR))
+
+                var currentType = sem.curSymTable.findVarGlobal(id).get.tp.asInstanceOf[S_ARRAY].tp
+                if (xs.length > 1) {
+                    for (i <- 0 to xs.length - 2) {
+                        var elemSize = formatter.getSize(currentType)
+                        instructionList.addAll(translate(xs(i), regs)) // Index in primary
+                        instructionList.addAll(List(
+                            Move(ImmNum(elemSize), RegisterX(secondary)),
+                            MulI(RegisterX(secondary), RegisterX(primary)), // offset in primary
+                            Pop(RegisterX(secondary), RegisterXZR),
+                            AddI(RegisterX(secondary), RegisterX(primary)),
+                            Move(ImmNum(0), RegisterX(secondary)),
+                            Load(BaseOfsRA(RegisterX(primary), RegisterX(secondary)), RegisterX(primary))
+                            // Address of the new array now in primary 
+                            // Using Load only as we are guaranteed 8 bytes!
+                        ))
+                        currentType = currentType.asInstanceOf[S_ARRAY].tp
+                    }
+                }
+
+                var elemSize = formatter.getSize(currentType)
+                instructionList.addAll(translate(xs(xs.length - 1), regs)) // Index in primary
+                // TODO: Add check!
+                instructionList.addAll(List(
+                    Move(ImmNum(elemSize), RegisterX(secondary)),
+                    MulI(RegisterX(secondary), RegisterX(primary)), // offset in primary
+                    Pop(RegisterX(secondary), RegisterXZR),
+                    AddI(RegisterX(secondary), RegisterX(primary))
+                ))
+            }
             
             case LIdent(id) => instructionList ++= loadContentsFromIdentifier(id, regs)
             // NOTE: We get here ONLY when we need to find the address of the id
@@ -615,7 +630,7 @@ class TreeWalker(var sem: Semantics, formatter: Aarch64_formatter) {
                 val arrSize = arrLen * elemSize
                 var arrHead = 0
                 instructionList ++= List(Comment(s"$arrLen element array"),
-                    Move(ImmNum(arrSize + 4), RegisterX(primary))                
+                    Move(ImmNum(arrSize + formatter.getSize(S_INT)), RegisterX(primary))                
                 )
                 instructionList ++= callFx(formatter.includeFx(new mallocFx(formatter)), formatter.regConf.scratchRegs, Left(List(RegisterX(primary))), List(S_ANY))
                 instructionList ++= List(Move(RegisterX(formatter.regConf.resultRegister), RegisterX(formatter.regConf.pointerReg)),
