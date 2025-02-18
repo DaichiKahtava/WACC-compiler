@@ -93,19 +93,7 @@ class Aarch64_formatter() {
 
         case Jump(label) => "b\t" + label + "\n"
         case ReturnI => "ret\n"
-        case Move(src, dst) => src match {
-            case ImmNum(n) => 
-                "movk\t"+ generateRegister(dst) +", #0x" + (n & 0xFFFF).toHexString + "\n" +
-                "movk\t"+ generateRegister(dst) +", #0x" + ((n>>16) & 0xFFFF).toHexString + ", lsl #16\n" +
-                (if (n < 0) {
-                    "movk\t" + generateRegister(dst) + ", #0x" + (0xFFFF).toHexString + ", lsl #32\n" +
-                    "movk\t" + generateRegister(dst) + ", #0x" + (0xFFFF).toHexString + ", lsl #48\n"
-                } else {
-                    "movk\t" + generateRegister(dst) + ", #0x" + (0x0000).toHexString + ", lsl #32\n" +
-                    "movk\t" + generateRegister(dst) + ", #0x" + (0x0000).toHexString + ", lsl #48\n"
-                })
-            case _: Register => "mov\t" + generateRegister(dst) + ", " + generateOperand(src) + "\n"
-        }
+        case Move(src, dst) => "mov\t" + generateRegister(dst) + ", " + generateOperand(src) + "\n"
                     
         case Load(src, dst) => "ldr\t" + generateRegister(dst) + ", " + generateAddress(src) + "\n"
         case LoadByte(src, dst, signed) => signed match {
