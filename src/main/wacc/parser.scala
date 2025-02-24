@@ -28,6 +28,7 @@ object parser {
             }
         }
     }
+    
     // def parse(input: String): Result[String, Program] = parser.parse(input)
     protected [wacc] lazy val parser = fully(program)
 
